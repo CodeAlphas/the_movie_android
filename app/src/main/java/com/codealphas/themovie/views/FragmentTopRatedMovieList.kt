@@ -1,4 +1,4 @@
-package com.example.movieapplication.views
+package com.codealphas.themovie.views
 
 import android.content.Intent
 import android.os.Bundle
@@ -14,14 +14,14 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.movieapplication.R
-import com.example.movieapplication.adapters.TopRatedMoviesRecyclerViewAdapter
-import com.example.movieapplication.databinding.TopRatedMovieListFragmentBinding
-import com.example.movieapplication.models.MoviesFromServer
-import com.example.movieapplication.utils.ItemDecorator
-import com.example.movieapplication.utils.Utils
-import com.example.movieapplication.utils.Utils.Companion.TAG
-import com.example.movieapplication.viewmodels.MovieViewModel
+import com.codealphas.themovie.R
+import com.codealphas.themovie.adapters.TopRatedMoviesRecyclerViewAdapter
+import com.codealphas.themovie.databinding.TopRatedMovieListFragmentBinding
+import com.codealphas.themovie.models.MoviesFromServer
+import com.codealphas.themovie.utils.ItemDecorator
+import com.codealphas.themovie.utils.Utils
+import com.codealphas.themovie.utils.Utils.Companion.TAG
+import com.codealphas.themovie.viewmodels.MovieViewModel
 
 class FragmentTopRatedMovieList : Fragment() {
 

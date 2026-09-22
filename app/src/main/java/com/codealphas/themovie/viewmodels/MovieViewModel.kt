@@ -1,13 +1,13 @@
-package com.example.movieapplication.viewmodels
+package com.codealphas.themovie.viewmodels
 
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.movieapplication.models.CreditsFromServer
-import com.example.movieapplication.models.MoviesFromServer
-import com.example.movieapplication.models.VideosFromServer
-import com.example.movieapplication.networks.RetroInstance
-import com.example.movieapplication.networks.RetrofitService
+import com.codealphas.themovie.models.CreditsFromServer
+import com.codealphas.themovie.models.MoviesFromServer
+import com.codealphas.themovie.models.VideosFromServer
+import com.codealphas.themovie.networks.RetroInstance
+import com.codealphas.themovie.networks.RetrofitService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 

@@ -1,4 +1,4 @@
-package com.example.movieapplication.views
+package com.codealphas.themovie.views
 
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
@@ -11,15 +11,15 @@ import androidx.core.view.isVisible
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.example.movieapplication.R
-import com.example.movieapplication.adapters.ReviewRecyclerViewAdapter
-import com.example.movieapplication.database.DatabaseInstance
-import com.example.movieapplication.databinding.ActivityReviewMainBinding
-import com.example.movieapplication.models.Review
-import com.example.movieapplication.repository.ReviewRepository
-import com.example.movieapplication.utils.ReviewClickDeleteInterface
-import com.example.movieapplication.utils.ReviewClickInterface
-import com.example.movieapplication.viewmodels.ReviewViewModel
+import com.codealphas.themovie.R
+import com.codealphas.themovie.adapters.ReviewRecyclerViewAdapter
+import com.codealphas.themovie.database.DatabaseInstance
+import com.codealphas.themovie.databinding.ActivityReviewMainBinding
+import com.codealphas.themovie.models.Review
+import com.codealphas.themovie.repository.ReviewRepository
+import com.codealphas.themovie.utils.ReviewClickDeleteInterface
+import com.codealphas.themovie.utils.ReviewClickInterface
+import com.codealphas.themovie.viewmodels.ReviewViewModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.database.*

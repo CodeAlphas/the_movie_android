@@ -1,8 +1,8 @@
-package com.example.movieapplication.database
+package com.codealphas.themovie.database
 
 import androidx.lifecycle.LiveData
 import androidx.room.*
-import com.example.movieapplication.models.Review
+import com.codealphas.themovie.models.Review
 
 // 영화 감상문 정보 테이블에 접근할 수 있는 메소드를 선언해 놓은 인터페이스
 @Dao

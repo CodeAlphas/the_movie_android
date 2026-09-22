@@ -1,4 +1,4 @@
-package com.example.movieapplication.views
+package com.codealphas.themovie.views
 
 import android.content.Intent
 import android.os.Bundle
@@ -6,11 +6,11 @@ import android.view.Menu
 import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
 
-import com.example.movieapplication.R
-import com.example.movieapplication.adapters.FragmentViewPagerAdapter
-import com.example.movieapplication.database.DatabaseInstance
-import com.example.movieapplication.databinding.ActivityMainBinding
-import com.example.movieapplication.repository.ReviewRepository
+import com.codealphas.themovie.R
+import com.codealphas.themovie.adapters.FragmentViewPagerAdapter
+import com.codealphas.themovie.database.DatabaseInstance
+import com.codealphas.themovie.databinding.ActivityMainBinding
+import com.codealphas.themovie.repository.ReviewRepository
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
 import com.google.firebase.auth.FirebaseAuth

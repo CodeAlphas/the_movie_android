@@ -1,10 +1,10 @@
-package com.example.movieapplication.views
+package com.codealphas.themovie.views
 
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.Toast
-import com.example.movieapplication.databinding.ActivityLoginBinding
+import com.codealphas.themovie.databinding.ActivityLoginBinding
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase

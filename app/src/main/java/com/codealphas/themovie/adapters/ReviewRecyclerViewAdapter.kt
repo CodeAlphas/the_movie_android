@@ -1,13 +1,13 @@
-package com.example.movieapplication.adapters
+package com.codealphas.themovie.adapters
 
 import android.content.Context
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
-import com.example.movieapplication.databinding.ReviewItemBinding
-import com.example.movieapplication.models.Review
-import com.example.movieapplication.utils.ReviewClickDeleteInterface
-import com.example.movieapplication.utils.ReviewClickInterface
+import com.codealphas.themovie.databinding.ReviewItemBinding
+import com.codealphas.themovie.models.Review
+import com.codealphas.themovie.utils.ReviewClickDeleteInterface
+import com.codealphas.themovie.utils.ReviewClickInterface
 
 // 영화 감상문 표시화면에서 작성한 감상문을 보여주는 리싸이클러뷰를 위한 어댑터
 class ReviewRecyclerViewAdapter(

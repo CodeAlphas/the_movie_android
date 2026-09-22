@@ -1,11 +1,11 @@
-package com.example.movieapplication.adapters
+package com.codealphas.themovie.adapters
 
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.viewpager2.adapter.FragmentStateAdapter
-import com.example.movieapplication.views.FragmentPopularMovieList
-import com.example.movieapplication.views.FragmentSearchMovie
-import com.example.movieapplication.views.FragmentTopRatedMovieList
+import com.codealphas.themovie.views.FragmentPopularMovieList
+import com.codealphas.themovie.views.FragmentSearchMovie
+import com.codealphas.themovie.views.FragmentTopRatedMovieList
 
 class FragmentViewPagerAdapter(
     fragmentActivity: FragmentActivity,

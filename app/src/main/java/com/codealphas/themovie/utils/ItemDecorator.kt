@@ -1,4 +1,4 @@
-package com.example.movieapplication.utils
+package com.codealphas.themovie.utils
 
 import android.content.Context
 import android.graphics.Rect

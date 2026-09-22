@@ -1,4 +1,4 @@
-package com.example.movieapplication.views
+package com.codealphas.themovie.views
 
 import android.annotation.SuppressLint
 import android.content.Context
@@ -16,13 +16,13 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
-import com.example.movieapplication.R
-import com.example.movieapplication.databinding.ActivityMapBinding
-import com.example.movieapplication.models.AddressFromServer
-import com.example.movieapplication.models.LocationLatLng
-import com.example.movieapplication.models.PoisFromServer
-import com.example.movieapplication.utils.Utils.Companion.TAG
-import com.example.movieapplication.viewmodels.MapViewModel
+import com.codealphas.themovie.R
+import com.codealphas.themovie.databinding.ActivityMapBinding
+import com.codealphas.themovie.models.AddressFromServer
+import com.codealphas.themovie.models.LocationLatLng
+import com.codealphas.themovie.models.PoisFromServer
+import com.codealphas.themovie.utils.Utils.Companion.TAG
+import com.codealphas.themovie.viewmodels.MapViewModel
 import com.google.android.gms.maps.*
 import com.google.android.gms.maps.model.*
 

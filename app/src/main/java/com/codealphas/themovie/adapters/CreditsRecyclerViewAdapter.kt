@@ -1,12 +1,12 @@
-package com.example.movieapplication.adapters
+package com.codealphas.themovie.adapters
 
 import android.content.Context
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
-import com.example.movieapplication.databinding.ActorItemBinding
-import com.example.movieapplication.models.CreditItem
+import com.codealphas.themovie.databinding.ActorItemBinding
+import com.codealphas.themovie.models.CreditItem
 
 // 영화 상세화면에서 등장인물 정보를 보여주는 리싸이클러뷰를 위한 어댑터
 class CreditsRecyclerViewAdapter(

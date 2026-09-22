@@ -1,10 +1,10 @@
-package com.example.movieapplication.database
+package com.codealphas.themovie.database
 
 import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import com.example.movieapplication.models.Review
+import com.codealphas.themovie.models.Review
 
 @Database(entities = [Review::class], version = 1)
 abstract class DatabaseInstance : RoomDatabase() {

@@ -1,15 +1,15 @@
-package com.example.movieapplication.viewmodels
+package com.codealphas.themovie.viewmodels
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.movieapplication.models.AddressFromServer
-import com.example.movieapplication.models.PoisFromServer
+import com.codealphas.themovie.models.AddressFromServer
+import com.codealphas.themovie.models.PoisFromServer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import com.example.movieapplication.networks.MapRetrofitService
-import com.example.movieapplication.networks.MapRetroInstance
+import com.codealphas.themovie.networks.MapRetrofitService
+import com.codealphas.themovie.networks.MapRetroInstance
 
 class MapViewModel : ViewModel() {
 

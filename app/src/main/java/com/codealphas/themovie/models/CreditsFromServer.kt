@@ -1,4 +1,4 @@
-package com.example.movieapplication.models
+package com.codealphas.themovie.models
 
 data class CreditsFromServer(
     val id: Int,

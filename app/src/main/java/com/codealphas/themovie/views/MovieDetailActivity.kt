@@ -1,4 +1,4 @@
-package com.example.movieapplication.views
+package com.codealphas.themovie.views
 
 import android.os.Bundle
 import android.util.Log
@@ -6,19 +6,21 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.*
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
-import com.example.movieapplication.R
-import com.example.movieapplication.adapters.CreditsRecyclerViewAdapter
-import com.example.movieapplication.databinding.ActivityMovieDetailBinding
-import com.example.movieapplication.models.CreditsFromServer
-import com.example.movieapplication.models.VideosFromServer
-import com.example.movieapplication.utils.Credentials.YOUTUBE_API_KEY
-import com.example.movieapplication.utils.Utils.Companion.TAG
-import com.example.movieapplication.viewmodels.MovieViewModel
-import com.google.android.youtube.player.*
+import com.codealphas.themovie.adapters.CreditsRecyclerViewAdapter
+import com.codealphas.themovie.databinding.ActivityMovieDetailBinding
+import com.codealphas.themovie.models.CreditsFromServer
+import com.codealphas.themovie.models.VideosFromServer
+import com.codealphas.themovie.utils.Utils.Companion.TAG
+import com.codealphas.themovie.viewmodels.MovieViewModel
 
-class MovieDetailActivity : AppCompatActivity(), YouTubePlayer.OnInitializedListener {
+// YouTube Android Player API는 Maven에 없어 컴파일이 막힌다. Phase 5에서 교체한다.
+// import com.codealphas.themovie.R
+// import com.codealphas.themovie.utils.Credentials.YOUTUBE_API_KEY
+// import com.google.android.youtube.player.*
 
-    private lateinit var youtubePlayerFragment: YouTubePlayerFragment
+class MovieDetailActivity : AppCompatActivity() {
+
+    // private lateinit var youtubePlayerFragment: YouTubePlayerFragment
     private lateinit var creditsRecyclerViewAdapter: CreditsRecyclerViewAdapter
     private lateinit var binding: ActivityMovieDetailBinding
     private lateinit var viewModel: MovieViewModel
@@ -57,28 +59,28 @@ class MovieDetailActivity : AppCompatActivity(), YouTubePlayer.OnInitializedList
     }
 
     // 유튜브 플레이어 뷰에 동영상을 로드해주는 메소드
-    private fun loadVideo() {
-        youtubePlayerFragment =
-            fragmentManager.findFragmentById(R.id.youtubePlayerViewFragment) as YouTubePlayerFragment
-        youtubePlayerFragment.initialize(YOUTUBE_API_KEY, this)
-    }
-
-    override fun onInitializationSuccess(
-        p0: YouTubePlayer.Provider?,
-        p1: YouTubePlayer?,
-        p2: Boolean
-    ) {
-        if (!p2) {
-            p1?.cueVideos(youtubeVideoId)
-        }
-    }
-
-    override fun onInitializationFailure(
-        p0: YouTubePlayer.Provider?,
-        p1: YouTubeInitializationResult?
-    ) {
-        // Log.d(TAG, "에러 발생")
-    }
+    // private fun loadVideo() {
+    //     youtubePlayerFragment =
+    //         fragmentManager.findFragmentById(R.id.youtubePlayerViewFragment) as YouTubePlayerFragment
+    //     youtubePlayerFragment.initialize(YOUTUBE_API_KEY, this)
+    // }
+    //
+    // override fun onInitializationSuccess(
+    //     p0: YouTubePlayer.Provider?,
+    //     p1: YouTubePlayer?,
+    //     p2: Boolean
+    // ) {
+    //     if (!p2) {
+    //         p1?.cueVideos(youtubeVideoId)
+    //     }
+    // }
+    //
+    // override fun onInitializationFailure(
+    //     p0: YouTubePlayer.Provider?,
+    //     p1: YouTubeInitializationResult?
+    // ) {
+    //     // Log.d(TAG, "에러 발생")
+    // }
 
     // 영화 관계자 정보를 TMDB 서버로부터 가져와 리싸이클러뷰에 넣어주는 메소드
     private fun getCredits(movieId: Int) {
@@ -115,7 +117,7 @@ class MovieDetailActivity : AppCompatActivity(), YouTubePlayer.OnInitializedList
                         videoList.forEach {
                             youtubeVideoId.add(it.key)
                         }
-                        loadVideo()
+                        // loadVideo()
                     }
                 } else {
                     // Log.d(TAG, "에러 발생")

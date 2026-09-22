@@ -1,11 +1,11 @@
-package com.example.movieapplication.utils
+package com.codealphas.themovie.utils
 
 import android.content.Context
 import android.util.DisplayMetrics
 import android.view.View
 import android.view.inputmethod.InputMethodManager
 import androidx.appcompat.app.AppCompatActivity
-import com.example.movieapplication.models.Review
+import com.codealphas.themovie.models.Review
 import java.text.SimpleDateFormat
 import java.util.*
 

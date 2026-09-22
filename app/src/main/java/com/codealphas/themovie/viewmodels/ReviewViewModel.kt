@@ -1,10 +1,10 @@
-package com.example.movieapplication.viewmodels
+package com.codealphas.themovie.viewmodels
 
 import android.app.Application
 import androidx.lifecycle.*
-import com.example.movieapplication.database.DatabaseInstance
-import com.example.movieapplication.models.Review
-import com.example.movieapplication.repository.ReviewRepository
+import com.codealphas.themovie.database.DatabaseInstance
+import com.codealphas.themovie.models.Review
+import com.codealphas.themovie.repository.ReviewRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 

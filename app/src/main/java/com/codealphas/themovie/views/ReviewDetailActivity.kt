@@ -1,4 +1,4 @@
-package com.example.movieapplication.views
+package com.codealphas.themovie.views
 
 import android.Manifest
 import android.content.Intent
@@ -20,11 +20,11 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
-import com.example.movieapplication.R
-import com.example.movieapplication.databinding.ActivityReviewDetailBinding
-import com.example.movieapplication.models.Review
-import com.example.movieapplication.utils.Utils
-import com.example.movieapplication.viewmodels.ReviewViewModel
+import com.codealphas.themovie.R
+import com.codealphas.themovie.databinding.ActivityReviewDetailBinding
+import com.codealphas.themovie.models.Review
+import com.codealphas.themovie.utils.Utils
+import com.codealphas.themovie.viewmodels.ReviewViewModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.database.DatabaseReference

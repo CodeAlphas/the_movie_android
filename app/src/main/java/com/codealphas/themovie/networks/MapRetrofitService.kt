@@ -1,8 +1,8 @@
-package com.example.movieapplication.networks
+package com.codealphas.themovie.networks
 
-import com.example.movieapplication.models.AddressFromServer
-import com.example.movieapplication.models.PoisFromServer
-import com.example.movieapplication.utils.Credentials
+import com.codealphas.themovie.models.AddressFromServer
+import com.codealphas.themovie.models.PoisFromServer
+import com.codealphas.themovie.utils.Credentials
 import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.Query

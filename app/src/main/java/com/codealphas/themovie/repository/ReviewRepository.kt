@@ -1,8 +1,8 @@
-package com.example.movieapplication.repository
+package com.codealphas.themovie.repository
 
 import androidx.lifecycle.LiveData
-import com.example.movieapplication.database.ReviewDao
-import com.example.movieapplication.models.Review
+import com.codealphas.themovie.database.ReviewDao
+import com.codealphas.themovie.models.Review
 
 class ReviewRepository(private val reviewDao: ReviewDao) {
 

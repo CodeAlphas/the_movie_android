@@ -1,4 +1,4 @@
-package com.example.movieapplication.adapters
+package com.codealphas.themovie.adapters
 
 import android.content.Context
 import android.content.Intent
@@ -6,9 +6,9 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
-import com.example.movieapplication.views.MovieDetailActivity
-import com.example.movieapplication.databinding.MovieItemBinding
-import com.example.movieapplication.models.MovieItem
+import com.codealphas.themovie.views.MovieDetailActivity
+import com.codealphas.themovie.databinding.MovieItemBinding
+import com.codealphas.themovie.models.MovieItem
 
 // 최고 평점 영화 표시화면에서 해당 영화정보를 보여주는 리싸이클러뷰를 위한 어댑터
 class TopRatedMoviesRecyclerViewAdapter(
