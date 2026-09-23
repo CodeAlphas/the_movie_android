@@ -25,13 +25,13 @@ import com.codealphas.themovie.databinding.ActivityReviewDetailBinding
 import com.codealphas.themovie.models.Review
 import com.codealphas.themovie.utils.Utils
 import com.codealphas.themovie.viewmodels.ReviewViewModel
+import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.ktx.auth
+import com.google.firebase.auth.auth
 import com.google.firebase.database.DatabaseReference
-import com.google.firebase.database.ktx.database
-import com.google.firebase.ktx.Firebase
+import com.google.firebase.database.database
 import com.google.firebase.storage.FirebaseStorage
-import com.google.firebase.storage.ktx.storage
+import com.google.firebase.storage.storage
 import kotlinx.coroutines.*
 import kotlinx.coroutines.tasks.await
 import java.io.File
@@ -59,7 +59,7 @@ class ReviewDetailActivity : AppCompatActivity() {
         binding = ActivityReviewDetailBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        supportActionBar!!.title = "영화 감상문 작성"
+        supportActionBar?.title = "영화 감상문 작성"
 
         initViewContent()
         initTitleEditText()

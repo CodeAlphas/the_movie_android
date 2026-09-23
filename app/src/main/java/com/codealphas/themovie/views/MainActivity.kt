@@ -29,20 +29,19 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        if (auth.currentUser == null) {
+            startActivity(Intent(this, LoginActivity::class.java))
+            finish()
+            return
+        }
+
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        supportActionBar!!.title = "오늘의 인기 영화" // 앱바(액션바)의 기본 텍스트
+        supportActionBar?.title = "오늘의 인기 영화" // 앱바(액션바)의 기본 텍스트
         initViewPager()
         initTabLayout()
         linkViewPagerAndTabLayout()
-    }
-
-    override fun onStart() {
-        super.onStart()
-        if (auth.currentUser == null) {
-            startActivity(Intent(this, LoginActivity::class.java))
-        } // 로그인되어 있지 않으면 로그인 화면으로 이동
     }
 
     private fun initViewPager() {
@@ -56,9 +55,9 @@ class MainActivity : AppCompatActivity() {
                 binding.viewPager.currentItem = position
 
                 when (position) {
-                    0 -> supportActionBar!!.title = "오늘의 인기 영화"
-                    1 -> supportActionBar!!.title = "높은 평점 영화"
-                    else -> supportActionBar!!.title = "영화 검색"
+                    0 -> supportActionBar?.title = "오늘의 인기 영화"
+                    1 -> supportActionBar?.title = "높은 평점 영화"
+                    else -> supportActionBar?.title = "영화 검색"
                 } // 탭 클릭시 해당 탭에 맞게 앱바(액션바)의 텍스트 변경
             }
 

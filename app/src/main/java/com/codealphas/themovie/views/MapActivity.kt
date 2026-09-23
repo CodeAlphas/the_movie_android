@@ -40,7 +40,7 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback {
         binding = ActivityMapBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        supportActionBar!!.title = "내 근처 영화관"
+        supportActionBar?.title = "내 근처 영화관"
 
         initGoogleMap()
         initCurrentLocationButton()

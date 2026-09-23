@@ -20,13 +20,13 @@ import com.codealphas.themovie.repository.ReviewRepository
 import com.codealphas.themovie.utils.ReviewClickDeleteInterface
 import com.codealphas.themovie.utils.ReviewClickInterface
 import com.codealphas.themovie.viewmodels.ReviewViewModel
+import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.ktx.auth
+import com.google.firebase.auth.auth
 import com.google.firebase.database.*
-import com.google.firebase.database.ktx.database
-import com.google.firebase.ktx.Firebase
+import com.google.firebase.database.database
 import com.google.firebase.storage.FirebaseStorage
-import com.google.firebase.storage.ktx.storage
+import com.google.firebase.storage.storage
 
 class ReviewMainActivity : AppCompatActivity(), ReviewClickInterface, ReviewClickDeleteInterface {
 
@@ -43,7 +43,7 @@ class ReviewMainActivity : AppCompatActivity(), ReviewClickInterface, ReviewClic
         binding = ActivityReviewMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        supportActionBar!!.title = "영화 감상문"
+        supportActionBar?.title = "영화 감상문"
 
         initRecyclerView()
         getReviewsFromServer()

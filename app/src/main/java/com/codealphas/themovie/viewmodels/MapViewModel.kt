@@ -3,11 +3,8 @@ package com.codealphas.themovie.viewmodels
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import com.codealphas.themovie.models.AddressFromServer
 import com.codealphas.themovie.models.PoisFromServer
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import com.codealphas.themovie.networks.MapRetrofitService
 import com.codealphas.themovie.networks.MapRetroInstance
 
@@ -22,21 +19,15 @@ class MapViewModel : ViewModel() {
         get() = _currentAddress
 
     fun makeCurrentAddressApiCall(centerLat: String, centerLon: String) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val retroInstance =
-                MapRetroInstance.getMapRetrofitInstance()
-                    .create(MapRetrofitService::class.java)
-            val response = retroInstance.getCurrentAddress(lat = centerLat, lon = centerLon)
+        launchRequest {
+            val response = service().getCurrentAddress(lat = centerLat, lon = centerLon)
             _currentAddress.postValue(response)
         }
     } // TMAP 서버로 현재 위치의 주소 정보를 요청하고 해당 정보를 받아오는 메소드
 
     fun makeTheaterListApiCall(categories: String, centerLat: Double, centerLon: Double) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val retroInstance =
-                MapRetroInstance.getMapRetrofitInstance()
-                    .create(MapRetrofitService::class.java)
-            val response = retroInstance.getTheaterList(
+        launchRequest {
+            val response = service().getTheaterList(
                 categories = categories,
                 centerLat = centerLat,
                 centerLon = centerLon
@@ -44,4 +35,8 @@ class MapViewModel : ViewModel() {
             _allTheater.postValue(response)
         }
     } // TMAP 서버로 주변 영화관 정보를 요청하고 해당 정보를 받아오는 메소드
+
+    private fun service(): MapRetrofitService {
+        return MapRetroInstance.getMapRetrofitInstance().create(MapRetrofitService::class.java)
+    }
 }

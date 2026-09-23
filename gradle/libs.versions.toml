@@ -19,7 +19,9 @@ gson = "2.11.0"
 coroutines = "1.10.2"
 glide = "4.16.0"
 playServicesMaps = "19.2.0"
-firebaseBom = "33.16.0"
+firebaseBom = "34.19.0"
+googleServices = "4.5.0"
+secrets = "2.0.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -55,5 +57,7 @@ ksp-symbol-processing = { module = "com.google.devtools.ksp:symbol-processing-gr
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
+google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+secrets = { id = "com.google.android.libraries.mapsplatform.secrets-gradle-plugin", version.ref = "secrets" }
 

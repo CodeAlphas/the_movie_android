@@ -2,14 +2,11 @@ package com.codealphas.themovie.viewmodels
 
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import com.codealphas.themovie.models.CreditsFromServer
 import com.codealphas.themovie.models.MoviesFromServer
 import com.codealphas.themovie.models.VideosFromServer
 import com.codealphas.themovie.networks.RetroInstance
 import com.codealphas.themovie.networks.RetrofitService
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 
 class MovieViewModel : ViewModel() {
 
@@ -34,47 +31,41 @@ class MovieViewModel : ViewModel() {
         get() = _allCredits
 
     fun makePopMovieListApiCall() {
-        viewModelScope.launch(Dispatchers.IO) {
-            val retroInstance =
-                RetroInstance.getRetrofitInstance().create(RetrofitService::class.java)
-            val response = retroInstance.getPopularMovieList()
+        launchRequest {
+            val response = service().getPopularMovieList()
             _allPopMovies.postValue(response)
         }
     } // TMDB 서버로 인기 영화 정보를 요청하고 해당 정보를 받아오는 메소드
 
     fun makeTopRatedMovieListApiCall() {
-        viewModelScope.launch(Dispatchers.IO) {
-            val retroInstance =
-                RetroInstance.getRetrofitInstance().create(RetrofitService::class.java)
-            val response = retroInstance.getTopRatedMovieList()
+        launchRequest {
+            val response = service().getTopRatedMovieList()
             _allTopMovies.postValue(response)
         }
     } // TMDB 서버로 높은 평점의 영화 정보를 요청하고 해당 정보를 받아오는 메소드
 
     fun makeSearchMovieListApiCall(query: String) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val retroInstance =
-                RetroInstance.getRetrofitInstance().create(RetrofitService::class.java)
-            val response = retroInstance.getSearchedMovieList(query = query)
+        launchRequest {
+            val response = service().getSearchedMovieList(query = query)
             _allSearchMovies.postValue(response)
         }
     } // TMDB 서버로 검색한 영화의 정보를 요청하고 해당 정보를 받아오는 메소드
 
     fun makeVideoApiCall(movieId: Int) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val retroInstance =
-                RetroInstance.getRetrofitInstance().create(RetrofitService::class.java)
-            val response = retroInstance.getVideosList(movieId = movieId)
+        launchRequest {
+            val response = service().getVideosList(movieId = movieId)
             _allVideos.postValue(response)
         }
     }  // TMDB 서버로 영화의 동영상 정보를 요청하고 해당 정보를 받아오는 메소드
 
     fun makeCreditApiCall(movieId: Int) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val retroInstance =
-                RetroInstance.getRetrofitInstance().create(RetrofitService::class.java)
-            val response = retroInstance.getCreditsList(movieId = movieId)
+        launchRequest {
+            val response = service().getCreditsList(movieId = movieId)
             _allCredits.postValue(response)
         }
     }  // TMDB 서버로 영화 관계자들의 정보를 요청하고 해당 정보를 받아오는 메소드
+
+    private fun service(): RetrofitService {
+        return RetroInstance.getRetrofitInstance().create(RetrofitService::class.java)
+    }
 }

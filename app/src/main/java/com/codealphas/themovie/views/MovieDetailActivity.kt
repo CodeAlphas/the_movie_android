@@ -32,7 +32,7 @@ class MovieDetailActivity : AppCompatActivity() {
         binding = ActivityMovieDetailBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        supportActionBar!!.title = "더 무비"
+        supportActionBar?.title = "더 무비"
 
         initViews()
         val movieId = intent.getIntExtra("movieId", 0) // 영화 id
