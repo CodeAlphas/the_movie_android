@@ -2,7 +2,7 @@ package com.codealphas.themovie.networks
 
 import com.codealphas.themovie.models.AddressFromServer
 import com.codealphas.themovie.models.PoisFromServer
-import com.codealphas.themovie.utils.Credentials
+import com.codealphas.themovie.BuildConfig.TMAP_API_KEY
 import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.Query
@@ -12,7 +12,7 @@ interface MapRetrofitService {
     // 현재 위치(좌표)의 주소 정보 요청
     @GET("tmap/geo/reversegeocoding")
     suspend fun getCurrentAddress(
-        @Header("appKey") appKey: String = Credentials.TMAP_API_KEY,
+        @Header("appKey") appKey: String = TMAP_API_KEY,
         @Query("version") version: Int = 1,
         @Query("lat") lat: String, // 위도
         @Query("lon") lon: String, // 경도
@@ -24,7 +24,7 @@ interface MapRetrofitService {
     // 현재 위치를 기준으로 주변 영화관 정보 요청
     @GET("tmap/pois/search/around")
     suspend fun getTheaterList(
-        @Header("appKey") appKey: String = Credentials.TMAP_API_KEY,
+        @Header("appKey") appKey: String = TMAP_API_KEY,
         @Query("version") version: Int = 1,
         @Query("centerLon") centerLon: Double, // 반경 검색에서 사용하는 중심 경도
         @Query("centerLat") centerLat: Double, // 반경 검색에서 사용하는 중심 위도

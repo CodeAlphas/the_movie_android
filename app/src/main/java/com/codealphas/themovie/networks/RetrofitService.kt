@@ -3,7 +3,7 @@ package com.codealphas.themovie.networks
 import com.codealphas.themovie.models.CreditsFromServer
 import com.codealphas.themovie.models.MoviesFromServer
 import com.codealphas.themovie.models.VideosFromServer
-import com.codealphas.themovie.utils.Credentials.TMDB_API_KEY
+import com.codealphas.themovie.BuildConfig.TMDB_API_KEY
 import retrofit2.http.GET
 import retrofit2.http.Path
 import retrofit2.http.Query

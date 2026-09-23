@@ -16,7 +16,7 @@ import com.codealphas.themovie.viewmodels.MovieViewModel
 
 // YouTube Android Player API는 Maven에 없어 컴파일이 막힌다. Phase 5에서 교체한다.
 // import com.codealphas.themovie.R
-// import com.codealphas.themovie.utils.Credentials.YOUTUBE_API_KEY
+// import com.codealphas.themovie.BuildConfig.YOUTUBE_API_KEY
 // import com.google.android.youtube.player.*
 
 class MovieDetailActivity : AppCompatActivity() {
