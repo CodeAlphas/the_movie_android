@@ -5,6 +5,7 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.Toast
 import com.codealphas.themovie.databinding.ActivityLoginBinding
+import com.codealphas.themovie.utils.applySystemBarInsets
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
@@ -18,6 +19,7 @@ class LoginActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        applySystemBarInsets()
 
         binding = ActivityLoginBinding.inflate(layoutInflater)
         setContentView(binding.root)

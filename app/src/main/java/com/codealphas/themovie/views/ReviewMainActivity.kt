@@ -18,6 +18,7 @@ import com.codealphas.themovie.databinding.ActivityReviewMainBinding
 import com.codealphas.themovie.models.Review
 import com.codealphas.themovie.repository.ReviewRepository
 import com.codealphas.themovie.utils.ReviewClickDeleteInterface
+import com.codealphas.themovie.utils.applySystemBarInsets
 import com.codealphas.themovie.utils.ReviewClickInterface
 import com.codealphas.themovie.viewmodels.ReviewViewModel
 import com.google.firebase.Firebase
@@ -39,6 +40,7 @@ class ReviewMainActivity : AppCompatActivity(), ReviewClickInterface, ReviewClic
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        applySystemBarInsets()
 
         binding = ActivityReviewMainBinding.inflate(layoutInflater)
         setContentView(binding.root)

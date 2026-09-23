@@ -11,6 +11,7 @@ import com.codealphas.themovie.adapters.FragmentViewPagerAdapter
 import com.codealphas.themovie.database.DatabaseInstance
 import com.codealphas.themovie.databinding.ActivityMainBinding
 import com.codealphas.themovie.repository.ReviewRepository
+import com.codealphas.themovie.utils.applySystemBarInsets
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
 import com.google.firebase.auth.FirebaseAuth
@@ -35,6 +36,7 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
+        applySystemBarInsets()
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 

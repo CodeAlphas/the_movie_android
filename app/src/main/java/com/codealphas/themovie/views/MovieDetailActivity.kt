@@ -11,6 +11,7 @@ import com.codealphas.themovie.databinding.ActivityMovieDetailBinding
 import com.codealphas.themovie.models.CreditsFromServer
 import com.codealphas.themovie.models.VideosFromServer
 import com.codealphas.themovie.utils.Utils.Companion.TAG
+import com.codealphas.themovie.utils.applySystemBarInsets
 import com.codealphas.themovie.viewmodels.MovieViewModel
 
 // YouTube Android Player API는 Maven에 없어 컴파일이 막힌다. Phase 5에서 교체한다.
@@ -28,6 +29,7 @@ class MovieDetailActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        applySystemBarInsets()
 
         binding = ActivityMovieDetailBinding.inflate(layoutInflater)
         setContentView(binding.root)

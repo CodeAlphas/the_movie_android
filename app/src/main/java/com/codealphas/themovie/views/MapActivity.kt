@@ -22,6 +22,7 @@ import com.codealphas.themovie.models.AddressFromServer
 import com.codealphas.themovie.models.LocationLatLng
 import com.codealphas.themovie.models.PoisFromServer
 import com.codealphas.themovie.utils.Utils.Companion.TAG
+import com.codealphas.themovie.utils.applySystemBarInsets
 import com.codealphas.themovie.viewmodels.MapViewModel
 import com.google.android.gms.maps.*
 import com.google.android.gms.maps.model.*
@@ -36,6 +37,7 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        applySystemBarInsets()
 
         binding = ActivityMapBinding.inflate(layoutInflater)
         setContentView(binding.root)

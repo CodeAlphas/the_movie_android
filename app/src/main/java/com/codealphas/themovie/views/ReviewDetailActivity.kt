@@ -24,6 +24,7 @@ import com.codealphas.themovie.R
 import com.codealphas.themovie.databinding.ActivityReviewDetailBinding
 import com.codealphas.themovie.models.Review
 import com.codealphas.themovie.utils.Utils
+import com.codealphas.themovie.utils.applySystemBarInsets
 import com.codealphas.themovie.viewmodels.ReviewViewModel
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
@@ -55,6 +56,7 @@ class ReviewDetailActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        applySystemBarInsets()
 
         binding = ActivityReviewDetailBinding.inflate(layoutInflater)
         setContentView(binding.root)
