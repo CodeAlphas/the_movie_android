@@ -3,7 +3,7 @@
     android:shape="rectangle">
 
     <!-- 채우기 색 -->
-    <solid android:color="#FF6200EE" />
+    <solid android:color="?attr/colorPrimary" />
     <!-- 모서리 둥근 정도 -->
     <corners android:radius="5dp" />
 

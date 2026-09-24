@@ -15,7 +15,7 @@
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="#131313"
+        android:background="?attr/colorSurface"
         tools:context=".views.MovieDetailActivity">
 
         <ImageView
@@ -36,7 +36,7 @@
             android:ellipsize="end"
             android:lines="2"
             android:text="TextView"
-            android:textColor="@color/white"
+            android:textColor="?attr/colorOnSurface"
             android:textSize="20dp"
             android:textStyle="bold"
             app:layout_constraintBottom_toTopOf="@id/textRelease"
@@ -47,7 +47,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="TextView"
-            android:textColor="@color/white"
+            android:textColor="?attr/colorOnSurfaceVariant"
             android:textSize="17dp"
             app:layout_constraintBottom_toTopOf="@+id/guideline2"
             app:layout_constraintLeft_toRightOf="@id/guideline3"
@@ -59,7 +59,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="7dp"
             android:text="평점 : "
-            android:textColor="@color/white"
+            android:textColor="?attr/colorOnSurfaceVariant"
             android:textSize="17dp"
             app:layout_constraintLeft_toLeftOf="@+id/guideline3"
             app:layout_constraintTop_toBottomOf="@id/textRelease" />
@@ -72,6 +72,7 @@
             android:layout_marginTop="7dp"
             android:max="10"
             android:numStars="5"
+            android:progressTint="?attr/colorTertiary"
             android:stepSize="0.1"
             app:layout_constraintLeft_toRightOf="@id/guideline3"
             app:layout_constraintTop_toBottomOf="@id/textGrade" />
@@ -97,8 +98,7 @@
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginTop="5dp"
-        android:background="@color/white">
+        android:background="?attr/colorSurface">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -111,7 +111,7 @@
                 android:layout_marginLeft="7dp"
                 android:layout_marginTop="5dp"
                 android:text="배우 정보"
-                android:textColor="@color/black"
+                android:textColor="?attr/colorOnSurface"
                 android:textSize="25dp"
                 android:textStyle="bold" />
 
@@ -128,7 +128,7 @@
                 android:layout_marginLeft="5dp"
                 android:layout_marginTop="5dp"
                 android:text="영상"
-                android:textColor="@color/black"
+                android:textColor="?attr/colorOnSurface"
                 android:textSize="25dp"
                 android:textStyle="bold" />
 
@@ -148,7 +148,7 @@
                 android:layout_marginLeft="7dp"
                 android:layout_marginTop="10dp"
                 android:text="줄거리"
-                android:textColor="@color/black"
+                android:textColor="?attr/colorOnSurface"
                 android:textSize="25dp"
                 android:textStyle="bold" />
 
@@ -161,6 +161,7 @@
                 android:layout_marginRight="7dp"
                 android:layout_marginBottom="5dp"
                 android:text="TextView"
+                android:textColor="?attr/colorOnSurface"
                 android:textSize="18dp" />
 
         </LinearLayout>

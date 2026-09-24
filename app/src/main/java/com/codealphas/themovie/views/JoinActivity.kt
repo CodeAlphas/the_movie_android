@@ -1,12 +1,12 @@
 package com.codealphas.themovie.views
 
-import android.graphics.Color
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.Toast
 import androidx.core.widget.doAfterTextChanged
 import com.codealphas.themovie.databinding.ActivityJoinBinding
 import com.codealphas.themovie.utils.applySystemBarInsets
+import com.google.android.material.color.MaterialColors
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
@@ -46,10 +46,14 @@ class JoinActivity : AppCompatActivity() {
     private fun checkPassword(pw1: String, pw2: String) {
         if (pw1 == pw2) {
             binding.checkPwTextView.text = "비밀번호와 일치합니다."
-            binding.checkPwTextView.setTextColor(Color.GREEN)
+            binding.checkPwTextView.setTextColor(
+                MaterialColors.getColor(binding.checkPwTextView, com.google.android.material.R.attr.colorPrimary)
+            )
         } else {
             binding.checkPwTextView.text = "비밀번호와 일치하지 않습니다."
-            binding.checkPwTextView.setTextColor(Color.WHITE)
+            binding.checkPwTextView.setTextColor(
+                MaterialColors.getColor(binding.checkPwTextView, com.google.android.material.R.attr.colorOnSurface)
+            )
         }
     }
 

@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/black"
+    android:background="?attr/colorSurface"
     android:clickable="true"
     android:focusableInTouchMode="true"
     tools:context=".views.ReviewDetailActivity">
@@ -43,8 +43,8 @@
             android:hint="감상문 제목을 입력하세요"
             android:padding="10dp"
             android:singleLine="true"
-            android:textColor="@color/black"
-            android:textColorHint="@color/black" />
+            android:textColor="?attr/colorOnSurfaceInverse"
+            android:textColorHint="?attr/colorOnSurfaceVariant" />
 
         <androidx.appcompat.widget.AppCompatImageView
             android:id="@+id/imageView"
@@ -76,8 +76,8 @@
             android:inputType="textMultiLine"
             android:padding="10dp"
             android:singleLine="false"
-            android:textColor="@color/black"
-            android:textColorHint="@color/black" />
+            android:textColor="?attr/colorOnSurfaceInverse"
+            android:textColorHint="?attr/colorOnSurfaceVariant" />
 
     </androidx.appcompat.widget.LinearLayoutCompat>
 
@@ -115,7 +115,8 @@
             android:layout_margin="10dp"
             android:background="@drawable/custom_button"
             android:text="버튼"
-            android:textAllCaps="false" />
+            android:textAllCaps="false"
+            android:textColor="?attr/colorOnPrimary" />
 
     </androidx.appcompat.widget.LinearLayoutCompat>
 

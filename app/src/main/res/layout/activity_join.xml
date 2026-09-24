@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/black"
+    android:background="?attr/colorSurface"
     android:gravity="center_horizontal"
     android:orientation="vertical"
     tools:context=".views.JoinActivity">
@@ -26,7 +26,7 @@
                 android:layout_marginBottom="20dp"
                 android:gravity="bottom"
                 android:text="회원가입"
-                android:textColor="@color/white"
+                android:textColor="?attr/colorOnSurface"
                 android:textSize="25dp" />
 
             <EditText
@@ -37,7 +37,7 @@
                 android:background="@drawable/input_bg"
                 android:hint="아이디"
                 android:paddingLeft="27dp"
-                android:textColorHint="#070707"
+                android:textColorHint="?attr/colorOnSurfaceVariant"
                 android:textSize="18dp" />
 
             <EditText
@@ -49,7 +49,7 @@
                 android:hint="비밀번호"
                 android:inputType="textPassword"
                 android:paddingLeft="27dp"
-                android:textColorHint="#070707"
+                android:textColorHint="?attr/colorOnSurfaceVariant"
                 android:textSize="18dp" />
 
             <EditText
@@ -61,7 +61,7 @@
                 android:hint="비밀번호 확인"
                 android:inputType="textPassword"
                 android:paddingLeft="27dp"
-                android:textColorHint="#070707"
+                android:textColorHint="?attr/colorOnSurfaceVariant"
                 android:textSize="18dp" />
 
             <TextView
@@ -71,7 +71,7 @@
                 android:layout_marginBottom="30dp"
                 android:gravity="left"
                 android:text="비밀번호와 일치하지 않습니다."
-                android:textColor="#FFFFFF" />
+                android:textColor="?attr/colorOnSurface" />
 
             <TextView
                 android:id="@+id/joinBtn"
@@ -81,7 +81,7 @@
                 android:background="@drawable/login"
                 android:gravity="center"
                 android:text="가입하기"
-                android:textColor="#FFFFFF"
+                android:textColor="?attr/colorOnSecondary"
                 android:textSize="20dp" />
 
             <TextView
@@ -90,7 +90,7 @@
                 android:layout_height="62dp"
                 android:gravity="right"
                 android:text="로그인하기"
-                android:textColor="#1868e8"
+                android:textColor="?attr/colorTertiary"
                 android:textSize="18dp"
                 android:textStyle="bold" />
 
