@@ -5,5 +5,20 @@
         <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
     </style>
 
-    <style name="Theme.TheMovie" parent="Base.Theme.TheMovie" />
+    <style name="Theme.TheMovie" parent="Base.Theme.TheMovie">
+        <item name="toolbarStyle">@style/Widget.TheMovie.Toolbar</item>
+    </style>
+
+    <style name="Widget.TheMovie.Toolbar" parent="Widget.Material3.Toolbar">
+        <item name="android:background">@color/purple_500</item>
+        <item name="titleTextColor">@color/white</item>
+        <item name="navigationIconTint">@color/white</item>
+        <item name="popupTheme">@style/ThemeOverlay.Material3.Light</item>
+    </style>
+
+    <!-- 위젯 스타일의 android:theme는 메뉴 아이콘 색에 쓰이지 않으므로, 아이콘이 흰색이 되도록 이 테마를 레이아웃의 Toolbar에 적용 -->
+    <style name="ThemeOverlay.TheMovie.Toolbar" parent="ThemeOverlay.Material3.Dark.ActionBar">
+        <item name="colorControlNormal">@color/white</item>
+        <item name="android:textColorPrimary">@color/white</item>
+    </style>
 </resources>

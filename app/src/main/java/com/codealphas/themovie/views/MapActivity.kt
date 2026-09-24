@@ -23,6 +23,7 @@ import com.codealphas.themovie.models.LocationLatLng
 import com.codealphas.themovie.models.PoisFromServer
 import com.codealphas.themovie.utils.Utils.Companion.TAG
 import com.codealphas.themovie.utils.applySystemBarInsets
+import com.codealphas.themovie.utils.setupAppBar
 import com.codealphas.themovie.viewmodels.MapViewModel
 import com.google.android.gms.maps.*
 import com.google.android.gms.maps.model.*
@@ -41,8 +42,7 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback {
 
         binding = ActivityMapBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
-        supportActionBar?.title = "내 근처 영화관"
+        setupAppBar(binding.toolbar, "내 근처 영화관")
 
         initGoogleMap()
         initCurrentLocationButton()

@@ -19,6 +19,7 @@ import com.codealphas.themovie.models.Review
 import com.codealphas.themovie.repository.ReviewRepository
 import com.codealphas.themovie.utils.ReviewClickDeleteInterface
 import com.codealphas.themovie.utils.applySystemBarInsets
+import com.codealphas.themovie.utils.setupAppBar
 import com.codealphas.themovie.utils.ReviewClickInterface
 import com.codealphas.themovie.viewmodels.ReviewViewModel
 import com.google.firebase.Firebase
@@ -44,8 +45,7 @@ class ReviewMainActivity : AppCompatActivity(), ReviewClickInterface, ReviewClic
 
         binding = ActivityReviewMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
-        supportActionBar?.title = "영화 감상문"
+        setupAppBar(binding.toolbar, "영화 감상문")
 
         initRecyclerView()
         getReviewsFromServer()

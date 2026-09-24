@@ -12,6 +12,7 @@ import com.codealphas.themovie.models.CreditsFromServer
 import com.codealphas.themovie.models.VideosFromServer
 import com.codealphas.themovie.utils.Utils.Companion.TAG
 import com.codealphas.themovie.utils.applySystemBarInsets
+import com.codealphas.themovie.utils.setupAppBar
 import com.codealphas.themovie.viewmodels.MovieViewModel
 
 // YouTube Android Player API는 Maven에 없어 컴파일이 막힌다. Phase 5에서 교체한다.
@@ -33,8 +34,7 @@ class MovieDetailActivity : AppCompatActivity() {
 
         binding = ActivityMovieDetailBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
-        supportActionBar?.title = "더 무비"
+        setupAppBar(binding.toolbar, "더 무비")
 
         initViews()
         val movieId = intent.getIntExtra("movieId", 0) // 영화 id

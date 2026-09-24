@@ -9,6 +9,15 @@
     android:focusableInTouchMode="true"
     tools:context=".views.ReviewDetailActivity">
 
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
+        android:layout_width="0dp"
+        android:layout_height="?attr/actionBarSize"
+        android:theme="@style/ThemeOverlay.TheMovie.Toolbar"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
     <androidx.appcompat.widget.LinearLayoutCompat
         android:id="@+id/firstLinearLayout"
         android:layout_width="match_parent"
@@ -18,7 +27,7 @@
         app:layout_constraintBottom_toTopOf="@id/secondLinearLayout"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        app:layout_constraintTop_toBottomOf="@id/toolbar">
 
         <androidx.appcompat.widget.AppCompatEditText
             android:id="@+id/titleEditText"

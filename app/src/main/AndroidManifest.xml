@@ -28,7 +28,6 @@
         <activity
             android:name=".views.MainActivity"
             android:exported="true"
-            android:theme="@style/Theme.TheMovie"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

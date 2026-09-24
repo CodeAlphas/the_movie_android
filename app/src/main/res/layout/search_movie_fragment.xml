@@ -7,7 +7,7 @@
     android:clickable="true"
     android:focusableInTouchMode="true">
 
-    <Toolbar
+    <View
         android:layout_width="match_parent"
         android:layout_height="190dp"
         android:background="@drawable/search_top_background"

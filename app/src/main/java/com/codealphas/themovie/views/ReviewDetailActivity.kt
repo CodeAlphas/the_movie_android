@@ -25,6 +25,7 @@ import com.codealphas.themovie.databinding.ActivityReviewDetailBinding
 import com.codealphas.themovie.models.Review
 import com.codealphas.themovie.utils.Utils
 import com.codealphas.themovie.utils.applySystemBarInsets
+import com.codealphas.themovie.utils.setupAppBar
 import com.codealphas.themovie.viewmodels.ReviewViewModel
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
@@ -60,8 +61,7 @@ class ReviewDetailActivity : AppCompatActivity() {
 
         binding = ActivityReviewDetailBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
-        supportActionBar?.title = "영화 감상문 작성"
+        setupAppBar(binding.toolbar, "영화 감상문 작성")
 
         initViewContent()
         initTitleEditText()
