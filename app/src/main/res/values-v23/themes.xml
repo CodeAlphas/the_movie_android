@@ -1,0 +1,11 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <style name="Theme.TheMovie" parent="Base.Theme.TheMovie">
+        <!-- Transparent system bars for edge-to-edge. -->
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <!-- 화면 배경이 흰색이므로, 상태 표시줄 아이콘이 배경에 묻히지 않도록 어둡게 표시 -->
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="toolbarStyle">@style/Widget.TheMovie.Toolbar</item>
+    </style>
+</resources>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+
+    <!-- 채우기 색 -->
+    <solid android:color="?attr/colorPrimary" />
+    <!-- 모서리 둥근 정도 -->
+    <corners android:radius="5dp" />
+
+</shape>
