@@ -14,14 +14,13 @@ class ReviewRecyclerViewAdapter(
     var inflater: LayoutInflater,
     var context: Context,
     val reviewClickInterface: ReviewClickInterface,
-    val reviewClickDeleteInterface: ReviewClickDeleteInterface
+    val reviewClickDeleteInterface: ReviewClickDeleteInterface,
 ) : RecyclerView.Adapter<ReviewRecyclerViewAdapter.ViewHolder>() {
-
     private val items = ArrayList<Review>()
 
-    inner class ViewHolder(private val itemBinding: ReviewItemBinding) :
-        RecyclerView.ViewHolder(itemBinding.root) {
-
+    inner class ViewHolder(
+        private val itemBinding: ReviewItemBinding,
+    ) : RecyclerView.ViewHolder(itemBinding.root) {
         fun bind(data: Review) {
             itemBinding.reviewTitle1.text = data.title
             itemBinding.reviewedTime1.text = data.time
@@ -37,19 +36,23 @@ class ReviewRecyclerViewAdapter(
         }
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+    override fun onCreateViewHolder(
+        parent: ViewGroup,
+        viewType: Int,
+    ): ViewHolder {
         val itemBinding =
             ReviewItemBinding.inflate(LayoutInflater.from(parent.context), parent, false)
         return ViewHolder(itemBinding)
     }
 
-    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+    override fun onBindViewHolder(
+        holder: ViewHolder,
+        position: Int,
+    ) {
         holder.bind(items.get(position))
     }
 
-    override fun getItemCount(): Int {
-        return items.size
-    }
+    override fun getItemCount(): Int = items.size
 
     // 리싸이클러뷰를 갱신해주는 메소드
     fun updateReviewList(newReview: List<Review>) {

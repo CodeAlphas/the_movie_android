@@ -2,7 +2,7 @@ package com.codealphas.themovie.models
 
 data class MoviesFromServer(
     val page: Int,
-    val results: ArrayList<MovieItem>
+    val results: ArrayList<MovieItem>,
 ) // TMDB 서버로부터 받은 영화 정보
 
 data class MovieItem(
@@ -19,5 +19,5 @@ data class MovieItem(
     val title: String,
     val video: Boolean,
     val vote_average: Double,
-    val vote_count: Int
+    val vote_count: Int,
 ) // TMDB 서버로부터 받은 영화 상세 정보

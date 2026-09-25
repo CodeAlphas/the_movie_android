@@ -9,11 +9,9 @@ import com.codealphas.themovie.views.FragmentTopRatedMovieList
 
 class FragmentViewPagerAdapter(
     fragmentActivity: FragmentActivity,
-    private val tabNum: Int
+    private val tabNum: Int,
 ) : FragmentStateAdapter(fragmentActivity) {
-    override fun getItemCount(): Int {
-        return tabNum
-    }
+    override fun getItemCount(): Int = tabNum
 
     override fun createFragment(position: Int): Fragment {
         return when (position) {

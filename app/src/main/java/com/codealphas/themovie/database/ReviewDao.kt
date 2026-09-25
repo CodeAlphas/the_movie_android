@@ -1,13 +1,18 @@
 package com.codealphas.themovie.database
 
 import androidx.lifecycle.LiveData
-import androidx.room.*
+import androidx.room.Dao
+import androidx.room.Delete
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import androidx.room.Transaction
+import androidx.room.Update
 import com.codealphas.themovie.models.Review
 
 // 영화 감상문 정보 테이블에 접근할 수 있는 메소드를 선언해 놓은 인터페이스
 @Dao
 interface ReviewDao {
-
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(review: Review)
 

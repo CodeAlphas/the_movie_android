@@ -3,6 +3,11 @@ plugins {
     alias(libs.plugins.google.services)
     alias(libs.plugins.ksp)
     alias(libs.plugins.secrets)
+    alias(libs.plugins.ktlint)
+}
+
+ktlint {
+    android.set(true)
 }
 
 android {

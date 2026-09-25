@@ -7,18 +7,24 @@ import androidx.room.PrimaryKey
 // 영화 감상문 정보를 저장하기 위한 테이블
 @Entity(tableName = "reviewTable")
 class Review(
-    @ColumnInfo(name = "title") // 감상문 제목
+    // 감상문 제목
+    @ColumnInfo(name = "title")
     val title: String,
-    @ColumnInfo(name = "image") // 감상문에 포함될 이미지 저장 경로
+    // 감상문에 포함될 이미지 저장 경로
+    @ColumnInfo(name = "image")
     val image: String,
-    @ColumnInfo(name = "content") // 감상문 내용
+    // 감상문 내용
+    @ColumnInfo(name = "content")
     val content: String,
-    @ColumnInfo(name = "time") // 감상문 작성/업데이트 시간
+    // 감상문 작성/업데이트 시간
+    @ColumnInfo(name = "time")
     val time: String,
-    @ColumnInfo(name = "rating") // 영화 개인 평점
+    // 영화 개인 평점
+    @ColumnInfo(name = "rating")
     val rating: Double,
-    @ColumnInfo(name = "storageFileName") // Firebase Storage에 저장된 이미지 파일 이름
-    val storageFileName: String
+    // Firebase Storage에 저장된 이미지 파일 이름
+    @ColumnInfo(name = "storageFileName")
+    val storageFileName: String,
 ) {
     @PrimaryKey(autoGenerate = true)
     var id = 0 // 감상문 id

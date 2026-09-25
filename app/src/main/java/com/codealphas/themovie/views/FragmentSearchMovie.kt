@@ -2,7 +2,6 @@ package com.codealphas.themovie.views
 
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -21,13 +20,11 @@ import com.codealphas.themovie.databinding.SearchMovieFragmentBinding
 import com.codealphas.themovie.models.MoviesFromServer
 import com.codealphas.themovie.utils.ItemDecorator
 import com.codealphas.themovie.utils.Utils
-import com.codealphas.themovie.utils.Utils.Companion.TAG
 import com.codealphas.themovie.viewmodels.MovieViewModel
 
 class FragmentSearchMovie : Fragment() {
-
     private var _binding: SearchMovieFragmentBinding? = null
-    private val binding get() = _binding!!
+    val binding get() = _binding!!
     private var query: String? = "" // editText 뷰를 통해 검색된 영화 이름
     private var buttonClicked = false
     private lateinit var searchMoviesRecyclerViewAdapter: SearchMoviesRecyclerViewAdapter
@@ -40,13 +37,16 @@ class FragmentSearchMovie : Fragment() {
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
-        savedInstanceState: Bundle?
+        savedInstanceState: Bundle?,
     ): View? {
         _binding = SearchMovieFragmentBinding.inflate(inflater, container, false)
         return binding.root
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+    override fun onViewCreated(
+        view: View,
+        savedInstanceState: Bundle?,
+    ) {
         super.onViewCreated(view, savedInstanceState)
 
         initRecyclerView()
@@ -64,29 +64,34 @@ class FragmentSearchMovie : Fragment() {
         binding.searchMovieRecyclerView.layoutManager = GridLayoutManager(requireContext(), 2)
         // ItemDecorator 클래스를 이용하여 리싸이클러뷰 아이템들 사이의 간격 조정
         binding.searchMovieRecyclerView.addItemDecoration(
-            ItemDecorator((Utils.getScreenWidth(requireContext()) - 360) / 3, requireContext())
+            ItemDecorator((Utils.getScreenWidth(requireContext()) - 360) / 3, requireContext()),
         )
         searchMoviesRecyclerViewAdapter = SearchMoviesRecyclerViewAdapter(requireContext())
         binding.searchMovieRecyclerView.adapter = searchMoviesRecyclerViewAdapter
-        binding.searchMovieRecyclerView.addOnScrollListener(object :
-            RecyclerView.OnScrollListener() {
-            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
-                super.onScrollStateChanged(recyclerView, newState)
-                if (newState == RecyclerView.SCROLL_STATE_IDLE) {
-                    binding.floatingButton.show() // 리싸이클러뷰 스크롤이 정지되어 있으면 플로팅 액션 버튼을 보이게 한다
-                    if (buttonClicked) {
-                        binding.writeFloatingButton.show()
-                        binding.locationFloatingButton.show()
-                    }
-                } else {
-                    binding.floatingButton.hide() // 리싸이클러뷰 스크롤이 움직이면 플로팅 액션 버튼을 숨긴다
-                    if (buttonClicked) {
-                        binding.writeFloatingButton.hide()
-                        binding.locationFloatingButton.hide()
+        binding.searchMovieRecyclerView.addOnScrollListener(
+            object :
+                RecyclerView.OnScrollListener() {
+                override fun onScrollStateChanged(
+                    recyclerView: RecyclerView,
+                    newState: Int,
+                ) {
+                    super.onScrollStateChanged(recyclerView, newState)
+                    if (newState == RecyclerView.SCROLL_STATE_IDLE) {
+                        binding.floatingButton.show() // 리싸이클러뷰 스크롤이 정지되어 있으면 플로팅 액션 버튼을 보이게 한다
+                        if (buttonClicked) {
+                            binding.writeFloatingButton.show()
+                            binding.locationFloatingButton.show()
+                        }
+                    } else {
+                        binding.floatingButton.hide() // 리싸이클러뷰 스크롤이 움직이면 플로팅 액션 버튼을 숨긴다
+                        if (buttonClicked) {
+                            binding.writeFloatingButton.hide()
+                            binding.locationFloatingButton.hide()
+                        }
                     }
                 }
-            }
-        })
+            },
+        )
     }
 
     private fun initFloatingActionButton() {
@@ -115,7 +120,7 @@ class FragmentSearchMovie : Fragment() {
                     sendRequest()
                     return true
                 } // 검색어가 입력중일 경우 호출
-            }
+            },
         )
     }
 
@@ -125,13 +130,16 @@ class FragmentSearchMovie : Fragment() {
             viewModel = ViewModelProvider(this).get(MovieViewModel::class.java)
             viewModel.makeSearchMovieListApiCall(query!!)
             viewModel.allSearchMovies
-                .observe(viewLifecycleOwner, Observer<MoviesFromServer> {
-                    if (it != null) {
-                        searchMoviesRecyclerViewAdapter.setUpdatedData(it.results)
-                    } else {
-                        // Log.d(TAG, "에러 발생")
-                    }
-                })
+                .observe(
+                    viewLifecycleOwner,
+                    Observer<MoviesFromServer> {
+                        if (it != null) {
+                            searchMoviesRecyclerViewAdapter.setUpdatedData(it.results)
+                        } else {
+                            // Log.d(TAG, "에러 발생")
+                        }
+                    },
+                )
         } // query가 화이트 스페이스로 이루어져 있지 않을 경우에만 TMDB 서버에 해당 문자열로 이루어진 영화 정보를 요청
     }
 
@@ -163,4 +171,3 @@ class FragmentSearchMovie : Fragment() {
         }
     }
 }
-

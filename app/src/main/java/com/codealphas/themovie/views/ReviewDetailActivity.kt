@@ -34,12 +34,12 @@ import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.database
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.storage
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import java.io.File
 
 class ReviewDetailActivity : AppCompatActivity() {
-
     private lateinit var binding: ActivityReviewDetailBinding
     private lateinit var viewModel: ReviewViewModel
     private lateinit var reviewDB: DatabaseReference
@@ -121,19 +121,17 @@ class ReviewDetailActivity : AppCompatActivity() {
     }
 
     private fun showImageControlDialog() {
-        AlertDialog.Builder(this)
+        AlertDialog
+            .Builder(this)
             .setTitle("사진첨부 및 삭제")
             .setMessage("사진을 첨부하거나 이미 첨부한 사진을 삭제하세요.")
             .setNeutralButton("삭제") { _, _ ->
                 deleteImage()
-            }
-            .setPositiveButton("갤러리") { _, _ ->
+            }.setPositiveButton("갤러리") { _, _ ->
                 startGallery()
-            }
-            .setNegativeButton("카메라") { _, _ ->
+            }.setNegativeButton("카메라") { _, _ ->
                 startCamera()
-            }
-            .create()
+            }.create()
             .show()
     }
 
@@ -152,7 +150,7 @@ class ReviewDetailActivity : AppCompatActivity() {
         when {
             ContextCompat.checkSelfPermission(
                 this,
-                readPermission
+                readPermission,
             ) == PackageManager.PERMISSION_GRANTED -> {
                 getPhoto()
             } // 외부저장소 접근 권한이 잘 부여되어있을 때, 갤러리에서 사진을 선택
@@ -169,7 +167,7 @@ class ReviewDetailActivity : AppCompatActivity() {
         when {
             ContextCompat.checkSelfPermission(
                 this,
-                cameraPermission
+                cameraPermission,
             ) == PackageManager.PERMISSION_GRANTED -> {
                 activateCamera()
             } // 카메라 사용 권한이 잘 부여되어있을 때, 카메라 실행
@@ -183,25 +181,25 @@ class ReviewDetailActivity : AppCompatActivity() {
     }
 
     private fun showPermissionPopup() {
-        AlertDialog.Builder(this)
+        AlertDialog
+            .Builder(this)
             .setTitle("권한이 필요합니다.")
             .setMessage("더 무비앱에서 사진을 불러오기 위해 권한이 필요합니다.")
             .setPositiveButton("허용") { _, _ ->
                 requestPermissions(arrayOf(readPermission), 1000)
-            }
-            .setNegativeButton("차단") { _, _ -> }
+            }.setNegativeButton("차단") { _, _ -> }
             .create()
             .show()
     }
 
     private fun showCameraPermissionPopup() {
-        AlertDialog.Builder(this)
+        AlertDialog
+            .Builder(this)
             .setTitle("권한이 필요합니다.")
             .setMessage("더 무비앱에서 사진을 촬영하기 위해 권한이 필요합니다.")
             .setPositiveButton("허용") { _, _ ->
                 requestPermissions(arrayOf(cameraPermission), 1001)
-            }
-            .setNegativeButton("차단") { _, _ -> }
+            }.setNegativeButton("차단") { _, _ -> }
             .create()
             .show()
     }
@@ -209,7 +207,7 @@ class ReviewDetailActivity : AppCompatActivity() {
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,
-        grantResults: IntArray
+        grantResults: IntArray,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         when (requestCode) {
@@ -254,7 +252,10 @@ class ReviewDetailActivity : AppCompatActivity() {
                 RESULT_OK -> {
                     selectedImageUri = result?.data?.data
                     if (selectedImageUri != null) {
-                        Glide.with(this).load(selectedImageUri).centerCrop()
+                        Glide
+                            .with(this)
+                            .load(selectedImageUri)
+                            .centerCrop()
                             .into(binding.imageView) // 사진을 올바르게 돌려서 imageView에 보여주기 위해 Glide 라이브러리 사용
                     } else {
                         Toast.makeText(this, "사진을 가져오지 못했습니다.", Toast.LENGTH_SHORT).show()
@@ -272,7 +273,10 @@ class ReviewDetailActivity : AppCompatActivity() {
                 RESULT_OK -> {
                     selectedImageUri = photoFile.toUri()
                     if (selectedImageUri != null) {
-                        Glide.with(this).load(photoFile).centerCrop()
+                        Glide
+                            .with(this)
+                            .load(photoFile)
+                            .centerCrop()
                             .into(binding.imageView) // 사진을 올바르게 돌려서 imageView에 보여주기 위해 Glide 라이브러리 사용
                     } else {
                         Toast.makeText(this, "사진을 가져오지 못했습니다.22", Toast.LENGTH_SHORT).show()
@@ -299,9 +303,11 @@ class ReviewDetailActivity : AppCompatActivity() {
     }
 
     private fun dataChanged() {
-        viewModel = ViewModelProvider(
-            this, ViewModelProvider.AndroidViewModelFactory.getInstance(application)
-        ).get(ReviewViewModel::class.java)
+        viewModel =
+            ViewModelProvider(
+                this,
+                ViewModelProvider.AndroidViewModelFactory.getInstance(application),
+            ).get(ReviewViewModel::class.java)
 
         val currentReviewTitle = binding.titleEditText.text.toString()
         val currentReviewContent = binding.contentEditText.text.toString()
@@ -316,14 +322,15 @@ class ReviewDetailActivity : AppCompatActivity() {
 
             if (reviewType.equals("Edit")) {
                 if (currentReviewTitle.isNotBlank() && currentReviewContent.isNotBlank()) {
-                    val updateReview = Review(
-                        currentReviewTitle,
-                        imageUri,
-                        currentReviewContent,
-                        Utils.getCurrentDate(),
-                        currentRating,
-                        fileName
-                    )
+                    val updateReview =
+                        Review(
+                            currentReviewTitle,
+                            imageUri,
+                            currentReviewContent,
+                            Utils.getCurrentDate(),
+                            currentRating,
+                            fileName,
+                        )
                     updateReview.id = reviewId
 
                     viewModel.updateReview(updateReview)
@@ -331,47 +338,53 @@ class ReviewDetailActivity : AppCompatActivity() {
                     updateFirebaseRealtimeDB(
                         currentReviewTitle,
                         currentReviewContent,
-                        currentRating
+                        currentRating,
                     )
 
                     Toast.makeText(applicationContext, "감상문이 수정되었습니다.", Toast.LENGTH_LONG).show()
                     returnToReviewMain()
                 } else {
-                    Toast.makeText(applicationContext, "제목과 내용을 모두 입력해주세요.", Toast.LENGTH_LONG)
+                    Toast
+                        .makeText(applicationContext, "제목과 내용을 모두 입력해주세요.", Toast.LENGTH_LONG)
                         .show()
                 }
             } else {
                 if (currentReviewTitle.isNotBlank() && currentReviewContent.isNotBlank()) {
-                    val updateReview = Review(
-                        currentReviewTitle,
-                        imageUri,
-                        currentReviewContent,
-                        Utils.getCurrentDate(),
-                        currentRating,
-                        fileName
-                    )
+                    val updateReview =
+                        Review(
+                            currentReviewTitle,
+                            imageUri,
+                            currentReviewContent,
+                            Utils.getCurrentDate(),
+                            currentRating,
+                            fileName,
+                        )
 
                     viewModel.insertTransaction(updateReview)
                     viewModel.maxId
-                        .observe(this@ReviewDetailActivity, Observer { maxId ->
-                            maxId?.let {
-                                reviewId = it
-                                updateFirebaseRealtimeDB(
-                                    currentReviewTitle,
-                                    currentReviewContent,
-                                    currentRating
-                                )
-                                Toast.makeText(
-                                    applicationContext,
-                                    "감상문이 등록되었습니다.",
-                                    Toast.LENGTH_LONG
-                                )
-                                    .show()
-                                returnToReviewMain()
-                            }
-                        })
+                        .observe(
+                            this@ReviewDetailActivity,
+                            Observer { maxId ->
+                                maxId?.let {
+                                    reviewId = it
+                                    updateFirebaseRealtimeDB(
+                                        currentReviewTitle,
+                                        currentReviewContent,
+                                        currentRating,
+                                    )
+                                    Toast
+                                        .makeText(
+                                            applicationContext,
+                                            "감상문이 등록되었습니다.",
+                                            Toast.LENGTH_LONG,
+                                        ).show()
+                                    returnToReviewMain()
+                                }
+                            },
+                        )
                 } else {
-                    Toast.makeText(applicationContext, "제목과 내용을 모두 입력해주세요.", Toast.LENGTH_LONG)
+                    Toast
+                        .makeText(applicationContext, "제목과 내용을 모두 입력해주세요.", Toast.LENGTH_LONG)
                         .show()
                 }
             }
@@ -381,7 +394,11 @@ class ReviewDetailActivity : AppCompatActivity() {
 
     private suspend fun deletePhotoStorage() {
         try {
-            storage.reference.child("review/photo").child(fileName).delete().await()
+            storage.reference
+                .child("review/photo")
+                .child(fileName)
+                .delete()
+                .await()
             fileName = ""
         } catch (e: Exception) {
             e.printStackTrace()
@@ -395,11 +412,18 @@ class ReviewDetailActivity : AppCompatActivity() {
 
         fileName = userId.substring(
             0,
-            10
+            10,
         ) + "${System.currentTimeMillis()}.png" // Storage에 저장될 File의 이름을 지정
         try {
-            imageUri = storage.reference.child("review/photo").child(fileName)
-                .putFile(selectedImageUri!!).await().storage.downloadUrl.await().toString()
+            imageUri =
+                storage.reference
+                    .child("review/photo")
+                    .child(fileName)
+                    .putFile(selectedImageUri!!)
+                    .await()
+                    .storage.downloadUrl
+                    .await()
+                    .toString()
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -408,10 +432,13 @@ class ReviewDetailActivity : AppCompatActivity() {
     private fun updateFirebaseRealtimeDB(
         currentReviewTitle: String,
         currentReviewContent: String,
-        currentRating: Double
+        currentRating: Double,
     ) {
         reviewDB =
-            Firebase.database.reference.child("users").child(userId).child("reviews")
+            Firebase.database.reference
+                .child("users")
+                .child(userId)
+                .child("reviews")
                 .child(reviewId.toString())
         val review = mutableMapOf<String, Any>()
         review["id"] = reviewId
@@ -445,7 +472,10 @@ class ReviewDetailActivity : AppCompatActivity() {
         window.clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE) // 화면 터치 풀기
     }
 
-    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+    override fun onKeyDown(
+        keyCode: Int,
+        event: KeyEvent?,
+    ): Boolean {
         if (keyCode == KeyEvent.KEYCODE_BACK) {
             val intent = Intent(this, ReviewMainActivity::class.java)
             startActivity(intent)

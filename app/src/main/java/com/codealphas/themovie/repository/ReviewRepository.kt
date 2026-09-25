@@ -4,8 +4,9 @@ import androidx.lifecycle.LiveData
 import com.codealphas.themovie.database.ReviewDao
 import com.codealphas.themovie.models.Review
 
-class ReviewRepository(private val reviewDao: ReviewDao) {
-
+class ReviewRepository(
+    private val reviewDao: ReviewDao,
+) {
     val allReview: LiveData<List<Review>> = reviewDao.getAll()
 
     suspend fun insert(review: Review) {
@@ -20,9 +21,7 @@ class ReviewRepository(private val reviewDao: ReviewDao) {
         reviewDao.update(review)
     }
 
-    suspend fun insertTransaction(review: Review): Int {
-        return reviewDao.insertTransaction(review)
-    }
+    suspend fun insertTransaction(review: Review): Int = reviewDao.insertTransaction(review)
 
     fun deleteAll() {
         reviewDao.deleteAll()

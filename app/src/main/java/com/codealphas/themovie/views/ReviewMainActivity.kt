@@ -1,12 +1,12 @@
 package com.codealphas.themovie.views
 
 import android.content.Intent
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
@@ -18,20 +18,25 @@ import com.codealphas.themovie.databinding.ActivityReviewMainBinding
 import com.codealphas.themovie.models.Review
 import com.codealphas.themovie.repository.ReviewRepository
 import com.codealphas.themovie.utils.ReviewClickDeleteInterface
+import com.codealphas.themovie.utils.ReviewClickInterface
 import com.codealphas.themovie.utils.applySystemBarInsets
 import com.codealphas.themovie.utils.setupAppBar
-import com.codealphas.themovie.utils.ReviewClickInterface
 import com.codealphas.themovie.viewmodels.ReviewViewModel
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
-import com.google.firebase.database.*
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.database
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.storage
 
-class ReviewMainActivity : AppCompatActivity(), ReviewClickInterface, ReviewClickDeleteInterface {
-
+class ReviewMainActivity :
+    AppCompatActivity(),
+    ReviewClickInterface,
+    ReviewClickDeleteInterface {
     private lateinit var binding: ActivityReviewMainBinding
     private lateinit var reviewViewModel: ReviewViewModel
     private lateinit var reviewDB: DatabaseReference
@@ -57,45 +62,61 @@ class ReviewMainActivity : AppCompatActivity(), ReviewClickInterface, ReviewClic
         val reviewRecyclerViewAdapter =
             ReviewRecyclerViewAdapter(LayoutInflater.from(this), this, this, this)
         binding.reviewRecyclerView.adapter = reviewRecyclerViewAdapter
-        reviewViewModel = ViewModelProvider(
-            this, ViewModelProvider.AndroidViewModelFactory.getInstance(application)
-        ).get(ReviewViewModel::class.java)
-        reviewViewModel.allReview.observe(this@ReviewMainActivity, Observer { List ->
-            List?.let {
-                reviewRecyclerViewAdapter.updateReviewList(it)
-            }
-            if (reviewRecyclerViewAdapter.itemCount == 0) {
-                showCenterTextView()
-            } else {
-                hideCenterTextView()
-            }
-        })
+        reviewViewModel =
+            ViewModelProvider(
+                this,
+                ViewModelProvider.AndroidViewModelFactory.getInstance(application),
+            ).get(ReviewViewModel::class.java)
+        reviewViewModel.allReview.observe(
+            this@ReviewMainActivity,
+            Observer { List ->
+                List?.let {
+                    reviewRecyclerViewAdapter.updateReviewList(it)
+                }
+                if (reviewRecyclerViewAdapter.itemCount == 0) {
+                    showCenterTextView()
+                } else {
+                    hideCenterTextView()
+                }
+            },
+        )
     }
 
     private fun getReviewsFromServer() {
         val type = intent.getStringExtra("type")
 
-        reviewDB = Firebase.database.reference.child("users").child(userId).child("reviews")
-        reviewDB.addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                if (!type.equals("Edit")) {
-                    for (data in snapshot.children) {
-                        val id = data.key.toString().toInt()
-                        val title = data.child("title").value.toString()
-                        val image = data.child("image").value.toString()
-                        val content = data.child("content").value.toString()
-                        val time = data.child("time").value.toString()
-                        val rating = data.child("rating").value.toString().toDouble()
-                        val storageFileName = data.child("storageFileName").value.toString()
-                        val review = Review(title, image, content, time, rating, storageFileName)
-                        review.id = id
-                        reviewViewModel.insertReview(review)
+        reviewDB =
+            Firebase.database.reference
+                .child("users")
+                .child(userId)
+                .child("reviews")
+        reviewDB.addListenerForSingleValueEvent(
+            object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    if (!type.equals("Edit")) {
+                        for (data in snapshot.children) {
+                            val id = data.key.toString().toInt()
+                            val title = data.child("title").value.toString()
+                            val image = data.child("image").value.toString()
+                            val content = data.child("content").value.toString()
+                            val time = data.child("time").value.toString()
+                            val rating =
+                                data
+                                    .child("rating")
+                                    .value
+                                    .toString()
+                                    .toDouble()
+                            val storageFileName = data.child("storageFileName").value.toString()
+                            val review = Review(title, image, content, time, rating, storageFileName)
+                            review.id = id
+                            reviewViewModel.insertReview(review)
+                        }
                     }
                 }
-            }
 
-            override fun onCancelled(error: DatabaseError) {}
-        }) // 서버에 저장된 감상문 정보 가져오기(Firebase Realtime Database) : MainActivity -> ReviewMainActivity 이동시
+                override fun onCancelled(error: DatabaseError) {}
+            },
+        ) // 서버에 저장된 감상문 정보 가져오기(Firebase Realtime Database) : MainActivity -> ReviewMainActivity 이동시
     }
 
     private fun showCenterTextView() {
@@ -118,15 +139,21 @@ class ReviewMainActivity : AppCompatActivity(), ReviewClickInterface, ReviewClic
         reviewViewModel.deleteReview(review)
         Toast.makeText(this, "감상문 ${review.title}가 삭제되었습니다.", Toast.LENGTH_LONG).show()
 
-        reviewDB = Firebase.database.reference.child("users").child(userId).child("reviews")
-            .child(review.id.toString())
+        reviewDB =
+            Firebase.database.reference
+                .child("users")
+                .child(userId)
+                .child("reviews")
+                .child(review.id.toString())
         reviewDB.removeValue()
 
         if (review.storageFileName != "") {
-            storage.reference.child("review/photo").child(review.storageFileName).delete()
+            storage.reference
+                .child("review/photo")
+                .child(review.storageFileName)
+                .delete()
         } // storage에 저장된 이미지 삭제
-
-   } // 작성한 감상문 아이템에서 X 이미지를 누르면 발생하는 이벤트 처리를 위한 메소드
+    } // 작성한 감상문 아이템에서 X 이미지를 누르면 발생하는 이벤트 처리를 위한 메소드
 
     override fun onIconClick(review: Review) {
         val intent = Intent(this@ReviewMainActivity, ReviewDetailActivity::class.java)

@@ -6,19 +6,19 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
-import com.codealphas.themovie.views.MovieDetailActivity
 import com.codealphas.themovie.databinding.MovieItemBinding
 import com.codealphas.themovie.models.MovieItem
+import com.codealphas.themovie.views.MovieDetailActivity
 
 // 인기 영화 표시화면에서 해당 영화정보를 보여주는 리싸이클러뷰를 위한 어댑터
 class PopularMoviesRecyclerViewAdapter(
-    val context: Context
+    val context: Context,
 ) : RecyclerView.Adapter<PopularMoviesRecyclerViewAdapter.ViewHolder>() {
-
     private var items = ArrayList<MovieItem>()
 
-    inner class ViewHolder(private val itemBinding: MovieItemBinding) :
-        RecyclerView.ViewHolder(itemBinding.root) {
+    inner class ViewHolder(
+        private val itemBinding: MovieItemBinding,
+    ) : RecyclerView.ViewHolder(itemBinding.root) {
         // 뷰와 데이터를 연결해주는 메소드
         fun bind(data: MovieItem) {
             val imageUrl = "https://image.tmdb.org/t/p/w500" + data.poster_path
@@ -48,19 +48,23 @@ class PopularMoviesRecyclerViewAdapter(
         }
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+    override fun onCreateViewHolder(
+        parent: ViewGroup,
+        viewType: Int,
+    ): ViewHolder {
         val itemBinding =
             MovieItemBinding.inflate(LayoutInflater.from(parent.context), parent, false)
         return ViewHolder(itemBinding)
     }
 
-    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+    override fun onBindViewHolder(
+        holder: ViewHolder,
+        position: Int,
+    ) {
         holder.bind(items.get(position))
     }
 
-    override fun getItemCount(): Int {
-        return items.size
-    }
+    override fun getItemCount(): Int = items.size
 
     // 리싸이클러뷰를 갱신해주는 메소드
     fun setUpdatedData(items: ArrayList<MovieItem>) {

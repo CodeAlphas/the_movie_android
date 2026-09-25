@@ -7,12 +7,11 @@ import android.view.inputmethod.InputMethodManager
 import androidx.appcompat.app.AppCompatActivity
 import com.codealphas.themovie.models.Review
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
+import java.util.Locale
 
 class Utils {
-
     companion object {
-
         const val TAG: String = "로그"
 
         // 기기의 가로 px을 반환해주는 메소드
@@ -23,12 +22,16 @@ class Utils {
         }
 
         // dp를 px로 변환해주는 메소드
-        fun dpToPx(px: Float, metrics: DisplayMetrics): Float {
-            return px / (metrics.densityDpi.toFloat() / DisplayMetrics.DENSITY_DEFAULT)
-        }
+        fun dpToPx(
+            px: Float,
+            metrics: DisplayMetrics,
+        ): Float = px / (metrics.densityDpi.toFloat() / DisplayMetrics.DENSITY_DEFAULT)
 
         // 소프트 키보드를 화면에서 내려가게하는 메소드
-        fun hideKeyboard(context: Context, view: View) {
+        fun hideKeyboard(
+            context: Context,
+            view: View,
+        ) {
             val inputMethodManager =
                 context.getSystemService(AppCompatActivity.INPUT_METHOD_SERVICE) as InputMethodManager
             inputMethodManager.hideSoftInputFromWindow(view.windowToken, 0)

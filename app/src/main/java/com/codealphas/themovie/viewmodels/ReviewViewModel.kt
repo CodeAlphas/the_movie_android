@@ -1,15 +1,19 @@
 package com.codealphas.themovie.viewmodels
 
 import android.app.Application
-import androidx.lifecycle.*
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.viewModelScope
 import com.codealphas.themovie.database.DatabaseInstance
 import com.codealphas.themovie.models.Review
 import com.codealphas.themovie.repository.ReviewRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-class ReviewViewModel(application: Application) : AndroidViewModel(application) {
-
+class ReviewViewModel(
+    application: Application,
+) : AndroidViewModel(application) {
     private val _allReview: LiveData<List<Review>>
     val allReview: LiveData<List<Review>>
         get() = _allReview
