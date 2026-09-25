@@ -21,7 +21,7 @@ class SearchMoviesRecyclerViewAdapter(
     ) : RecyclerView.ViewHolder(itemBinding.root) {
         // 뷰와 데이터를 연결해주는 메소드
         fun bind(data: MovieItem) {
-            val imageUrl = "https://image.tmdb.org/t/p/w500" + data.poster_path
+            val imageUrl = "https://image.tmdb.org/t/p/w500" + data.posterPath
 
             // 뷰에 Glide 라이브러리를 이용하여 이미지 로드
             Glide
@@ -37,11 +37,11 @@ class SearchMoviesRecyclerViewAdapter(
                 val movie = items.get(position)
                 // 인텐트를 통하여 영화 상세화면에 영화 정보 전달
                 val intent = Intent(context, MovieDetailActivity::class.java)
-                intent.putExtra("poster", movie.poster_path)
+                intent.putExtra("poster", movie.posterPath)
                 intent.putExtra("title", movie.title)
-                intent.putExtra("releaseDate", movie.release_date)
+                intent.putExtra("releaseDate", movie.releaseDate)
                 intent.putExtra("overview", movie.overview)
-                intent.putExtra("voteAverage", movie.vote_average)
+                intent.putExtra("voteAverage", movie.voteAverage)
                 intent.putExtra("movieId", movie.id)
                 context.startActivity(intent)
             }

@@ -9,6 +9,7 @@ import android.location.LocationListener
 import android.location.LocationManager
 import android.os.Bundle
 import android.provider.Settings
+import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -34,6 +35,11 @@ import com.google.android.gms.maps.model.MarkerOptions
 class MapActivity :
     AppCompatActivity(),
     OnMapReadyCallback {
+    private companion object {
+        const val LOCATION_PERMISSION_REQUEST_CODE = 1001
+        const val MAP_ZOOM = 17.0f
+    }
+
     private lateinit var binding: ActivityMapBinding
     private lateinit var googleMap: GoogleMap
     private lateinit var locationManager: LocationManager
@@ -99,7 +105,7 @@ class MapActivity :
                         android.Manifest.permission.ACCESS_FINE_LOCATION,
                         android.Manifest.permission.ACCESS_COARSE_LOCATION,
                     ),
-                    1001,
+                    LOCATION_PERMISSION_REQUEST_CODE,
                 )
             } else {
                 setMyLocationListener()
@@ -116,7 +122,7 @@ class MapActivity :
         grantResults: IntArray,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == 1001) {
+        if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
             if (grantResults[0] == PackageManager.PERMISSION_GRANTED &&
                 grantResults[1] == PackageManager.PERMISSION_GRANTED
             ) {
@@ -163,6 +169,7 @@ class MapActivity :
                     )
                 onCurrentLocationChanged(currentLocationPos)
             } catch (e: Exception) {
+                Log.e("MapActivity", "위치 정보 갱신 불가", e)
                 Toast.makeText(this@MapActivity, "위치 정보 갱신 불가", Toast.LENGTH_SHORT).show()
             }
         }
@@ -171,11 +178,11 @@ class MapActivity :
             provider: String?,
             status: Int,
             extras: Bundle?,
-        ) {}
+        ) = Unit
 
-        override fun onProviderEnabled(provider: String) {}
+        override fun onProviderEnabled(provider: String) = Unit
 
-        override fun onProviderDisabled(provider: String) {}
+        override fun onProviderDisabled(provider: String) = Unit
         // https://stackoverflow.com/questions/64638260/android-locationlistener-abstractmethoderror-on-onstatuschanged-and-onproviderd
     }
 
@@ -186,7 +193,7 @@ class MapActivity :
                     currentLocationPos.latitude.toDouble(),
                     currentLocationPos.longitude.toDouble(),
                 ),
-                17.0f,
+                MAP_ZOOM,
             ),
         )
 

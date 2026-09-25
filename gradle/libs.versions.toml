@@ -23,6 +23,8 @@ firebaseBom = "34.19.0"
 googleServices = "4.5.0"
 secrets = "2.0.1"
 ktlint = "14.2.0"
+# detekt 1.23은 AGP 9의 built-in Kotlin을 분석하지 못하므로 2.0 alpha를 사용
+detekt = "2.0.0-alpha.6"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -62,4 +64,5 @@ google-services = { id = "com.google.gms.google-services", version.ref = "google
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 secrets = { id = "com.google.android.libraries.mapsplatform.secrets-gradle-plugin", version.ref = "secrets" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint" }
+detekt = { id = "dev.detekt", version.ref = "detekt" }
 

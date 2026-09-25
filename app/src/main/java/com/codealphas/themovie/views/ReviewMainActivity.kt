@@ -114,7 +114,7 @@ class ReviewMainActivity :
                     }
                 }
 
-                override fun onCancelled(error: DatabaseError) {}
+                override fun onCancelled(error: DatabaseError) = Unit
             },
         ) // 서버에 저장된 감상문 정보 가져오기(Firebase Realtime Database) : MainActivity -> ReviewMainActivity 이동시
     }

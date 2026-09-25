@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
+import android.util.Log
 import android.view.KeyEvent
 import android.view.WindowManager
 import android.widget.Toast
@@ -40,6 +41,12 @@ import kotlinx.coroutines.tasks.await
 import java.io.File
 
 class ReviewDetailActivity : AppCompatActivity() {
+    private companion object {
+        const val READ_PERMISSION_REQUEST_CODE = 1000
+        const val CAMERA_PERMISSION_REQUEST_CODE = 1001
+        const val USER_ID_PREFIX_LENGTH = 10
+    }
+
     private lateinit var binding: ActivityReviewDetailBinding
     private lateinit var viewModel: ReviewViewModel
     private lateinit var reviewDB: DatabaseReference
@@ -158,7 +165,7 @@ class ReviewDetailActivity : AppCompatActivity() {
                 showPermissionPopup()
             } // 이전에 앱이 권한을 요청하고 사용자가 요청을 거부한 경우 교육용 팝업을 띄움
             else -> {
-                requestPermissions(arrayOf(readPermission), 1000)
+                requestPermissions(arrayOf(readPermission), READ_PERMISSION_REQUEST_CODE)
             } // 권한 요청을 위한 팝업을 띄움
         }
     }
@@ -175,7 +182,7 @@ class ReviewDetailActivity : AppCompatActivity() {
                 showCameraPermissionPopup()
             } // 이전에 앱이 권한을 요청하고 사용자가 요청을 거부한 경우 교육용 팝업을 띄움
             else -> {
-                requestPermissions(arrayOf(cameraPermission), 1001)
+                requestPermissions(arrayOf(cameraPermission), CAMERA_PERMISSION_REQUEST_CODE)
             } // 권한 요청을 위한 팝업을 띄움
         }
     }
@@ -186,7 +193,7 @@ class ReviewDetailActivity : AppCompatActivity() {
             .setTitle("권한이 필요합니다.")
             .setMessage("더 무비앱에서 사진을 불러오기 위해 권한이 필요합니다.")
             .setPositiveButton("허용") { _, _ ->
-                requestPermissions(arrayOf(readPermission), 1000)
+                requestPermissions(arrayOf(readPermission), READ_PERMISSION_REQUEST_CODE)
             }.setNegativeButton("차단") { _, _ -> }
             .create()
             .show()
@@ -198,7 +205,7 @@ class ReviewDetailActivity : AppCompatActivity() {
             .setTitle("권한이 필요합니다.")
             .setMessage("더 무비앱에서 사진을 촬영하기 위해 권한이 필요합니다.")
             .setPositiveButton("허용") { _, _ ->
-                requestPermissions(arrayOf(cameraPermission), 1001)
+                requestPermissions(arrayOf(cameraPermission), CAMERA_PERMISSION_REQUEST_CODE)
             }.setNegativeButton("차단") { _, _ -> }
             .create()
             .show()
@@ -211,14 +218,14 @@ class ReviewDetailActivity : AppCompatActivity() {
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         when (requestCode) {
-            1000 -> {
+            READ_PERMISSION_REQUEST_CODE -> {
                 if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     getPhoto() // 권한이 부여됨
                 } else {
                     Toast.makeText(this, "권한을 거부하셨습니다.", Toast.LENGTH_SHORT).show()
                 }
             }
-            1001 -> {
+            CAMERA_PERMISSION_REQUEST_CODE -> {
                 if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     activateCamera() // 권한이 부여됨
                 } else {
@@ -401,7 +408,7 @@ class ReviewDetailActivity : AppCompatActivity() {
                 .await()
             fileName = ""
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e("ReviewDetailActivity", "Firebase 요청 실패", e)
         }
     }
 
@@ -412,7 +419,7 @@ class ReviewDetailActivity : AppCompatActivity() {
 
         fileName = userId.substring(
             0,
-            10,
+            USER_ID_PREFIX_LENGTH,
         ) + "${System.currentTimeMillis()}.png" // Storage에 저장될 File의 이름을 지정
         try {
             imageUri =
@@ -425,7 +432,7 @@ class ReviewDetailActivity : AppCompatActivity() {
                     .await()
                     .toString()
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e("ReviewDetailActivity", "Firebase 요청 실패", e)
         }
     } // 이미지를 Firebase Storage의 지정된 경로에 업로드해주고 해당 이미지를 가져올 수 있는 Url을 반환해오는 메소드
 
@@ -451,7 +458,7 @@ class ReviewDetailActivity : AppCompatActivity() {
         try {
             reviewDB.updateChildren(review)
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e("ReviewDetailActivity", "Firebase 요청 실패", e)
         }
     } // 서버에 감상문 정보를 저장(Firebase Realtime Database)해주는 메소드
 

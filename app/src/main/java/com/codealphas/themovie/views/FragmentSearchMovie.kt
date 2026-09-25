@@ -23,6 +23,14 @@ import com.codealphas.themovie.utils.Utils
 import com.codealphas.themovie.viewmodels.MovieViewModel
 
 class FragmentSearchMovie : Fragment() {
+    private companion object {
+        const val GRID_SPAN_COUNT = 2
+        const val POSTER_WIDTH_DP = 180
+
+        // 왼쪽 여백, 포스터 사이, 오른쪽 여백의 너비가 같으므로, 포스터를 뺀 화면 너비를 3으로 나눔
+        const val ROW_GAP_UNIT_COUNT = 3
+    }
+
     private var _binding: SearchMovieFragmentBinding? = null
     val binding get() = _binding!!
     private var query: String? = "" // editText 뷰를 통해 검색된 영화 이름
@@ -61,10 +69,14 @@ class FragmentSearchMovie : Fragment() {
 
     private fun initRecyclerView() {
         // 리싸이클러 뷰의 아이템들을 GridLayout 방식으로 배치
-        binding.searchMovieRecyclerView.layoutManager = GridLayoutManager(requireContext(), 2)
+        binding.searchMovieRecyclerView.layoutManager = GridLayoutManager(requireContext(), GRID_SPAN_COUNT)
         // ItemDecorator 클래스를 이용하여 리싸이클러뷰 아이템들 사이의 간격 조정
         binding.searchMovieRecyclerView.addItemDecoration(
-            ItemDecorator((Utils.getScreenWidth(requireContext()) - 360) / 3, requireContext()),
+            ItemDecorator(
+                (Utils.getScreenWidth(requireContext()) - GRID_SPAN_COUNT * POSTER_WIDTH_DP) /
+                    ROW_GAP_UNIT_COUNT,
+                requireContext(),
+            ),
         )
         searchMoviesRecyclerViewAdapter = SearchMoviesRecyclerViewAdapter(requireContext())
         binding.searchMovieRecyclerView.adapter = searchMoviesRecyclerViewAdapter

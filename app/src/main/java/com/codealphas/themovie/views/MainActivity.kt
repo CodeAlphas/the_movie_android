@@ -17,6 +17,10 @@ import com.google.android.material.tabs.TabLayoutMediator
 import com.google.firebase.auth.FirebaseAuth
 
 class MainActivity : AppCompatActivity() {
+    private companion object {
+        const val TAB_COUNT = 3
+    }
+
     private lateinit var binding: ActivityMainBinding
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
     private val tabTitles = arrayListOf("인기", "높은 평점", "검색")
@@ -46,7 +50,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun initViewPager() {
-        binding.viewPager.adapter = FragmentViewPagerAdapter(this, 3) // 뷰페이저에 Adapter 장착
+        binding.viewPager.adapter = FragmentViewPagerAdapter(this, TAB_COUNT) // 뷰페이저에 Adapter 장착
     }
 
     private fun initTabLayout() {
@@ -63,9 +67,9 @@ class MainActivity : AppCompatActivity() {
                     } // 탭 클릭시 해당 탭에 맞게 앱바(액션바)의 텍스트 변경
                 }
 
-                override fun onTabUnselected(tab: TabLayout.Tab?) {}
+                override fun onTabUnselected(tab: TabLayout.Tab?) = Unit
 
-                override fun onTabReselected(tab: TabLayout.Tab?) {}
+                override fun onTabReselected(tab: TabLayout.Tab?) = Unit
             },
         ) // 탭 레이아웃 설정
     }

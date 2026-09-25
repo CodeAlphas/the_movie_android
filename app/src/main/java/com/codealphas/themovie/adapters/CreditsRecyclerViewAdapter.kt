@@ -19,7 +19,7 @@ class CreditsRecyclerViewAdapter(
     ) : RecyclerView.ViewHolder(itemBinding.root) {
         // 뷰와 데이터를 연결해주는 메소드
         fun bind(data: CreditItem) {
-            val imageUrl = "https://image.tmdb.org/t/p/w500" + data.profile_path
+            val imageUrl = "https://image.tmdb.org/t/p/w500" + data.profilePath
 
             // 뷰에 Glide 라이브러리를 이용하여 이미지 로드
             Glide
