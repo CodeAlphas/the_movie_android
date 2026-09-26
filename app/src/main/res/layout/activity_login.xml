@@ -16,7 +16,7 @@
         android:layout_marginBottom="56dp"
         android:scaleType="fitCenter"
         android:src="@drawable/the_movie"
-        android:tint="?attr/colorOnSurface" />
+        app:tint="?attr/colorOnSurface" />
 
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"

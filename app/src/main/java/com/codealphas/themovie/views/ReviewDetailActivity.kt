@@ -10,6 +10,7 @@ import android.util.Log
 import android.view.KeyEvent
 import android.view.WindowManager
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -64,6 +65,16 @@ class ReviewDetailActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // 예측형 뒤로 가기에서는 onKeyDown의 뒤로 키가 오지 않으므로, 감상문 목록으로 가도록 콜백 등록
+        onBackPressedDispatcher.addCallback(
+            this,
+            object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    startActivity(Intent(this@ReviewDetailActivity, ReviewMainActivity::class.java))
+                    finish()
+                }
+            },
+        )
         applySystemBarInsets()
 
         binding = ActivityReviewDetailBinding.inflate(layoutInflater)
@@ -477,17 +488,5 @@ class ReviewDetailActivity : AppCompatActivity() {
     private fun hideProgress() {
         binding.progressBar.isVisible = false
         window.clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE) // 화면 터치 풀기
-    }
-
-    override fun onKeyDown(
-        keyCode: Int,
-        event: KeyEvent?,
-    ): Boolean {
-        if (keyCode == KeyEvent.KEYCODE_BACK) {
-            val intent = Intent(this, ReviewMainActivity::class.java)
-            startActivity(intent)
-            this.finish()
-        }
-        return false
     }
 }

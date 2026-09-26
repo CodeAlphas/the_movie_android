@@ -1,13 +1,16 @@
 package com.codealphas.themovie.service
 
+import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import com.codealphas.themovie.R
 import com.codealphas.themovie.views.MainActivity
 import com.google.firebase.messaging.FirebaseMessagingService
@@ -60,7 +63,15 @@ class FirebaseMessagingService : FirebaseMessagingService() {
                 .setContentIntent(pendingIntent)
                 .setAutoCancel(true) // 사용자가 알림을 탭하면 자동으로 알림 삭제
 
-        NotificationManagerCompat.from(this).notify(0, buildNotification.build())
+        // Android 13부터 알림 권한이 없으면 notify가 SecurityException을 던지므로, 허용된 경우에만 표시
+        if (
+            ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.POST_NOTIFICATIONS,
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            NotificationManagerCompat.from(this).notify(0, buildNotification.build())
+        }
     } // 메시지를 수신할 때마다 호출되는 메소드
 
     private fun createNotificationChannel() {
