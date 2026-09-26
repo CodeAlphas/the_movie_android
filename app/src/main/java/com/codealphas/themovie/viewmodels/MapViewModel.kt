@@ -3,10 +3,14 @@ package com.codealphas.themovie.viewmodels
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.codealphas.themovie.domain.DataResult
 import com.codealphas.themovie.models.AddressFromServer
 import com.codealphas.themovie.models.PoisFromServer
 import com.codealphas.themovie.networks.MapApiService
+import com.codealphas.themovie.networks.safeApiCall
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
@@ -27,9 +31,9 @@ class MapViewModel
             centerLat: String,
             centerLon: String,
         ) {
-            launchRequest {
-                val response = service.getCurrentAddress(lat = centerLat, lon = centerLon)
-                _currentAddress.postValue(response)
+            viewModelScope.launch {
+                val result = safeApiCall { service.getCurrentAddress(lat = centerLat, lon = centerLon) }
+                if (result is DataResult.Success) _currentAddress.value = result.data
             }
         } // TMAP 서버로 현재 위치의 주소 정보를 요청하고 해당 정보를 받아오는 메소드
 
@@ -38,14 +42,16 @@ class MapViewModel
             centerLat: Double,
             centerLon: Double,
         ) {
-            launchRequest {
-                val response =
-                    service.getTheaterList(
-                        categories = categories,
-                        centerLat = centerLat,
-                        centerLon = centerLon,
-                    )
-                _allTheater.postValue(response)
+            viewModelScope.launch {
+                val result =
+                    safeApiCall {
+                        service.getTheaterList(
+                            categories = categories,
+                            centerLat = centerLat,
+                            centerLon = centerLon,
+                        )
+                    }
+                if (result is DataResult.Success) _allTheater.value = result.data
             }
         } // TMAP 서버로 주변 영화관 정보를 요청하고 해당 정보를 받아오는 메소드
     }
