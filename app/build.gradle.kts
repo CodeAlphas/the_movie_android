@@ -1,33 +1,16 @@
 plugins {
-    alias(libs.plugins.android.application)
+    id("movie.android.application")
+    id("movie.quality")
     alias(libs.plugins.google.services)
     alias(libs.plugins.ksp)
     alias(libs.plugins.secrets)
-    alias(libs.plugins.ktlint)
-    alias(libs.plugins.detekt)
-}
-
-ktlint {
-    android.set(true)
-}
-
-detekt {
-    buildUponDefaultConfig = true
-    config.setFrom(rootProject.file("config/detekt/detekt.yml"))
-    parallel = true
-    baseline = file("detekt-baseline.xml")
 }
 
 android {
     namespace = "com.codealphas.themovie"
-    compileSdk {
-        version = release(37)
-    }
 
     defaultConfig {
         applicationId = "com.codealphas.themovie"
-        minSdk = 24
-        targetSdk = 37
         versionCode = 1
         versionName = "1.0"
 
@@ -40,10 +23,6 @@ android {
                 enable = false
             }
         }
-    }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
     }
     buildFeatures {
         viewBinding = true
