@@ -108,6 +108,7 @@ class FragmentTopRatedMovieList : Fragment() {
 
     private fun initViewModel() {
         viewModel.makeTopRatedMovieListApiCall()
+        viewModel.remoteError.observeRemoteError(viewLifecycleOwner, binding.root)
         viewModel.allTopMovies
             .observe(
                 viewLifecycleOwner,

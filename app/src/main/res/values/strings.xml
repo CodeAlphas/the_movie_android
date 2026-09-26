@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">더 무비</string>
+    <string name="remote_error_timeout">응답 시간이 초과되었습니다.</string>
+    <string name="remote_error_network">네트워크에 연결되지 않았습니다.</string>
+    <string name="remote_error_http">요청이 실패했습니다. (%1$d)</string>
+    <string name="remote_error_serialization">서버 응답을 읽지 못했습니다.</string>
+    <string name="remote_error_unknown">요청을 처리하지 못했습니다.</string>
 </resources>

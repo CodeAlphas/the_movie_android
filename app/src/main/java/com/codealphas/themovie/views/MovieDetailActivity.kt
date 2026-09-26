@@ -37,6 +37,7 @@ class MovieDetailActivity : AppCompatActivity() {
         setupAppBar(binding.toolbar, "더 무비")
 
         initViews()
+        viewModel.remoteError.observeRemoteError(this, binding.root)
         val movieId = intent.getIntExtra("movieId", 0) // 영화 id
         getCredits(movieId)
         checkVideo(movieId)

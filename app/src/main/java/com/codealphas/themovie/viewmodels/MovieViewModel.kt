@@ -4,12 +4,15 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.codealphas.themovie.domain.DataResult
+import com.codealphas.themovie.domain.RemoteError
 import com.codealphas.themovie.models.CreditsFromServer
 import com.codealphas.themovie.models.MoviesFromServer
 import com.codealphas.themovie.models.VideosFromServer
 import com.codealphas.themovie.networks.TmdbApiService
 import com.codealphas.themovie.networks.safeApiCall
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -39,38 +42,39 @@ class MovieViewModel
         val allCredits: MutableLiveData<CreditsFromServer>
             get() = _allCredits
 
+        // replay가 1이면 화면이 다시 구독할 때 마지막 오류를 또 받으므로, 같은 안내가 다시 뜨지 않도록 replay를 0으로 설정
+        private val _remoteError = MutableSharedFlow<RemoteError>(replay = 0)
+        val remoteError: SharedFlow<RemoteError> = _remoteError
+
         fun makePopMovieListApiCall() {
-            viewModelScope.launch {
-                val result = safeApiCall { service.getPopularMovieList() }
-                if (result is DataResult.Success) _allPopMovies.value = result.data
-            }
+            fetch({ service.getPopularMovieList() }) { _allPopMovies.value = it }
         } // TMDB 서버로 인기 영화 정보를 요청하고 해당 정보를 받아오는 메소드
 
         fun makeTopRatedMovieListApiCall() {
-            viewModelScope.launch {
-                val result = safeApiCall { service.getTopRatedMovieList() }
-                if (result is DataResult.Success) _allTopMovies.value = result.data
-            }
+            fetch({ service.getTopRatedMovieList() }) { _allTopMovies.value = it }
         } // TMDB 서버로 높은 평점의 영화 정보를 요청하고 해당 정보를 받아오는 메소드
 
         fun makeSearchMovieListApiCall(query: String) {
-            viewModelScope.launch {
-                val result = safeApiCall { service.getSearchedMovieList(query = query) }
-                if (result is DataResult.Success) _allSearchMovies.value = result.data
-            }
+            fetch({ service.getSearchedMovieList(query = query) }) { _allSearchMovies.value = it }
         } // TMDB 서버로 검색한 영화의 정보를 요청하고 해당 정보를 받아오는 메소드
 
         fun makeVideoApiCall(movieId: Int) {
-            viewModelScope.launch {
-                val result = safeApiCall { service.getVideosList(movieId = movieId) }
-                if (result is DataResult.Success) _allVideos.value = result.data
-            }
+            fetch({ service.getVideosList(movieId = movieId) }) { _allVideos.value = it }
         } // TMDB 서버로 영화의 동영상 정보를 요청하고 해당 정보를 받아오는 메소드
 
         fun makeCreditApiCall(movieId: Int) {
-            viewModelScope.launch {
-                val result = safeApiCall { service.getCreditsList(movieId = movieId) }
-                if (result is DataResult.Success) _allCredits.value = result.data
-            }
+            fetch({ service.getCreditsList(movieId = movieId) }) { _allCredits.value = it }
         } // TMDB 서버로 영화 관계자들의 정보를 요청하고 해당 정보를 받아오는 메소드
+
+        private fun <T> fetch(
+            block: suspend () -> T,
+            onSuccess: (T) -> Unit,
+        ) {
+            viewModelScope.launch {
+                when (val result = safeApiCall(block)) {
+                    is DataResult.Success -> onSuccess(result.data)
+                    is DataResult.Failure -> _remoteError.emit(result.error)
+                }
+            }
+        }
     }

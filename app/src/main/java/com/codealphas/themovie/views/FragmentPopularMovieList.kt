@@ -108,6 +108,7 @@ class FragmentPopularMovieList : Fragment() {
 
     private fun initViewModel() {
         viewModel.makePopMovieListApiCall()
+        viewModel.remoteError.observeRemoteError(viewLifecycleOwner, binding.root)
         viewModel.allPopMovies
             .observe(
                 viewLifecycleOwner,

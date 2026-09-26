@@ -62,6 +62,8 @@ class FragmentSearchMovie : Fragment() {
         initRecyclerView()
         initFloatingActionButton()
         initSearchViews()
+        // 검색어가 바뀔 때마다 sendRequest가 목록 구독을 추가하므로, 구독이 쌓이지 않도록 오류 안내는 여기서 한 번만 구독
+        viewModel.remoteError.observeRemoteError(viewLifecycleOwner, binding.root)
     }
 
     override fun onDestroyView() {
@@ -126,6 +128,8 @@ class FragmentSearchMovie : Fragment() {
                 override fun onQueryTextSubmit(p0: String?): Boolean {
                     query = p0
                     sendRequest()
+                    // SearchView는 onQueryTextSubmit이 true면 키보드를 내리지 않으므로, 검색 후 키보드가 남아 있지 않도록 포커스를 해제
+                    binding.searchView.clearFocus()
                     return true
                 } // 검색 버튼을 누른 경우 호출
 
