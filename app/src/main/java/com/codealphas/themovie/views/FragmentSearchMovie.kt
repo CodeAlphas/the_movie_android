@@ -8,6 +8,8 @@ import android.view.ViewGroup
 import android.view.animation.Animation
 import android.view.animation.AnimationUtils
 import android.widget.SearchView
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -62,6 +64,7 @@ class FragmentSearchMovie : Fragment() {
         initRecyclerView()
         initFloatingActionButton()
         initSearchViews()
+        clearFocusWhenImeHides()
         // 검색어가 바뀔 때마다 sendRequest가 목록 구독을 추가하므로, 구독이 쌓이지 않도록 오류 안내는 여기서 한 번만 구독
         viewModel.remoteError.observeRemoteError(viewLifecycleOwner, binding.root)
     }
@@ -140,6 +143,17 @@ class FragmentSearchMovie : Fragment() {
                 } // 검색어가 입력중일 경우 호출
             },
         )
+    }
+
+    private fun clearFocusWhenImeHides() {
+        var imeVisible = false
+        ViewCompat.setOnApplyWindowInsetsListener(binding.searchView) { _, insets ->
+            val visible = insets.isVisible(WindowInsetsCompat.Type.ime())
+            // 뒤로 가기는 키보드만 숨기고 포커스는 남기므로, 상세에서 돌아와도 키보드가 다시 뜨지 않도록 포커스를 해제
+            if (imeVisible && !visible) binding.searchView.clearFocus()
+            imeVisible = visible
+            insets
+        }
     }
 
     // 검색한 영화에 대한 정보를 TMDB 서버에 요청하고 해당정보를 리싸이클러뷰에 보여주는 메소드

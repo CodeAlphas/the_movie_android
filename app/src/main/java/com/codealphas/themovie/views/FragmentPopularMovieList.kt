@@ -62,6 +62,12 @@ class FragmentPopularMovieList : Fragment() {
         initFloatingActionButton()
     }
 
+    override fun onResume() {
+        super.onResume()
+        // ViewPager2는 화면에 없는 탭도 STARTED로 유지해 탭을 옮길 때 onResume만 다시 호출하므로, 실패로 비어 있는 목록을 탭이 다시 보일 때 재요청
+        if (viewModel.allPopMovies.value == null) viewModel.makePopMovieListApiCall()
+    }
+
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
@@ -107,7 +113,6 @@ class FragmentPopularMovieList : Fragment() {
     }
 
     private fun initViewModel() {
-        viewModel.makePopMovieListApiCall()
         viewModel.remoteError.observeRemoteError(viewLifecycleOwner, binding.root)
         viewModel.allPopMovies
             .observe(

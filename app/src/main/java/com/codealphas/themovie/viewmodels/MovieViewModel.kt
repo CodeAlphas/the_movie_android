@@ -11,6 +11,7 @@ import com.codealphas.themovie.models.VideosFromServer
 import com.codealphas.themovie.networks.TmdbApiService
 import com.codealphas.themovie.networks.safeApiCall
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.launch
@@ -46,12 +47,21 @@ class MovieViewModel
         private val _remoteError = MutableSharedFlow<RemoteError>(replay = 0)
         val remoteError: SharedFlow<RemoteError> = _remoteError
 
+        private var popularLoad: Job? = null
+        private var topRatedLoad: Job? = null
+
         fun makePopMovieListApiCall() {
-            fetch({ service.getPopularMovieList() }) { _allPopMovies.value = it }
+            popularLoad =
+                loadMovies(_allPopMovies.value, popularLoad, { service.getPopularMovieList() }) {
+                    _allPopMovies.value = it
+                }
         } // TMDB 서버로 인기 영화 정보를 요청하고 해당 정보를 받아오는 메소드
 
         fun makeTopRatedMovieListApiCall() {
-            fetch({ service.getTopRatedMovieList() }) { _allTopMovies.value = it }
+            topRatedLoad =
+                loadMovies(_allTopMovies.value, topRatedLoad, { service.getTopRatedMovieList() }) {
+                    _allTopMovies.value = it
+                }
         } // TMDB 서버로 높은 평점의 영화 정보를 요청하고 해당 정보를 받아오는 메소드
 
         fun makeSearchMovieListApiCall(query: String) {
@@ -66,15 +76,25 @@ class MovieViewModel
             fetch({ service.getCreditsList(movieId = movieId) }) { _allCredits.value = it }
         } // TMDB 서버로 영화 관계자들의 정보를 요청하고 해당 정보를 받아오는 메소드
 
+        // 응답 전에 다시 호출되면 LiveData가 아직 비어 같은 요청이 한 번 더 나가므로, 진행 중인 요청이 있으면 그 응답을 대기
+        private fun loadMovies(
+            current: MoviesFromServer?,
+            ongoing: Job?,
+            block: suspend () -> MoviesFromServer,
+            onSuccess: (MoviesFromServer) -> Unit,
+        ): Job? {
+            if (current != null || ongoing?.isActive == true) return ongoing
+            return fetch(block, onSuccess)
+        }
+
         private fun <T> fetch(
             block: suspend () -> T,
             onSuccess: (T) -> Unit,
-        ) {
+        ): Job =
             viewModelScope.launch {
                 when (val result = safeApiCall(block)) {
                     is DataResult.Success -> onSuccess(result.data)
                     is DataResult.Failure -> _remoteError.emit(result.error)
                 }
             }
-        }
     }
