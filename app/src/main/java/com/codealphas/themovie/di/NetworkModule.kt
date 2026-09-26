@@ -1,6 +1,8 @@
 package com.codealphas.themovie.di
 
 import com.codealphas.themovie.networks.MapApiService
+import com.codealphas.themovie.networks.TmapApiKeyInterceptor
+import com.codealphas.themovie.networks.TmdbApiKeyInterceptor
 import com.codealphas.themovie.networks.TmdbApiService
 import dagger.Module
 import dagger.Provides
@@ -11,17 +13,7 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
-import javax.inject.Qualifier
 import javax.inject.Singleton
-
-// Retrofit 바인딩이 둘이라 구분이 없으면 Hilt가 주입 대상을 정하지 못하므로, 서버별로 표시
-@Qualifier
-@Retention(AnnotationRetention.BINARY)
-annotation class TmdbRetrofit
-
-@Qualifier
-@Retention(AnnotationRetention.BINARY)
-annotation class TmapRetrofit
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -36,15 +28,34 @@ object NetworkModule {
             explicitNulls = false
         }
 
+    // TMDB와 TMap은 붙이는 인증 키가 다르므로, 클라이언트도 API별로 나눔
     @Provides
     @Singleton
-    fun provideOkHttpClient(): OkHttpClient = OkHttpClient()
+    @TmdbOkHttp
+    fun provideTmdbOkHttpClient(
+        @TmdbApiKey apiKey: String,
+    ): OkHttpClient =
+        OkHttpClient
+            .Builder()
+            .addInterceptor(TmdbApiKeyInterceptor(apiKey))
+            .build()
+
+    @Provides
+    @Singleton
+    @TmapOkHttp
+    fun provideTmapOkHttpClient(
+        @TmapApiKey apiKey: String,
+    ): OkHttpClient =
+        OkHttpClient
+            .Builder()
+            .addInterceptor(TmapApiKeyInterceptor(apiKey))
+            .build()
 
     @Provides
     @Singleton
     @TmdbRetrofit
     fun provideTmdbRetrofit(
-        client: OkHttpClient,
+        @TmdbOkHttp client: OkHttpClient,
         json: Json,
     ): Retrofit =
         Retrofit
@@ -58,7 +69,7 @@ object NetworkModule {
     @Singleton
     @TmapRetrofit
     fun provideTmapRetrofit(
-        client: OkHttpClient,
+        @TmapOkHttp client: OkHttpClient,
         json: Json,
     ): Retrofit =
         Retrofit
