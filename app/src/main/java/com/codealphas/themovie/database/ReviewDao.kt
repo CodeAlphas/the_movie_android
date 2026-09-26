@@ -32,7 +32,7 @@ interface ReviewDao {
     suspend fun getMaxId(): Int
 
     @Query("DELETE FROM reviewTable")
-    fun deleteAll()
+    suspend fun deleteAll()
 
     @Query("SELECT * FROM reviewTable ORDER BY id DESC")
     fun getAll(): LiveData<List<Review>>

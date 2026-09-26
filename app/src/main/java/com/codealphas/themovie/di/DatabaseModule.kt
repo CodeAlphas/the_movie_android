@@ -25,10 +25,7 @@ object DatabaseModule {
                 context,
                 AppDatabase::class.java,
                 "review_database",
-            )
-            // 로그아웃이 deleteAll()을 메인 스레드에서 부르므로, 그 호출을 옮기기 전까지 메인 스레드 조회를 허용
-            .allowMainThreadQueries()
-            .build()
+            ).build()
 
     @Provides
     @Singleton

@@ -9,13 +9,15 @@ import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.Observer
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.codealphas.themovie.R
 import com.codealphas.themovie.adapters.ReviewRecyclerViewAdapter
 import com.codealphas.themovie.databinding.ActivityReviewMainBinding
 import com.codealphas.themovie.models.Review
-import com.codealphas.themovie.repository.ReviewRepository
 import com.codealphas.themovie.utils.ReviewClickDeleteInterface
 import com.codealphas.themovie.utils.ReviewClickInterface
 import com.codealphas.themovie.utils.applySystemBarInsets
@@ -32,7 +34,7 @@ import com.google.firebase.database.database
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.storage
 import dagger.hilt.android.AndroidEntryPoint
-import javax.inject.Inject
+import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class ReviewMainActivity :
@@ -41,9 +43,6 @@ class ReviewMainActivity :
     ReviewClickDeleteInterface {
     private lateinit var binding: ActivityReviewMainBinding
     private val reviewViewModel: ReviewViewModel by viewModels()
-
-    @Inject
-    lateinit var reviewRepository: ReviewRepository
     private lateinit var reviewDB: DatabaseReference
     private val auth: FirebaseAuth by lazy { Firebase.auth }
     private val userId: String by lazy { auth.currentUser?.uid.orEmpty() }
@@ -60,6 +59,18 @@ class ReviewMainActivity :
         initRecyclerView()
         getReviewsFromServer()
         initReviewAddFloatingButton()
+        observeLogout()
+    }
+
+    private fun observeLogout() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                reviewViewModel.logoutCompleted.collect {
+                    startActivity(Intent(applicationContext, LoginActivity::class.java))
+                    finish()
+                }
+            }
+        }
     }
 
     private fun initRecyclerView() {
@@ -176,12 +187,7 @@ class ReviewMainActivity :
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.logout_action -> {
-                auth.signOut() // 로그아웃(Firebase Authentication)
-
-                reviewRepository.deleteAll() // 로그아웃시 reviewTable의 데이터 삭제
-
-                startActivity(Intent(applicationContext, LoginActivity::class.java))
-                this.finish()
+                reviewViewModel.logout()
                 return true
             }
             else -> return super.onOptionsItemSelected(item)

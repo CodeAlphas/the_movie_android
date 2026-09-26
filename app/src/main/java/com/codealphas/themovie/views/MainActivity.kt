@@ -4,18 +4,22 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import com.codealphas.themovie.R
 import com.codealphas.themovie.adapters.FragmentViewPagerAdapter
 import com.codealphas.themovie.databinding.ActivityMainBinding
-import com.codealphas.themovie.repository.ReviewRepository
 import com.codealphas.themovie.utils.applySystemBarInsets
 import com.codealphas.themovie.utils.setupAppBar
+import com.codealphas.themovie.viewmodels.MainViewModel
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
 import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.AndroidEntryPoint
-import javax.inject.Inject
+import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
@@ -24,10 +28,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private lateinit var binding: ActivityMainBinding
-
-    @Inject
-    lateinit var reviewRepository: ReviewRepository
-
+    private val viewModel: MainViewModel by viewModels()
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
     private val tabTitles = arrayListOf("인기", "높은 평점", "검색")
     private val tabIcons =
@@ -53,6 +54,18 @@ class MainActivity : AppCompatActivity() {
         initViewPager()
         initTabLayout()
         linkViewPagerAndTabLayout()
+        observeLogout()
+    }
+
+    private fun observeLogout() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.logoutCompleted.collect {
+                    startActivity(Intent(applicationContext, LoginActivity::class.java))
+                    finish()
+                }
+            }
+        }
     }
 
     private fun initViewPager() {
@@ -95,12 +108,7 @@ class MainActivity : AppCompatActivity() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.logout_action -> {
-                auth.signOut() // 로그아웃(Firebase Authentication)
-
-                reviewRepository.deleteAll() // 로그아웃시 reviewTable의 데이터 삭제
-
-                startActivity(Intent(applicationContext, LoginActivity::class.java))
-                this.finish()
+                viewModel.logout()
                 return true
             }
             else -> return super.onOptionsItemSelected(item)
