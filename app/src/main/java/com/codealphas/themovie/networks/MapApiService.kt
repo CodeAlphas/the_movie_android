@@ -7,7 +7,7 @@ import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.Query
 
-interface MapRetrofitService {
+interface MapApiService {
     // 현재 위치(좌표)의 주소 정보 요청
     @GET("tmap/geo/reversegeocoding")
     suspend fun getCurrentAddress(

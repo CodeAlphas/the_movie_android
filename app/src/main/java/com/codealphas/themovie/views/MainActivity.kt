@@ -7,7 +7,6 @@ import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
 import com.codealphas.themovie.R
 import com.codealphas.themovie.adapters.FragmentViewPagerAdapter
-import com.codealphas.themovie.database.DatabaseInstance
 import com.codealphas.themovie.databinding.ActivityMainBinding
 import com.codealphas.themovie.repository.ReviewRepository
 import com.codealphas.themovie.utils.applySystemBarInsets
@@ -15,13 +14,20 @@ import com.codealphas.themovie.utils.setupAppBar
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
 import com.google.firebase.auth.FirebaseAuth
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
     private companion object {
         const val TAB_COUNT = 3
     }
 
     private lateinit var binding: ActivityMainBinding
+
+    @Inject
+    lateinit var reviewRepository: ReviewRepository
+
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
     private val tabTitles = arrayListOf("인기", "높은 평점", "검색")
     private val tabIcons =
@@ -91,9 +97,7 @@ class MainActivity : AppCompatActivity() {
             R.id.logout_action -> {
                 auth.signOut() // 로그아웃(Firebase Authentication)
 
-                val dao = DatabaseInstance.getInstance(application).reviewDao()
-                val repository = ReviewRepository(dao)
-                repository.deleteAll() // 로그아웃시 reviewTable의 데이터 삭제
+                reviewRepository.deleteAll() // 로그아웃시 reviewTable의 데이터 삭제
 
                 startActivity(Intent(applicationContext, LoginActivity::class.java))
                 this.finish()
