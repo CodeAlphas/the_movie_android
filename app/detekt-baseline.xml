@@ -1,0 +1,9 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>TooGenericExceptionCaught:MapActivity.kt:MapActivity.MyLocationListener$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:ReviewDetailActivity.kt:ReviewDetailActivity$e: Exception</ID>
+    <ID>TooManyFunctions:ReviewDetailActivity.kt:ReviewDetailActivity : AppCompatActivity</ID>
+  </CurrentIssues>
+</SmellBaseline>

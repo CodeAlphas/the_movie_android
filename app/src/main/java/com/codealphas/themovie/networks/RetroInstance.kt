@@ -3,20 +3,19 @@ package com.codealphas.themovie.networks
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
-class RetroInstance {
+object RetroInstance {
+    private const val BASE_URL: String = "https://api.themoviedb.org/3/"
+    private var instance: Retrofit? = null
 
-    companion object {
-        private const val BaseURL: String = "https://api.themoviedb.org/3/"
-        private var INSTANCE: Retrofit? = null
-
-        fun getRetrofitInstance(): Retrofit {
-            return INSTANCE ?: synchronized(this) {
-                val instance = Retrofit.Builder().baseUrl(BaseURL)
+    fun getRetrofitInstance(): Retrofit =
+        instance ?: synchronized(this) {
+            val instance =
+                Retrofit
+                    .Builder()
+                    .baseUrl(BASE_URL)
                     .addConverterFactory(GsonConverterFactory.create())
                     .build() // TMDB 서버와의 통신을 위한 Retrofit 객체
-                INSTANCE = instance
-                instance
-            }
+            this.instance = instance
+            instance
         }
-    }
 }

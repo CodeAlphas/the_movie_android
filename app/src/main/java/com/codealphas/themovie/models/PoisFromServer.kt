@@ -1,18 +1,18 @@
 package com.codealphas.themovie.models
 
 data class PoisFromServer(
-    val searchPoiInfo: SearchPoiInfo
+    val searchPoiInfo: SearchPoiInfo,
 )
 
 data class SearchPoiInfo(
     val totalCount: Int,
     val count: Int,
     val page: Int,
-    val pois: Pois
+    val pois: Pois,
 )
 
 data class Pois(
-    val poi: ArrayList<PoiItem>
+    val poi: ArrayList<PoiItem>,
 )
 
 data class PoiItem(

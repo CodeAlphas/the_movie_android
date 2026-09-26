@@ -12,18 +12,21 @@ abstract class DatabaseInstance : RoomDatabase() {
 
     companion object {
         @Volatile
-        private var INSTANCE: DatabaseInstance? = null // 영화 감상문 정보를 관리하기 위한 RoomDatabase 객체
+        // 영화 감상문 정보를 관리하기 위한 RoomDatabase 객체
+        private var instance: DatabaseInstance? = null
 
-        fun getInstance(context: Context): DatabaseInstance {
-            return INSTANCE ?: synchronized(this) {
-                val instance = Room.databaseBuilder(
-                    context.applicationContext,
-                    DatabaseInstance::class.java,
-                    "review_database"
-                ).allowMainThreadQueries().build()
-                INSTANCE = instance
+        fun getInstance(context: Context): DatabaseInstance =
+            instance ?: synchronized(this) {
+                val instance =
+                    Room
+                        .databaseBuilder(
+                            context.applicationContext,
+                            DatabaseInstance::class.java,
+                            "review_database",
+                        ).allowMainThreadQueries()
+                        .build()
+                this.instance = instance
                 instance
             }
-        }
     }
 } // 싱글톤 디자인 패턴

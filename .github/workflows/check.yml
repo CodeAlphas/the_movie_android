@@ -1,0 +1,57 @@
+name: check
+
+on:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: android-actions/setup-android@v4
+
+      - name: local.properties 더미 생성
+        run: |
+          cat > local.properties << 'EOF'
+          TMDB_API_KEY=dummy
+          TMAP_API_KEY=dummy
+          YOUTUBE_API_KEY=dummy
+          EOF
+
+      - name: google-services.json 더미 생성
+        run: |
+          cat > app/google-services.json << 'EOF'
+          {
+            "project_info": {
+              "project_number": "0",
+              "project_id": "dummy"
+            },
+            "client": [
+              {
+                "client_info": {
+                  "mobilesdk_app_id": "1:0:android:0",
+                  "android_client_info": {
+                    "package_name": "com.codealphas.themovie"
+                  }
+                },
+                "api_key": [
+                  { "current_key": "dummy" }
+                ]
+              }
+            ],
+            "configuration_version": "1"
+          }
+          EOF
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - run: ./gradlew lint ktlintCheck
+      - run: ./gradlew detekt
+      - run: ./gradlew testDebugUnitTest
+      - run: ./gradlew assembleDebug

@@ -1,14 +1,13 @@
 package com.codealphas.themovie.networks
 
+import com.codealphas.themovie.BuildConfig.TMAP_API_KEY
 import com.codealphas.themovie.models.AddressFromServer
 import com.codealphas.themovie.models.PoisFromServer
-import com.codealphas.themovie.BuildConfig.TMAP_API_KEY
 import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.Query
 
 interface MapRetrofitService {
-
     // 현재 위치(좌표)의 주소 정보 요청
     @GET("tmap/geo/reversegeocoding")
     suspend fun getCurrentAddress(
@@ -18,7 +17,7 @@ interface MapRetrofitService {
         @Query("lon") lon: String, // 경도
         @Query("coordType") coordType: String? = null,
         @Query("addressType") addressType: String? = null,
-        @Query("callback") callback: String? = null
+        @Query("callback") callback: String? = null,
     ): AddressFromServer
 
     // 현재 위치를 기준으로 주변 영화관 정보 요청
@@ -32,8 +31,7 @@ interface MapRetrofitService {
         @Query("page") page: Int = 1,
         @Query("count") count: Int = 200,
         @Query("radius") radius: Int = 7, // 검색 반경, 1~33km
-        @Query("multiPoint") multiPoint: String = "Y",  // Y/N : 멀티입구점 미지원/지원
-        @Query("callback") callback: String? = null
+        @Query("multiPoint") multiPoint: String = "Y", // Y/N : 멀티입구점 미지원/지원
+        @Query("callback") callback: String? = null,
     ): PoisFromServer
-
 }

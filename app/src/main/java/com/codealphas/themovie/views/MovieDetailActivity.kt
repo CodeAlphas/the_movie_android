@@ -1,16 +1,15 @@
 package com.codealphas.themovie.views
 
 import android.os.Bundle
-import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.*
+import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
 import com.codealphas.themovie.adapters.CreditsRecyclerViewAdapter
 import com.codealphas.themovie.databinding.ActivityMovieDetailBinding
 import com.codealphas.themovie.models.CreditsFromServer
 import com.codealphas.themovie.models.VideosFromServer
-import com.codealphas.themovie.utils.Utils.Companion.TAG
 import com.codealphas.themovie.utils.applySystemBarInsets
 import com.codealphas.themovie.utils.setupAppBar
 import com.codealphas.themovie.viewmodels.MovieViewModel
@@ -21,7 +20,6 @@ import com.codealphas.themovie.viewmodels.MovieViewModel
 // import com.google.android.youtube.player.*
 
 class MovieDetailActivity : AppCompatActivity() {
-
     // private lateinit var youtubePlayerFragment: YouTubePlayerFragment
     private lateinit var creditsRecyclerViewAdapter: CreditsRecyclerViewAdapter
     private lateinit var binding: ActivityMovieDetailBinding
@@ -50,7 +48,8 @@ class MovieDetailActivity : AppCompatActivity() {
         val overview = intent.getStringExtra("overview") // 영화 개요
         val voteAverage = intent.getDoubleExtra("voteAverage", 0.0) // 영화 평점
 
-        Glide.with(this)
+        Glide
+            .with(this)
             .load(poster)
             .into(binding.imagePoster)
         binding.textTitle.text = title
@@ -90,7 +89,7 @@ class MovieDetailActivity : AppCompatActivity() {
             LinearLayoutManager(
                 this,
                 LinearLayoutManager.HORIZONTAL,
-                false
+                false,
             ) // 리싸이클러 뷰의 아이템들을 가로 방향으로 배열
         creditsRecyclerViewAdapter = CreditsRecyclerViewAdapter(this)
         binding.creditsRecyclerView.adapter = creditsRecyclerViewAdapter
@@ -98,13 +97,16 @@ class MovieDetailActivity : AppCompatActivity() {
         viewModel = ViewModelProvider(this).get(MovieViewModel::class.java)
         viewModel.makeCreditApiCall(movieId)
         viewModel.allCredits
-            .observe(this, Observer<CreditsFromServer> {
-                if (it != null) {
-                    creditsRecyclerViewAdapter.setUpdatedData(it.cast)
-                } else {
-                    // Log.d(TAG, "에러 발생")
-                }
-            })
+            .observe(
+                this,
+                Observer<CreditsFromServer> {
+                    if (it != null) {
+                        creditsRecyclerViewAdapter.setUpdatedData(it.cast)
+                    } else {
+                        // Log.d(TAG, "에러 발생")
+                    }
+                },
+            )
     }
 
     // 영화와 관련된 동영상 정보가 있는지 TMDB 서버에 확인하고 있으면 해당 정보로 유튜브 플레이어를 로드하는 메소드
@@ -112,18 +114,21 @@ class MovieDetailActivity : AppCompatActivity() {
         viewModel = ViewModelProvider(this).get(MovieViewModel::class.java)
         viewModel.makeVideoApiCall(movieId)
         viewModel.allVideos
-            .observe(this, Observer<VideosFromServer> {
-                if (it != null) {
-                    val videoList = it.results
-                    if (videoList.size > 0) {
-                        videoList.forEach {
-                            youtubeVideoId.add(it.key)
+            .observe(
+                this,
+                Observer<VideosFromServer> {
+                    if (it != null) {
+                        val videoList = it.results
+                        if (videoList.size > 0) {
+                            videoList.forEach {
+                                youtubeVideoId.add(it.key)
+                            }
+                            // loadVideo()
                         }
-                        // loadVideo()
+                    } else {
+                        // Log.d(TAG, "에러 발생")
                     }
-                } else {
-                    // Log.d(TAG, "에러 발생")
-                }
-            })
+                },
+            )
     }
 }

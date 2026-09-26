@@ -9,7 +9,6 @@ import com.codealphas.themovie.networks.RetroInstance
 import com.codealphas.themovie.networks.RetrofitService
 
 class MovieViewModel : ViewModel() {
-
     private val _allPopMovies = MutableLiveData<MoviesFromServer>()
     val allPopMovies: MutableLiveData<MoviesFromServer>
         get() = _allPopMovies
@@ -56,16 +55,14 @@ class MovieViewModel : ViewModel() {
             val response = service().getVideosList(movieId = movieId)
             _allVideos.postValue(response)
         }
-    }  // TMDB 서버로 영화의 동영상 정보를 요청하고 해당 정보를 받아오는 메소드
+    } // TMDB 서버로 영화의 동영상 정보를 요청하고 해당 정보를 받아오는 메소드
 
     fun makeCreditApiCall(movieId: Int) {
         launchRequest {
             val response = service().getCreditsList(movieId = movieId)
             _allCredits.postValue(response)
         }
-    }  // TMDB 서버로 영화 관계자들의 정보를 요청하고 해당 정보를 받아오는 메소드
+    } // TMDB 서버로 영화 관계자들의 정보를 요청하고 해당 정보를 받아오는 메소드
 
-    private fun service(): RetrofitService {
-        return RetroInstance.getRetrofitInstance().create(RetrofitService::class.java)
-    }
+    private fun service(): RetrofitService = RetroInstance.getRetrofitInstance().create(RetrofitService::class.java)
 }

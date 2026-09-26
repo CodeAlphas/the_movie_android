@@ -3,7 +3,7 @@ package com.codealphas.themovie.models
 import com.google.gson.annotations.SerializedName
 
 data class AddressFromServer(
-    val addressInfo: AddressItem
+    val addressInfo: AddressItem,
 )
 
 data class AddressItem(
@@ -38,5 +38,5 @@ data class AddressItem(
     @SerializedName("roadCode")
     val roadCode: String?,
     @SerializedName("bunji")
-    val bunji: String?
+    val bunji: String?,
 ) // TMAP 서버로부터 받은 주소 정보(ReverseGeocoding)

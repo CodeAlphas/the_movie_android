@@ -7,11 +7,11 @@ import android.content.pm.PackageManager
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Observer
@@ -21,14 +21,24 @@ import com.codealphas.themovie.databinding.ActivityMapBinding
 import com.codealphas.themovie.models.AddressFromServer
 import com.codealphas.themovie.models.LocationLatLng
 import com.codealphas.themovie.models.PoisFromServer
-import com.codealphas.themovie.utils.Utils.Companion.TAG
 import com.codealphas.themovie.utils.applySystemBarInsets
 import com.codealphas.themovie.utils.setupAppBar
 import com.codealphas.themovie.viewmodels.MapViewModel
-import com.google.android.gms.maps.*
-import com.google.android.gms.maps.model.*
+import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.OnMapReadyCallback
+import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.MarkerOptions
 
-class MapActivity : AppCompatActivity(), OnMapReadyCallback {
+class MapActivity :
+    AppCompatActivity(),
+    OnMapReadyCallback {
+    private companion object {
+        const val LOCATION_PERMISSION_REQUEST_CODE = 1001
+        const val MAP_ZOOM = 17.0f
+    }
 
     private lateinit var binding: ActivityMapBinding
     private lateinit var googleMap: GoogleMap
@@ -82,19 +92,20 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback {
         if (isGpsAvailable) {
             if (ContextCompat.checkSelfPermission(
                     this,
-                    android.Manifest.permission.ACCESS_FINE_LOCATION
-                ) != PackageManager.PERMISSION_GRANTED && ContextCompat.checkSelfPermission(
+                    android.Manifest.permission.ACCESS_FINE_LOCATION,
+                ) != PackageManager.PERMISSION_GRANTED &&
+                ContextCompat.checkSelfPermission(
                     this,
-                    android.Manifest.permission.ACCESS_COARSE_LOCATION
+                    android.Manifest.permission.ACCESS_COARSE_LOCATION,
                 ) != PackageManager.PERMISSION_GRANTED
             ) {
                 ActivityCompat.requestPermissions(
                     this,
                     arrayOf(
                         android.Manifest.permission.ACCESS_FINE_LOCATION,
-                        android.Manifest.permission.ACCESS_COARSE_LOCATION
+                        android.Manifest.permission.ACCESS_COARSE_LOCATION,
                     ),
-                    1001
+                    LOCATION_PERMISSION_REQUEST_CODE,
                 )
             } else {
                 setMyLocationListener()
@@ -108,11 +119,13 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback {
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,
-        grantResults: IntArray
+        grantResults: IntArray,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == 1001) {
-            if (grantResults[0] == PackageManager.PERMISSION_GRANTED && grantResults[1] == PackageManager.PERMISSION_GRANTED) {
+        if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
+            if (grantResults[0] == PackageManager.PERMISSION_GRANTED &&
+                grantResults[1] == PackageManager.PERMISSION_GRANTED
+            ) {
                 setMyLocationListener()
             } else {
                 Toast.makeText(this, "권한을 부여받지 못했습니다.", Toast.LENGTH_SHORT).show()
@@ -134,37 +147,42 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback {
                 LocationManager.GPS_PROVIDER,
                 minTime,
                 minDistance,
-                myLocationListener
+                myLocationListener,
             )
             requestLocationUpdates(
                 LocationManager.NETWORK_PROVIDER,
                 minTime,
                 minDistance,
-                myLocationListener
+                myLocationListener,
             )
         }
     }
 
     inner class MyLocationListener : LocationListener {
-
         override fun onLocationChanged(location: Location) {
             try {
                 location.latitude
-                val currentLocationPos = LocationLatLng(
-                    location.latitude.toFloat(),
-                    location.longitude.toFloat()
-                )
+                val currentLocationPos =
+                    LocationLatLng(
+                        location.latitude.toFloat(),
+                        location.longitude.toFloat(),
+                    )
                 onCurrentLocationChanged(currentLocationPos)
             } catch (e: Exception) {
-                Toast.makeText(this@MapActivity, "위치 정보 갱신 불가", Toast.LENGTH_SHORT).show();
+                Log.e("MapActivity", "위치 정보 갱신 불가", e)
+                Toast.makeText(this@MapActivity, "위치 정보 갱신 불가", Toast.LENGTH_SHORT).show()
             }
         }
 
-        override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {}
+        override fun onStatusChanged(
+            provider: String?,
+            status: Int,
+            extras: Bundle?,
+        ) = Unit
 
-        override fun onProviderEnabled(provider: String) {}
+        override fun onProviderEnabled(provider: String) = Unit
 
-        override fun onProviderDisabled(provider: String) {}
+        override fun onProviderDisabled(provider: String) = Unit
         // https://stackoverflow.com/questions/64638260/android-locationlistener-abstractmethoderror-on-onstatuschanged-and-onproviderd
     }
 
@@ -173,9 +191,10 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback {
             CameraUpdateFactory.newLatLngZoom(
                 LatLng(
                     currentLocationPos.latitude.toDouble(),
-                    currentLocationPos.longitude.toDouble()
-                ), 17.0f
-            )
+                    currentLocationPos.longitude.toDouble(),
+                ),
+                MAP_ZOOM,
+            ),
         )
 
         viewModel = ViewModelProvider(this).get(MapViewModel::class.java)
@@ -186,29 +205,32 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback {
     private fun showCurrentLocationMarker(currentLocationPos: LocationLatLng) {
         viewModel.makeCurrentAddressApiCall(
             currentLocationPos.latitude.toString(),
-            currentLocationPos.longitude.toString()
+            currentLocationPos.longitude.toString(),
         )
         viewModel.currentAddress
-            .observe(this, Observer<AddressFromServer> {
-                if (it != null) {
-                    googleMap.clear()
-                    it.addressInfo.apply {
-                        val currentMarker = MarkerOptions()
+            .observe(
+                this,
+                Observer<AddressFromServer> {
+                    if (it != null) {
+                        googleMap.clear()
+                        it.addressInfo.apply {
+                            val currentMarker = MarkerOptions()
 
-                        currentMarker.position(
-                            LatLng(
-                                currentLocationPos.latitude.toDouble(),
-                                currentLocationPos.longitude.toDouble()
+                            currentMarker.position(
+                                LatLng(
+                                    currentLocationPos.latitude.toDouble(),
+                                    currentLocationPos.longitude.toDouble(),
+                                ),
                             )
-                        )
-                        currentMarker.title("현재 위치")
-                        currentMarker.snippet(this.fullAddress)
-                        googleMap.addMarker(currentMarker)
+                            currentMarker.title("현재 위치")
+                            currentMarker.snippet(this.fullAddress)
+                            googleMap.addMarker(currentMarker)
+                        }
+                    } else {
+                        // Log.d(TAG, "에러 발생")
                     }
-                } else {
-                    // Log.d(TAG, "에러 발생")
-                }
-            })
+                },
+            )
     }
 
     private fun showNearTheater(currentLocationPos: LocationLatLng) {
@@ -218,24 +240,29 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback {
 
         viewModel.makeTheaterListApiCall(categories, centerLat, centerLon)
         viewModel.allTheater
-            .observe(this, Observer<PoisFromServer> {
-                if (it != null) {
-                    it.searchPoiInfo.pois.apply {
-                        this.poi.forEach {
-                            val poiMarker = MarkerOptions()
-                            val bmDescriptor =
-                                BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)
+            .observe(
+                this,
+                Observer<PoisFromServer> {
+                    if (it != null) {
+                        it.searchPoiInfo.pois.apply {
+                            this.poi.forEach {
+                                val poiMarker = MarkerOptions()
+                                val bmDescriptor =
+                                    BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)
 
-                            poiMarker.icon(bmDescriptor)
-                            poiMarker.position(LatLng(it.noorLat, it.noorLon))
-                            poiMarker.title(it.name)
-                            poiMarker.snippet("${it.upperAddrName} ${it.middleAddrName} ${it.lowerAddrName} ${it.detailAddrName}")
-                            googleMap.addMarker(poiMarker)
+                                poiMarker.icon(bmDescriptor)
+                                poiMarker.position(LatLng(it.noorLat, it.noorLon))
+                                poiMarker.title(it.name)
+                                poiMarker.snippet(
+                                    "${it.upperAddrName} ${it.middleAddrName} ${it.lowerAddrName} ${it.detailAddrName}",
+                                )
+                                googleMap.addMarker(poiMarker)
+                            }
                         }
+                    } else {
+                        // Log.d(TAG, "에러 발생")
                     }
-                } else {
-                    // Log.d(TAG, "에러 발생")
-                }
-            })
+                },
+            )
     }
 }
