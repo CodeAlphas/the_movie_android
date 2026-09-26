@@ -23,6 +23,8 @@ firebaseBom = "34.19.0"
 googleServices = "4.5.0"
 secrets = "2.0.1"
 ktlint = "14.2.0"
+# AGP 9용 Hilt Gradle 플러그인은 2.59부터이므로, 증분 빌드가 느린 HiltSyncTask를 고친 2.59.2를 사용
+hilt = "2.59.2"
 # detekt 1.23은 AGP 9의 built-in Kotlin을 분석하지 못하므로 2.0 alpha를 사용
 detekt = "2.0.0-alpha.6"
 
@@ -60,11 +62,15 @@ ksp-symbol-processing = { module = "com.google.devtools.ksp:symbol-processing-gr
 android-gradle-plugin = { group = "com.android.tools.build", name = "gradle", version.ref = "agp" }
 ktlint-gradle-plugin = { module = "org.jlleitschuh.gradle:ktlint-gradle", version.ref = "ktlint" }
 detekt-gradle-plugin = { module = "dev.detekt:detekt-gradle-plugin", version.ref = "detekt" }
+hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
+hilt-compiler = { group = "com.google.dagger", name = "hilt-compiler", version.ref = "hilt" }
+hilt-android-gradle-plugin = { module = "com.google.dagger:hilt-android-gradle-plugin", version.ref = "hilt" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 secrets = { id = "com.google.android.libraries.mapsplatform.secrets-gradle-plugin", version.ref = "secrets" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint" }
 detekt = { id = "dev.detekt", version.ref = "detekt" }

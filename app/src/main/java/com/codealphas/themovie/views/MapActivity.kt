@@ -11,11 +11,11 @@ import android.os.Bundle
 import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModelProvider
 import com.codealphas.themovie.R
 import com.codealphas.themovie.databinding.ActivityMapBinding
 import com.codealphas.themovie.models.AddressFromServer
@@ -31,7 +31,9 @@ import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MapActivity :
     AppCompatActivity(),
     OnMapReadyCallback {
@@ -44,7 +46,7 @@ class MapActivity :
     private lateinit var googleMap: GoogleMap
     private lateinit var locationManager: LocationManager
     private lateinit var myLocationListener: MyLocationListener
-    private lateinit var viewModel: MapViewModel
+    private val viewModel: MapViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -197,7 +199,6 @@ class MapActivity :
             ),
         )
 
-        viewModel = ViewModelProvider(this).get(MapViewModel::class.java)
         showCurrentLocationMarker(currentLocationPos)
         showNearTheater(currentLocationPos)
     }

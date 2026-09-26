@@ -1,8 +1,8 @@
 plugins {
     id("movie.android.application")
+    id("movie.android.hilt")
     id("movie.quality")
     alias(libs.plugins.google.services)
-    alias(libs.plugins.ksp)
     alias(libs.plugins.secrets)
 }
 

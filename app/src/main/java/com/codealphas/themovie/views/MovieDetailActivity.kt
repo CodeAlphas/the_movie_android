@@ -1,9 +1,9 @@
 package com.codealphas.themovie.views
 
 import android.os.Bundle
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
 import com.codealphas.themovie.adapters.CreditsRecyclerViewAdapter
@@ -13,17 +13,19 @@ import com.codealphas.themovie.models.VideosFromServer
 import com.codealphas.themovie.utils.applySystemBarInsets
 import com.codealphas.themovie.utils.setupAppBar
 import com.codealphas.themovie.viewmodels.MovieViewModel
+import dagger.hilt.android.AndroidEntryPoint
 
 // YouTube Android Player API는 Maven에 없어 컴파일이 막힌다. Phase 5에서 교체한다.
 // import com.codealphas.themovie.R
 // import com.codealphas.themovie.BuildConfig.YOUTUBE_API_KEY
 // import com.google.android.youtube.player.*
 
+@AndroidEntryPoint
 class MovieDetailActivity : AppCompatActivity() {
     // private lateinit var youtubePlayerFragment: YouTubePlayerFragment
     private lateinit var creditsRecyclerViewAdapter: CreditsRecyclerViewAdapter
     private lateinit var binding: ActivityMovieDetailBinding
-    private lateinit var viewModel: MovieViewModel
+    private val viewModel: MovieViewModel by viewModels()
     private var youtubeVideoId: ArrayList<String> = ArrayList() // TMDB 서버로부터 받은 영화관련 동영상의 ID 정보
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -94,7 +96,6 @@ class MovieDetailActivity : AppCompatActivity() {
         creditsRecyclerViewAdapter = CreditsRecyclerViewAdapter(this)
         binding.creditsRecyclerView.adapter = creditsRecyclerViewAdapter
 
-        viewModel = ViewModelProvider(this).get(MovieViewModel::class.java)
         viewModel.makeCreditApiCall(movieId)
         viewModel.allCredits
             .observe(
@@ -111,7 +112,6 @@ class MovieDetailActivity : AppCompatActivity() {
 
     // 영화와 관련된 동영상 정보가 있는지 TMDB 서버에 확인하고 있으면 해당 정보로 유튜브 플레이어를 로드하는 메소드
     private fun checkVideo(movieId: Int) {
-        viewModel = ViewModelProvider(this).get(MovieViewModel::class.java)
         viewModel.makeVideoApiCall(movieId)
         viewModel.allVideos
             .observe(

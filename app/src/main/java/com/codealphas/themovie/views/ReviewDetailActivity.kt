@@ -12,6 +12,7 @@ import android.view.WindowManager
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -19,7 +20,6 @@ import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import androidx.core.view.isVisible
 import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
 import com.codealphas.themovie.R
@@ -36,11 +36,13 @@ import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.database
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.storage
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import java.io.File
 
+@AndroidEntryPoint
 class ReviewDetailActivity : AppCompatActivity() {
     private companion object {
         const val READ_PERMISSION_REQUEST_CODE = 1000
@@ -49,7 +51,7 @@ class ReviewDetailActivity : AppCompatActivity() {
     }
 
     private lateinit var binding: ActivityReviewDetailBinding
-    private lateinit var viewModel: ReviewViewModel
+    private val viewModel: ReviewViewModel by viewModels()
     private lateinit var reviewDB: DatabaseReference
     private lateinit var photoFile: File
     private val auth: FirebaseAuth by lazy { Firebase.auth }
@@ -321,12 +323,6 @@ class ReviewDetailActivity : AppCompatActivity() {
     }
 
     private fun dataChanged() {
-        viewModel =
-            ViewModelProvider(
-                this,
-                ViewModelProvider.AndroidViewModelFactory.getInstance(application),
-            ).get(ReviewViewModel::class.java)
-
         val currentReviewTitle = binding.titleEditText.text.toString()
         val currentReviewContent = binding.contentEditText.text.toString()
         val currentRating = binding.reviewRatingBar.rating.toDouble() * 2

@@ -23,7 +23,7 @@ class ReviewRepository(
 
     suspend fun insertTransaction(review: Review): Int = reviewDao.insertTransaction(review)
 
-    fun deleteAll() {
+    suspend fun deleteAll() {
         reviewDao.deleteAll()
     }
 }

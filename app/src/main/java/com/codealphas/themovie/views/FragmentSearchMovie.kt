@@ -10,8 +10,8 @@ import android.view.animation.AnimationUtils
 import android.widget.SearchView
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.codealphas.themovie.R
@@ -21,7 +21,9 @@ import com.codealphas.themovie.models.MoviesFromServer
 import com.codealphas.themovie.utils.ItemDecorator
 import com.codealphas.themovie.utils.Utils
 import com.codealphas.themovie.viewmodels.MovieViewModel
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class FragmentSearchMovie : Fragment() {
     private companion object {
         const val GRID_SPAN_COUNT = 2
@@ -36,7 +38,7 @@ class FragmentSearchMovie : Fragment() {
     private var query: String? = "" // editText 뷰를 통해 검색된 영화 이름
     private var buttonClicked = false
     private lateinit var searchMoviesRecyclerViewAdapter: SearchMoviesRecyclerViewAdapter
-    private lateinit var viewModel: MovieViewModel
+    private val viewModel: MovieViewModel by viewModels()
     private val rotateOpen: Animation by lazy { AnimationUtils.loadAnimation(context, R.anim.rotate_open_anim) }
     private val rotateClose: Animation by lazy { AnimationUtils.loadAnimation(context, R.anim.rotate_close_anim) }
     private val fromBottom: Animation by lazy { AnimationUtils.loadAnimation(context, R.anim.from_bottom_anim) }
@@ -139,7 +141,6 @@ class FragmentSearchMovie : Fragment() {
     // 검색한 영화에 대한 정보를 TMDB 서버에 요청하고 해당정보를 리싸이클러뷰에 보여주는 메소드
     private fun sendRequest() {
         if (query != null && query!!.isNotBlank()) {
-            viewModel = ViewModelProvider(this).get(MovieViewModel::class.java)
             viewModel.makeSearchMovieListApiCall(query!!)
             viewModel.allSearchMovies
                 .observe(

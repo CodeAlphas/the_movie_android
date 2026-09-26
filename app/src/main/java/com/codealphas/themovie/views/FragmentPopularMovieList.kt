@@ -9,8 +9,8 @@ import android.view.animation.Animation
 import android.view.animation.AnimationUtils
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.codealphas.themovie.R
@@ -20,7 +20,9 @@ import com.codealphas.themovie.models.MoviesFromServer
 import com.codealphas.themovie.utils.ItemDecorator
 import com.codealphas.themovie.utils.Utils
 import com.codealphas.themovie.viewmodels.MovieViewModel
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class FragmentPopularMovieList : Fragment() {
     private companion object {
         const val GRID_SPAN_COUNT = 2
@@ -34,7 +36,7 @@ class FragmentPopularMovieList : Fragment() {
     val binding get() = _binding!!
     private var buttonClicked = false
     private lateinit var popularMoviesRecyclerViewAdapter: PopularMoviesRecyclerViewAdapter
-    private lateinit var viewModel: MovieViewModel
+    private val viewModel: MovieViewModel by viewModels()
     private val rotateOpen: Animation by lazy { AnimationUtils.loadAnimation(context, R.anim.rotate_open_anim) }
     private val rotateClose: Animation by lazy { AnimationUtils.loadAnimation(context, R.anim.rotate_close_anim) }
     private val fromBottom: Animation by lazy { AnimationUtils.loadAnimation(context, R.anim.from_bottom_anim) }
@@ -105,7 +107,6 @@ class FragmentPopularMovieList : Fragment() {
     }
 
     private fun initViewModel() {
-        viewModel = ViewModelProvider(this).get(MovieViewModel::class.java)
         viewModel.makePopMovieListApiCall()
         viewModel.allPopMovies
             .observe(

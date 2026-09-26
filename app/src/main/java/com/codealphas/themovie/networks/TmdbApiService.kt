@@ -8,7 +8,7 @@ import retrofit2.http.GET
 import retrofit2.http.Path
 import retrofit2.http.Query
 
-interface RetrofitService {
+interface TmdbApiService {
     // 일별 인기 영화 정보 요청
     @GET("movie/popular")
     suspend fun getPopularMovieList(
