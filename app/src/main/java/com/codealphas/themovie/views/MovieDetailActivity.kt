@@ -44,7 +44,7 @@ class MovieDetailActivity : AppCompatActivity() {
 
     private fun initViews() {
         val poster =
-            "https://image.tmdb.org/t/p/w500" + intent.getStringExtra("poster") // 영화 포스터 저장 경로
+            intent.getStringExtra("poster")?.let { "https://image.tmdb.org/t/p/w500$it" } // 영화 포스터 저장 경로
         val title = intent.getStringExtra("title") // 영화 제목
         val releaseDate = intent.getStringExtra("releaseDate") // 영화 개봉일자
         val overview = intent.getStringExtra("overview") // 영화 개요

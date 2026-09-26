@@ -2,6 +2,7 @@ plugins {
     id("movie.android.application")
     id("movie.android.hilt")
     id("movie.quality")
+    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.google.services)
     alias(libs.plugins.secrets)
 }
@@ -31,6 +32,7 @@ android {
 }
 
 dependencies {
+    implementation(libs.androidx.annotation.experimental)
     implementation(libs.androidx.activity.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.constraintlayout)
@@ -46,8 +48,8 @@ dependencies {
     ksp(libs.androidx.room.compiler)
     implementation(libs.material)
     implementation(libs.retrofit)
-    implementation(libs.retrofit.converter.gson)
-    implementation(libs.gson)
+    implementation(libs.retrofit.converter.kotlinx.serialization)
+    implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.kotlinx.coroutines.play.services)
     implementation(libs.glide)

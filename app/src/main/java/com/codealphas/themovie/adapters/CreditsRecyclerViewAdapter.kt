@@ -12,14 +12,14 @@ import com.codealphas.themovie.models.CreditItem
 class CreditsRecyclerViewAdapter(
     val context: Context,
 ) : RecyclerView.Adapter<CreditsRecyclerViewAdapter.ViewHolder>() {
-    private var items = ArrayList<CreditItem>()
+    private var items: List<CreditItem> = emptyList()
 
     inner class ViewHolder(
         private val itemBinding: ActorItemBinding,
     ) : RecyclerView.ViewHolder(itemBinding.root) {
         // 뷰와 데이터를 연결해주는 메소드
         fun bind(data: CreditItem) {
-            val imageUrl = "https://image.tmdb.org/t/p/w500" + data.profilePath
+            val imageUrl = data.profilePath?.let { "https://image.tmdb.org/t/p/w500$it" }
 
             // 뷰에 Glide 라이브러리를 이용하여 이미지 로드
             Glide
@@ -51,7 +51,7 @@ class CreditsRecyclerViewAdapter(
     override fun getItemCount(): Int = items.size
 
     // 리싸이클러뷰를 갱신해주는 메소드
-    fun setUpdatedData(items: ArrayList<CreditItem>) {
+    fun setUpdatedData(items: List<CreditItem>) {
         this.items = items
         notifyDataSetChanged()
     }
