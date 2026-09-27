@@ -9,3 +9,9 @@ sealed interface DataResult<out T> {
         val error: RemoteError,
     ) : DataResult<Nothing>
 }
+
+fun <T, R> DataResult<T>.map(transform: (T) -> R): DataResult<R> =
+    when (this) {
+        is DataResult.Success -> DataResult.Success(transform(data))
+        is DataResult.Failure -> this
+    }

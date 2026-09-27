@@ -16,7 +16,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.codealphas.themovie.R
 import com.codealphas.themovie.adapters.PopularMoviesRecyclerViewAdapter
 import com.codealphas.themovie.databinding.PopularMovieListFragmentBinding
-import com.codealphas.themovie.models.MoviesFromServer
+import com.codealphas.themovie.domain.movie.Movie
 import com.codealphas.themovie.utils.ItemDecorator
 import com.codealphas.themovie.utils.Utils
 import com.codealphas.themovie.viewmodels.MovieViewModel
@@ -117,13 +117,9 @@ class FragmentPopularMovieList : Fragment() {
         viewModel.allPopMovies
             .observe(
                 viewLifecycleOwner,
-                Observer<MoviesFromServer> {
-                    if (it != null) {
-                        popularMoviesRecyclerViewAdapter.setUpdatedData(it.results)
-                        binding.floatingButton.visibility = View.VISIBLE
-                    } else {
-                        // Log.d(TAG, "에러 발생")
-                    }
+                Observer<List<Movie>> { movies ->
+                    popularMoviesRecyclerViewAdapter.setUpdatedData(movies)
+                    binding.floatingButton.visibility = View.VISIBLE
                 },
             )
     }

@@ -16,7 +16,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.codealphas.themovie.R
 import com.codealphas.themovie.adapters.TopRatedMoviesRecyclerViewAdapter
 import com.codealphas.themovie.databinding.TopRatedMovieListFragmentBinding
-import com.codealphas.themovie.models.MoviesFromServer
+import com.codealphas.themovie.domain.movie.Movie
 import com.codealphas.themovie.utils.ItemDecorator
 import com.codealphas.themovie.utils.Utils
 import com.codealphas.themovie.viewmodels.MovieViewModel
@@ -117,13 +117,9 @@ class FragmentTopRatedMovieList : Fragment() {
         viewModel.allTopMovies
             .observe(
                 viewLifecycleOwner,
-                Observer<MoviesFromServer> {
-                    if (it != null) {
-                        topRatedMoviesRecyclerViewAdapter.setUpdatedData(it.results)
-                        binding.floatingButton.visibility = View.VISIBLE
-                    } else {
-                        // Log.d(TAG, "에러 발생")
-                    }
+                Observer<List<Movie>> { movies ->
+                    topRatedMoviesRecyclerViewAdapter.setUpdatedData(movies)
+                    binding.floatingButton.visibility = View.VISIBLE
                 },
             )
     }

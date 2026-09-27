@@ -8,8 +8,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
 import com.codealphas.themovie.adapters.CreditsRecyclerViewAdapter
 import com.codealphas.themovie.databinding.ActivityMovieDetailBinding
-import com.codealphas.themovie.models.CreditsFromServer
-import com.codealphas.themovie.models.VideosFromServer
+import com.codealphas.themovie.domain.movie.Cast
+import com.codealphas.themovie.domain.movie.Video
 import com.codealphas.themovie.utils.applySystemBarInsets
 import com.codealphas.themovie.utils.setupAppBar
 import com.codealphas.themovie.viewmodels.MovieViewModel
@@ -44,8 +44,8 @@ class MovieDetailActivity : AppCompatActivity() {
     }
 
     private fun initViews() {
-        val poster =
-            intent.getStringExtra("poster")?.let { "https://image.tmdb.org/t/p/w500$it" } // 영화 포스터 저장 경로
+        // Intent의 poster는 매퍼가 붙인 w500 주소이므로, 한 번 더 붙이지 않고 그대로 로드
+        val poster = intent.getStringExtra("poster")
         val title = intent.getStringExtra("title") // 영화 제목
         val releaseDate = intent.getStringExtra("releaseDate") // 영화 개봉일자
         val overview = intent.getStringExtra("overview") // 영화 개요
@@ -101,12 +101,8 @@ class MovieDetailActivity : AppCompatActivity() {
         viewModel.allCredits
             .observe(
                 this,
-                Observer<CreditsFromServer> {
-                    if (it != null) {
-                        creditsRecyclerViewAdapter.setUpdatedData(it.cast)
-                    } else {
-                        // Log.d(TAG, "에러 발생")
-                    }
+                Observer<List<Cast>> { cast ->
+                    creditsRecyclerViewAdapter.setUpdatedData(cast)
                 },
             )
     }
@@ -117,17 +113,12 @@ class MovieDetailActivity : AppCompatActivity() {
         viewModel.allVideos
             .observe(
                 this,
-                Observer<VideosFromServer> {
-                    if (it != null) {
-                        val videoList = it.results
-                        if (videoList.size > 0) {
-                            videoList.forEach {
-                                youtubeVideoId.add(it.key)
-                            }
-                            // loadVideo()
+                Observer<List<Video>> { videos ->
+                    if (videos.size > 0) {
+                        videos.forEach { video ->
+                            youtubeVideoId.add(video.key)
                         }
-                    } else {
-                        // Log.d(TAG, "에러 발생")
+                        // loadVideo()
                     }
                 },
             )
