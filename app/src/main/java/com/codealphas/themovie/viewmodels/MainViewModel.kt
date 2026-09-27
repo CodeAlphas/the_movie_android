@@ -2,7 +2,7 @@ package com.codealphas.themovie.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.codealphas.themovie.repository.ReviewRepository
+import com.codealphas.themovie.domain.review.ReviewRepository
 import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel

@@ -5,7 +5,7 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.codealphas.themovie.databinding.ReviewItemBinding
-import com.codealphas.themovie.models.Review
+import com.codealphas.themovie.domain.review.Review
 import com.codealphas.themovie.utils.ReviewClickDeleteInterface
 import com.codealphas.themovie.utils.ReviewClickInterface
 

@@ -24,7 +24,7 @@ import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
 import com.codealphas.themovie.R
 import com.codealphas.themovie.databinding.ActivityReviewDetailBinding
-import com.codealphas.themovie.models.Review
+import com.codealphas.themovie.domain.review.Review
 import com.codealphas.themovie.utils.Utils
 import com.codealphas.themovie.utils.applySystemBarInsets
 import com.codealphas.themovie.utils.setupAppBar
@@ -338,14 +338,14 @@ class ReviewDetailActivity : AppCompatActivity() {
                 if (currentReviewTitle.isNotBlank() && currentReviewContent.isNotBlank()) {
                     val updateReview =
                         Review(
-                            currentReviewTitle,
-                            imageUri,
-                            currentReviewContent,
-                            Utils.getCurrentDate(),
-                            currentRating,
-                            fileName,
+                            title = currentReviewTitle,
+                            image = imageUri,
+                            content = currentReviewContent,
+                            time = Utils.getCurrentDate(),
+                            rating = currentRating,
+                            storageFileName = fileName,
+                            id = reviewId,
                         )
-                    updateReview.id = reviewId
 
                     viewModel.updateReview(updateReview)
 

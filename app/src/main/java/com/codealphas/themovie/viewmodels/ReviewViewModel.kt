@@ -3,12 +3,12 @@ package com.codealphas.themovie.viewmodels
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
-import com.codealphas.themovie.models.Review
-import com.codealphas.themovie.repository.ReviewRepository
+import com.codealphas.themovie.domain.review.Review
+import com.codealphas.themovie.domain.review.ReviewRepository
 import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.receiveAsFlow
@@ -22,9 +22,7 @@ class ReviewViewModel
         private val repository: ReviewRepository,
         private val auth: FirebaseAuth,
     ) : ViewModel() {
-        private val _allReview: LiveData<List<Review>> = repository.allReview
-        val allReview: LiveData<List<Review>>
-            get() = _allReview
+        val allReview: LiveData<List<Review>> = repository.observeAll().asLiveData()
 
         private val _maxId = MutableLiveData<Int>()
         val maxId: LiveData<Int>
@@ -34,28 +32,28 @@ class ReviewViewModel
         val logoutCompleted: Flow<Unit> = _logoutCompleted.receiveAsFlow()
 
         fun deleteReview(review: Review) {
-            viewModelScope.launch(Dispatchers.IO) {
+            viewModelScope.launch {
                 repository.delete(review)
             }
-        } // 사용자의 영화 감상문을 삭제하는 메소드
+        }
 
         fun updateReview(review: Review) {
-            viewModelScope.launch(Dispatchers.IO) {
+            viewModelScope.launch {
                 repository.update(review)
             }
-        } // 사용자의 영화 감상문을 수정하는 메소드
+        }
 
         fun insertReview(review: Review) {
-            viewModelScope.launch(Dispatchers.IO) {
+            viewModelScope.launch {
                 repository.insert(review)
             }
-        } // 사용자의 영화 감상문을 추가하는 메소드
+        }
 
         fun insertTransaction(review: Review) {
-            viewModelScope.launch(Dispatchers.IO) {
-                _maxId.postValue(repository.insertTransaction(review))
+            viewModelScope.launch {
+                _maxId.value = repository.insertAndReturnId(review)
             }
-        } // 사용자의 영화 감상문을 추가하고 해당 감상문의 id 정보를 받아오는 메소드
+        }
 
         fun logout() {
             viewModelScope.launch {

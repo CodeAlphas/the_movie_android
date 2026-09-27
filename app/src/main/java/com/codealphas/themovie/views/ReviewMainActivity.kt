@@ -17,7 +17,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.codealphas.themovie.R
 import com.codealphas.themovie.adapters.ReviewRecyclerViewAdapter
 import com.codealphas.themovie.databinding.ActivityReviewMainBinding
-import com.codealphas.themovie.models.Review
+import com.codealphas.themovie.domain.review.Review
 import com.codealphas.themovie.utils.ReviewClickDeleteInterface
 import com.codealphas.themovie.utils.ReviewClickInterface
 import com.codealphas.themovie.utils.applySystemBarInsets
@@ -118,8 +118,16 @@ class ReviewMainActivity :
                                     .toString()
                                     .toDouble()
                             val storageFileName = data.child("storageFileName").value.toString()
-                            val review = Review(title, image, content, time, rating, storageFileName)
-                            review.id = id
+                            val review =
+                                Review(
+                                    title = title,
+                                    image = image,
+                                    content = content,
+                                    time = time,
+                                    rating = rating,
+                                    storageFileName = storageFileName,
+                                    id = id,
+                                )
                             reviewViewModel.insertReview(review)
                         }
                     }
