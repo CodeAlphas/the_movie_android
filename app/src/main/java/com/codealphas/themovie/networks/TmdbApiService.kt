@@ -1,6 +1,5 @@
 package com.codealphas.themovie.networks
 
-import com.codealphas.themovie.BuildConfig.TMDB_API_KEY
 import com.codealphas.themovie.models.CreditsFromServer
 import com.codealphas.themovie.models.MoviesFromServer
 import com.codealphas.themovie.models.VideosFromServer
@@ -12,7 +11,6 @@ interface TmdbApiService {
     // 일별 인기 영화 정보 요청
     @GET("movie/popular")
     suspend fun getPopularMovieList(
-        @Query("api_key") apiKey: String = TMDB_API_KEY, // TMDB API 키
         @Query("language") language: String = "ko",
         @Query("page") page: Int = 1,
     ): MoviesFromServer
@@ -20,7 +18,6 @@ interface TmdbApiService {
     // 최고 평점 영화 정보 요청
     @GET("movie/top_rated")
     suspend fun getTopRatedMovieList(
-        @Query("api_key") apiKey: String = TMDB_API_KEY, // TMDB API 키
         @Query("language") language: String = "ko",
         @Query("page") page: Int = 1,
     ): MoviesFromServer
@@ -28,7 +25,6 @@ interface TmdbApiService {
     // 사용자 검색 영화 정보 요청
     @GET("search/movie")
     suspend fun getSearchedMovieList(
-        @Query("api_key") apiKey: String = TMDB_API_KEY, // TMDB API 키
         @Query("language") language: String = "ko",
         @Query("query") query: String,
     ): MoviesFromServer
@@ -37,7 +33,6 @@ interface TmdbApiService {
     @GET("movie/{movie_id}/credits")
     suspend fun getCreditsList(
         @Path("movie_id") movieId: Int,
-        @Query("api_key") apiKey: String = TMDB_API_KEY, // TMDB API 키
         @Query("language") language: String = "en",
     ): CreditsFromServer
 
@@ -45,7 +40,6 @@ interface TmdbApiService {
     @GET("movie/{movie_id}/videos")
     suspend fun getVideosList(
         @Path("movie_id") movieId: Int,
-        @Query("api_key") apiKey: String = TMDB_API_KEY, // TMDB API 키
         @Query("language") language: String = "en",
     ): VideosFromServer
 }

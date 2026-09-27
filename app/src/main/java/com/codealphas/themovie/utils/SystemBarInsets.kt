@@ -28,6 +28,8 @@ fun AppCompatActivity.applySystemBarInsets() {
             right = bars.right,
             bottom = maxOf(bars.bottom, ime.bottom),
         )
+        // 이 리스너가 CONSUMED를 반환하면 안쪽 뷰에는 insets가 전달되지 않으므로, 검색창이 키보드 표시 여부를 받도록 레이아웃 루트에 원래 insets를 직접 전달
+        ViewCompat.dispatchApplyWindowInsets(root, insets)
         WindowInsetsCompat.CONSUMED
     }
 }

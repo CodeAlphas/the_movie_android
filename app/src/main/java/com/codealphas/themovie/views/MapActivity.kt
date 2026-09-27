@@ -58,6 +58,8 @@ class MapActivity :
 
         initGoogleMap()
         initCurrentLocationButton()
+        // 위치 갱신마다 주소와 극장 구독을 추가하므로, 구독이 쌓이지 않도록 오류 안내는 여기서 한 번만 구독
+        viewModel.remoteError.observeRemoteError(this, binding.root)
     }
 
     override fun onDestroy() {

@@ -1,9 +1,13 @@
 package com.codealphas.themovie.models
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class PoisFromServer(
     val searchPoiInfo: SearchPoiInfo,
 )
 
+@Serializable
 data class SearchPoiInfo(
     val totalCount: Int,
     val count: Int,
@@ -11,10 +15,12 @@ data class SearchPoiInfo(
     val pois: Pois,
 )
 
+@Serializable
 data class Pois(
-    val poi: ArrayList<PoiItem>,
+    val poi: List<PoiItem>,
 )
 
+@Serializable
 data class PoiItem(
     val id: String,
     val name: String,

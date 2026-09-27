@@ -1,16 +1,19 @@
 package com.codealphas.themovie.models
 
-import com.google.gson.annotations.SerializedName
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class VideosFromServer(
     val id: Int,
-    val results: ArrayList<VideoItem>,
+    val results: List<VideoItem>,
 ) // TMDB 서버로부터 받은 영화 비디오 정보
 
+@Serializable
 data class VideoItem(
-    @SerializedName("iso_639_1")
+    @SerialName("iso_639_1")
     val iso6391: String,
-    @SerializedName("iso_3166_1")
+    @SerialName("iso_3166_1")
     val iso31661: String,
     val name: String,
     val key: String,
@@ -18,7 +21,7 @@ data class VideoItem(
     val size: Int,
     val type: String,
     val official: Boolean,
-    @SerializedName("published_at")
+    @SerialName("published_at")
     val publishedAt: String,
     val id: String,
 ) // TMDB 서버로부터 받은 영화 비디오 상세 정보

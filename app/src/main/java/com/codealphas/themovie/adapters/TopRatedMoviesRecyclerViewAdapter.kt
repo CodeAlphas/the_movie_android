@@ -14,14 +14,14 @@ import com.codealphas.themovie.views.MovieDetailActivity
 class TopRatedMoviesRecyclerViewAdapter(
     var context: Context,
 ) : RecyclerView.Adapter<TopRatedMoviesRecyclerViewAdapter.ViewHolder>() {
-    var items = ArrayList<MovieItem>()
+    var items: List<MovieItem> = emptyList()
 
     inner class ViewHolder(
         private val itemBinding: MovieItemBinding,
     ) : RecyclerView.ViewHolder(itemBinding.root) {
         // 뷰와 데이터를 연결해주는 메소드
         fun bind(data: MovieItem) {
-            val imageUrl = "https://image.tmdb.org/t/p/w500" + data.posterPath
+            val imageUrl = data.posterPath?.let { "https://image.tmdb.org/t/p/w500$it" }
 
             // 뷰에 Glide 라이브러리를 이용하여 이미지 로드
             Glide
@@ -67,7 +67,7 @@ class TopRatedMoviesRecyclerViewAdapter(
     override fun getItemCount(): Int = items.size
 
     // 리싸이클러뷰를 갱신해주는 메소드
-    fun setUpdatedData(items: ArrayList<MovieItem>) {
+    fun setUpdatedData(items: List<MovieItem>) {
         this.items = items
         notifyDataSetChanged()
     }
