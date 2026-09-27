@@ -16,11 +16,16 @@ gradlePlugin {
             id = "movie.android.hilt"
             implementationClass = "com.codealphas.themovie.HiltConventionPlugin"
         }
+        register("jvmLibrary") {
+            id = "movie.jvm.library"
+            implementationClass = "com.codealphas.themovie.JvmLibraryConventionPlugin"
+        }
     }
 }
 
 dependencies {
     compileOnly(libs.android.gradle.plugin)
+    compileOnly(libs.kotlin.gradle.plugin)
     compileOnly(libs.ktlint.gradle.plugin)
     compileOnly(libs.detekt.gradle.plugin)
     // AGP 9가 맞춘 KSP 2.2.10-2.0.2는 생성 파일을 android.sourceSets에 넣지 않아 컴파일에서 빠지므로, KSP 2.3.12를 클래스패스에 고정

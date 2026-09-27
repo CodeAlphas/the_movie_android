@@ -3,8 +3,8 @@ package com.codealphas.themovie.viewmodels
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.codealphas.themovie.domain.DataResult
-import com.codealphas.themovie.domain.RemoteError
+import com.codealphas.themovie.domain.result.DataResult
+import com.codealphas.themovie.domain.result.RemoteError
 import com.codealphas.themovie.models.CreditsFromServer
 import com.codealphas.themovie.models.MoviesFromServer
 import com.codealphas.themovie.models.VideosFromServer

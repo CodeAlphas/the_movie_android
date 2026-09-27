@@ -18,7 +18,6 @@ class QualityConventionPlugin : Plugin<Project> {
                 buildUponDefaultConfig.set(true)
                 config.setFrom(rootProject.file("config/detekt/detekt.yml"))
                 parallel.set(true)
-                baseline.set(layout.projectDirectory.file("detekt-baseline.xml"))
             }
         }
     }

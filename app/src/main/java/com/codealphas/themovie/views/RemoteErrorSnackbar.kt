@@ -6,7 +6,7 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.codealphas.themovie.R
-import com.codealphas.themovie.domain.RemoteError
+import com.codealphas.themovie.domain.result.RemoteError
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch

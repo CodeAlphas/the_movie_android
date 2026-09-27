@@ -1,4 +1,4 @@
-package com.codealphas.themovie.domain
+package com.codealphas.themovie.domain.result
 
 sealed interface DataResult<out T> {
     data class Success<T>(

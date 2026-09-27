@@ -32,6 +32,7 @@ android {
 }
 
 dependencies {
+    implementation(project(":domain"))
     implementation(libs.androidx.annotation.experimental)
     implementation(libs.androidx.activity.ktx)
     implementation(libs.androidx.appcompat)

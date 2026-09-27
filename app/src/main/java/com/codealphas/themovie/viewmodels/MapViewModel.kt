@@ -4,8 +4,8 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.codealphas.themovie.domain.DataResult
-import com.codealphas.themovie.domain.RemoteError
+import com.codealphas.themovie.domain.result.DataResult
+import com.codealphas.themovie.domain.result.RemoteError
 import com.codealphas.themovie.models.AddressFromServer
 import com.codealphas.themovie.models.PoisFromServer
 import com.codealphas.themovie.networks.MapApiService

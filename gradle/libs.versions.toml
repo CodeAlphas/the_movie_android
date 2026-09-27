@@ -34,6 +34,8 @@ ktlint = "14.2.0"
 hilt = "2.59.2"
 # detekt 1.23은 AGP 9의 built-in Kotlin을 분석하지 못하므로 2.0 alpha를 사용
 detekt = "2.0.0-alpha.6"
+# :domain의 @Inject는 javax.inject 애너테이션이므로 1을 사용
+javaxInject = "1"
 
 [libraries]
 androidx-annotation-experimental = { group = "androidx.annotation", name = "annotation-experimental", version.ref = "annotationExperimental" }
@@ -58,7 +60,9 @@ retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = 
 retrofit-converter-kotlinx-serialization = { group = "com.squareup.retrofit2", name = "converter-kotlinx-serialization", version.ref = "retrofit" }
 okhttp-mockwebserver = { group = "com.squareup.okhttp3", name = "mockwebserver", version.ref = "okhttp" }
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
+kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "coroutines" }
 kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
+javax-inject = { group = "javax.inject", name = "javax.inject", version.ref = "javaxInject" }
 kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutines" }
 kotlinx-coroutines-play-services = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-play-services", version.ref = "coroutines" }
 glide = { group = "com.github.bumptech.glide", name = "glide", version.ref = "glide" }
@@ -70,6 +74,7 @@ firebase-storage = { group = "com.google.firebase", name = "firebase-storage" }
 firebase-messaging = { group = "com.google.firebase", name = "firebase-messaging" }
 ksp-symbol-processing = { module = "com.google.devtools.ksp:symbol-processing-gradle-plugin", version.ref = "ksp" }
 android-gradle-plugin = { group = "com.android.tools.build", name = "gradle", version.ref = "agp" }
+kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 ktlint-gradle-plugin = { module = "org.jlleitschuh.gradle:ktlint-gradle", version.ref = "ktlint" }
 detekt-gradle-plugin = { module = "dev.detekt:detekt-gradle-plugin", version.ref = "detekt" }
 hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
@@ -85,4 +90,5 @@ hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 secrets = { id = "com.google.android.libraries.mapsplatform.secrets-gradle-plugin", version.ref = "secrets" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint" }
 detekt = { id = "dev.detekt", version.ref = "detekt" }
+jetbrains-kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 
