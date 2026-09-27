@@ -19,6 +19,8 @@ lifecycle = "2.8.7"
 room = "2.7.2"
 ksp = "2.3.12"
 retrofit = "3.0.0"
+# Retrofit 3.0.0이 가져오는 OkHttp가 4.12.0이므로, mockwebserver도 그 버전을 사용
+okhttp = "4.12.0"
 # 1.10.0부터는 Kotlin 2.3으로 빌드되므로, Kotlin 2.2.10에서 동작하도록 Kotlin 2.2.0으로 빌드된 1.9.0을 사용
 kotlinxSerialization = "1.9.0"
 coroutines = "1.10.2"
@@ -54,6 +56,7 @@ androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = 
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
 retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
 retrofit-converter-kotlinx-serialization = { group = "com.squareup.retrofit2", name = "converter-kotlinx-serialization", version.ref = "retrofit" }
+okhttp-mockwebserver = { group = "com.squareup.okhttp3", name = "mockwebserver", version.ref = "okhttp" }
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
 kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
 kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutines" }

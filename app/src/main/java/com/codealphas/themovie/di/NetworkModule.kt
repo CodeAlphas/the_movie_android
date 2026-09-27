@@ -1,6 +1,7 @@
 package com.codealphas.themovie.di
 
 import com.codealphas.themovie.networks.MapApiService
+import com.codealphas.themovie.networks.RetryInterceptor
 import com.codealphas.themovie.networks.TmapApiKeyInterceptor
 import com.codealphas.themovie.networks.TmdbApiKeyInterceptor
 import com.codealphas.themovie.networks.TmdbApiService
@@ -28,15 +29,22 @@ object NetworkModule {
             explicitNulls = false
         }
 
+    @Provides
+    @Singleton
+    fun provideRetryInterceptor(): RetryInterceptor = RetryInterceptor()
+
     // TMDB와 TMap은 붙이는 인증 키가 다르므로, 클라이언트도 API별로 나눔
     @Provides
     @Singleton
     @TmdbOkHttp
     fun provideTmdbOkHttpClient(
         @TmdbApiKey apiKey: String,
+        retryInterceptor: RetryInterceptor,
     ): OkHttpClient =
         OkHttpClient
             .Builder()
+            // proceed()는 다음 인터셉터로 들어가므로, 재시도마다 인증 키를 다시 붙이도록 키 인터셉터보다 먼저 등록
+            .addInterceptor(retryInterceptor)
             .addInterceptor(TmdbApiKeyInterceptor(apiKey))
             .build()
 
@@ -45,9 +53,12 @@ object NetworkModule {
     @TmapOkHttp
     fun provideTmapOkHttpClient(
         @TmapApiKey apiKey: String,
+        retryInterceptor: RetryInterceptor,
     ): OkHttpClient =
         OkHttpClient
             .Builder()
+            // proceed()는 다음 인터셉터로 들어가므로, 재시도마다 인증 키를 다시 붙이도록 키 인터셉터보다 먼저 등록
+            .addInterceptor(retryInterceptor)
             .addInterceptor(TmapApiKeyInterceptor(apiKey))
             .build()
 

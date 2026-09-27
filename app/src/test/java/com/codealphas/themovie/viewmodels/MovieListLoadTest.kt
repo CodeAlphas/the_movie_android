@@ -22,7 +22,7 @@ import java.io.IOException
 @OptIn(ExperimentalCoroutinesApi::class)
 class MovieListLoadTest {
     @Test
-    fun skipsPopularRequestWhilePreviousIsActive() =
+    fun `인기 영화 요청이 진행 중일 때 다시 요청하면 서버를 한 번만 호출해야 한다`() =
         runTest {
             Dispatchers.setMain(StandardTestDispatcher(testScheduler))
             val service = FakeTmdbApiService(hangPopular = true)
@@ -40,7 +40,7 @@ class MovieListLoadTest {
         }
 
     @Test
-    fun requestsPopularAgainAfterPreviousFailure() =
+    fun `인기 영화 요청이 실패한 뒤 다시 요청하면 서버를 한 번 더 호출해야 한다`() =
         runTest {
             Dispatchers.setMain(StandardTestDispatcher(testScheduler))
             val service = FakeTmdbApiService(hangPopular = false)
