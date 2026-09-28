@@ -27,6 +27,18 @@ class LogoutUseCaseTest {
 private class FakeAuthRepository(
     private val calls: MutableList<String>,
 ) : AuthRepository {
+    override suspend fun signIn(
+        email: String,
+        password: String,
+    ): AuthResult = error("사용하지 않음")
+
+    override suspend fun signUp(
+        email: String,
+        password: String,
+    ): AuthResult = error("사용하지 않음")
+
+    override fun currentUserId(): String? = error("사용하지 않음")
+
     override fun signOut() {
         calls += "signOut"
     }

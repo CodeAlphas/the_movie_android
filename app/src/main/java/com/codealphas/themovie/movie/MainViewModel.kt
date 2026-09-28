@@ -2,6 +2,7 @@ package com.codealphas.themovie.movie
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.codealphas.themovie.domain.auth.AuthRepository
 import com.codealphas.themovie.domain.auth.LogoutUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
@@ -14,10 +15,13 @@ import javax.inject.Inject
 class MainViewModel
     @Inject
     constructor(
+        private val authRepository: AuthRepository,
         private val logoutUseCase: LogoutUseCase,
     ) : ViewModel() {
         private val _logoutCompleted = Channel<Unit>(Channel.BUFFERED)
         val logoutCompleted: Flow<Unit> = _logoutCompleted.receiveAsFlow()
+
+        fun isSignedIn(): Boolean = authRepository.currentUserId() != null
 
         fun logout() {
             viewModelScope.launch {
