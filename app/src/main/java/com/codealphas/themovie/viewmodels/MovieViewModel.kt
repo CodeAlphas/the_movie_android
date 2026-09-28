@@ -1,15 +1,15 @@
 package com.codealphas.themovie.viewmodels
 
+import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.codealphas.themovie.domain.DataResult
-import com.codealphas.themovie.domain.RemoteError
-import com.codealphas.themovie.models.CreditsFromServer
-import com.codealphas.themovie.models.MoviesFromServer
-import com.codealphas.themovie.models.VideosFromServer
-import com.codealphas.themovie.networks.TmdbApiService
-import com.codealphas.themovie.networks.safeApiCall
+import com.codealphas.themovie.domain.movie.Cast
+import com.codealphas.themovie.domain.movie.Movie
+import com.codealphas.themovie.domain.movie.MovieRepository
+import com.codealphas.themovie.domain.movie.Video
+import com.codealphas.themovie.domain.result.DataResult
+import com.codealphas.themovie.domain.result.RemoteError
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -21,26 +21,26 @@ import javax.inject.Inject
 class MovieViewModel
     @Inject
     constructor(
-        private val service: TmdbApiService,
+        private val repository: MovieRepository,
     ) : ViewModel() {
-        private val _allPopMovies = MutableLiveData<MoviesFromServer>()
-        val allPopMovies: MutableLiveData<MoviesFromServer>
+        private val _allPopMovies = MutableLiveData<List<Movie>>()
+        val allPopMovies: LiveData<List<Movie>>
             get() = _allPopMovies
 
-        private val _allTopMovies = MutableLiveData<MoviesFromServer>()
-        val allTopMovies: MutableLiveData<MoviesFromServer>
+        private val _allTopMovies = MutableLiveData<List<Movie>>()
+        val allTopMovies: LiveData<List<Movie>>
             get() = _allTopMovies
 
-        private val _allSearchMovies = MutableLiveData<MoviesFromServer>()
-        val allSearchMovies: MutableLiveData<MoviesFromServer>
+        private val _allSearchMovies = MutableLiveData<List<Movie>>()
+        val allSearchMovies: LiveData<List<Movie>>
             get() = _allSearchMovies
 
-        private val _allVideos = MutableLiveData<VideosFromServer>()
-        val allVideos: MutableLiveData<VideosFromServer>
+        private val _allVideos = MutableLiveData<List<Video>>()
+        val allVideos: LiveData<List<Video>>
             get() = _allVideos
 
-        private val _allCredits = MutableLiveData<CreditsFromServer>()
-        val allCredits: MutableLiveData<CreditsFromServer>
+        private val _allCredits = MutableLiveData<List<Cast>>()
+        val allCredits: LiveData<List<Cast>>
             get() = _allCredits
 
         // replay가 1이면 화면이 다시 구독할 때 마지막 오류를 또 받으므로, 같은 안내가 다시 뜨지 않도록 replay를 0으로 설정
@@ -52,49 +52,53 @@ class MovieViewModel
 
         fun makePopMovieListApiCall() {
             popularLoad =
-                loadMovies(_allPopMovies.value, popularLoad, { service.getPopularMovieList() }) {
+                loadMovies(_allPopMovies.value, popularLoad, { repository.getPopularMovies() }) {
                     _allPopMovies.value = it
                 }
-        } // TMDB 서버로 인기 영화 정보를 요청하고 해당 정보를 받아오는 메소드
+        }
 
         fun makeTopRatedMovieListApiCall() {
             topRatedLoad =
-                loadMovies(_allTopMovies.value, topRatedLoad, { service.getTopRatedMovieList() }) {
+                loadMovies(_allTopMovies.value, topRatedLoad, { repository.getTopRatedMovies() }) {
                     _allTopMovies.value = it
                 }
-        } // TMDB 서버로 높은 평점의 영화 정보를 요청하고 해당 정보를 받아오는 메소드
+        }
 
         fun makeSearchMovieListApiCall(query: String) {
-            fetch({ service.getSearchedMovieList(query = query) }) { _allSearchMovies.value = it }
-        } // TMDB 서버로 검색한 영화의 정보를 요청하고 해당 정보를 받아오는 메소드
+            fetch({ repository.searchMovies(query) }) { _allSearchMovies.value = it }
+        }
 
         fun makeVideoApiCall(movieId: Int) {
-            fetch({ service.getVideosList(movieId = movieId) }) { _allVideos.value = it }
-        } // TMDB 서버로 영화의 동영상 정보를 요청하고 해당 정보를 받아오는 메소드
+            fetch({ repository.getVideos(movieId) }) { _allVideos.value = it }
+        }
 
         fun makeCreditApiCall(movieId: Int) {
-            fetch({ service.getCreditsList(movieId = movieId) }) { _allCredits.value = it }
-        } // TMDB 서버로 영화 관계자들의 정보를 요청하고 해당 정보를 받아오는 메소드
+            fetch({ repository.getCast(movieId) }) { _allCredits.value = it }
+        }
 
         // 응답 전에 다시 호출되면 LiveData가 아직 비어 같은 요청이 한 번 더 나가므로, 진행 중인 요청이 있으면 그 응답을 대기
         private fun loadMovies(
-            current: MoviesFromServer?,
+            current: List<Movie>?,
             ongoing: Job?,
-            block: suspend () -> MoviesFromServer,
-            onSuccess: (MoviesFromServer) -> Unit,
+            block: suspend () -> DataResult<List<Movie>>,
+            onSuccess: (List<Movie>) -> Unit,
         ): Job? {
             if (current != null || ongoing?.isActive == true) return ongoing
             return fetch(block, onSuccess)
         }
 
         private fun <T> fetch(
-            block: suspend () -> T,
+            block: suspend () -> DataResult<T>,
             onSuccess: (T) -> Unit,
         ): Job =
             viewModelScope.launch {
-                when (val result = safeApiCall(block)) {
+                when (val result = block()) {
                     is DataResult.Success -> onSuccess(result.data)
-                    is DataResult.Failure -> _remoteError.emit(result.error)
+                    is DataResult.Failure -> {
+                        // 실패를 빈 목록으로 넣으면 인기와 평점 LiveData가 null이 아니어서,
+                        // 탭이 다시 보일 때 재요청이 멈추므로 오류만 전달
+                        _remoteError.emit(result.error)
+                    }
                 }
             }
     }

@@ -6,25 +6,23 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.codealphas.themovie.databinding.ActorItemBinding
-import com.codealphas.themovie.models.CreditItem
+import com.codealphas.themovie.domain.movie.Cast
 
 // 영화 상세화면에서 등장인물 정보를 보여주는 리싸이클러뷰를 위한 어댑터
 class CreditsRecyclerViewAdapter(
     val context: Context,
 ) : RecyclerView.Adapter<CreditsRecyclerViewAdapter.ViewHolder>() {
-    private var items: List<CreditItem> = emptyList()
+    private var items: List<Cast> = emptyList()
 
     inner class ViewHolder(
         private val itemBinding: ActorItemBinding,
     ) : RecyclerView.ViewHolder(itemBinding.root) {
         // 뷰와 데이터를 연결해주는 메소드
-        fun bind(data: CreditItem) {
-            val imageUrl = data.profilePath?.let { "https://image.tmdb.org/t/p/w500$it" }
-
+        fun bind(data: Cast) {
             // 뷰에 Glide 라이브러리를 이용하여 이미지 로드
             Glide
                 .with(context)
-                .load(imageUrl)
+                .load(data.profileUrl)
                 .centerCrop()
                 .into(itemBinding.actorImageView)
             itemBinding.actorCharacterNameTextView.text = data.character
@@ -51,7 +49,7 @@ class CreditsRecyclerViewAdapter(
     override fun getItemCount(): Int = items.size
 
     // 리싸이클러뷰를 갱신해주는 메소드
-    fun setUpdatedData(items: List<CreditItem>) {
+    fun setUpdatedData(items: List<Cast>) {
         this.items = items
         notifyDataSetChanged()
     }

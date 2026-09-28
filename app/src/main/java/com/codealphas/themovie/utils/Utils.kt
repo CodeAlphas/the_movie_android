@@ -5,7 +5,7 @@ import android.util.DisplayMetrics
 import android.view.View
 import android.view.inputmethod.InputMethodManager
 import androidx.appcompat.app.AppCompatActivity
-import com.codealphas.themovie.models.Review
+import com.codealphas.themovie.domain.review.Review
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale

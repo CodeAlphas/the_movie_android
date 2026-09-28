@@ -19,7 +19,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.codealphas.themovie.R
 import com.codealphas.themovie.adapters.SearchMoviesRecyclerViewAdapter
 import com.codealphas.themovie.databinding.SearchMovieFragmentBinding
-import com.codealphas.themovie.models.MoviesFromServer
+import com.codealphas.themovie.domain.movie.Movie
 import com.codealphas.themovie.utils.ItemDecorator
 import com.codealphas.themovie.utils.Utils
 import com.codealphas.themovie.viewmodels.MovieViewModel
@@ -163,12 +163,8 @@ class FragmentSearchMovie : Fragment() {
             viewModel.allSearchMovies
                 .observe(
                     viewLifecycleOwner,
-                    Observer<MoviesFromServer> {
-                        if (it != null) {
-                            searchMoviesRecyclerViewAdapter.setUpdatedData(it.results)
-                        } else {
-                            // Log.d(TAG, "에러 발생")
-                        }
+                    Observer<List<Movie>> { movies ->
+                        searchMoviesRecyclerViewAdapter.setUpdatedData(movies)
                     },
                 )
         } // query가 화이트 스페이스로 이루어져 있지 않을 경우에만 TMDB 서버에 해당 문자열로 이루어진 영화 정보를 요청

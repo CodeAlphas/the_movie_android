@@ -7,26 +7,24 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.codealphas.themovie.databinding.MovieItemBinding
-import com.codealphas.themovie.models.MovieItem
+import com.codealphas.themovie.domain.movie.Movie
 import com.codealphas.themovie.views.MovieDetailActivity
 
 // 최고 평점 영화 표시화면에서 해당 영화정보를 보여주는 리싸이클러뷰를 위한 어댑터
 class TopRatedMoviesRecyclerViewAdapter(
     var context: Context,
 ) : RecyclerView.Adapter<TopRatedMoviesRecyclerViewAdapter.ViewHolder>() {
-    var items: List<MovieItem> = emptyList()
+    var items: List<Movie> = emptyList()
 
     inner class ViewHolder(
         private val itemBinding: MovieItemBinding,
     ) : RecyclerView.ViewHolder(itemBinding.root) {
         // 뷰와 데이터를 연결해주는 메소드
-        fun bind(data: MovieItem) {
-            val imageUrl = data.posterPath?.let { "https://image.tmdb.org/t/p/w500$it" }
-
+        fun bind(data: Movie) {
             // 뷰에 Glide 라이브러리를 이용하여 이미지 로드
             Glide
                 .with(context)
-                .load(imageUrl)
+                .load(data.posterUrl)
                 .centerCrop()
                 .into(itemBinding.imageViewMoviePoster)
             itemBinding.textViewMovieTitle.text = data.title
@@ -37,7 +35,7 @@ class TopRatedMoviesRecyclerViewAdapter(
                 val movie = items.get(position)
                 // 인텐트를 통하여 영화 상세화면에 영화 정보 전달
                 val intent = Intent(context, MovieDetailActivity::class.java)
-                intent.putExtra("poster", movie.posterPath)
+                intent.putExtra("poster", movie.posterUrl)
                 intent.putExtra("title", movie.title)
                 intent.putExtra("releaseDate", movie.releaseDate)
                 intent.putExtra("overview", movie.overview)
@@ -67,7 +65,7 @@ class TopRatedMoviesRecyclerViewAdapter(
     override fun getItemCount(): Int = items.size
 
     // 리싸이클러뷰를 갱신해주는 메소드
-    fun setUpdatedData(items: List<MovieItem>) {
+    fun setUpdatedData(items: List<Movie>) {
         this.items = items
         notifyDataSetChanged()
     }

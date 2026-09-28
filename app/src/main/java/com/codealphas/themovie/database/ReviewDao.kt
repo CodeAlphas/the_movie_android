@@ -1,6 +1,5 @@
 package com.codealphas.themovie.database
 
-import androidx.lifecycle.LiveData
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
@@ -8,22 +7,22 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Update
-import com.codealphas.themovie.models.Review
+import com.codealphas.themovie.models.ReviewEntity
+import kotlinx.coroutines.flow.Flow
 
-// 영화 감상문 정보 테이블에 접근할 수 있는 메소드를 선언해 놓은 인터페이스
 @Dao
 interface ReviewDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun insert(review: Review)
+    suspend fun insert(review: ReviewEntity)
 
     @Delete
-    suspend fun delete(review: Review)
+    suspend fun delete(review: ReviewEntity)
 
     @Update
-    suspend fun update(review: Review)
+    suspend fun update(review: ReviewEntity)
 
     @Transaction
-    suspend fun insertTransaction(review: Review): Int {
+    suspend fun insertTransaction(review: ReviewEntity): Int {
         insert(review)
         return getMaxId()
     }
@@ -35,5 +34,5 @@ interface ReviewDao {
     suspend fun deleteAll()
 
     @Query("SELECT * FROM reviewTable ORDER BY id DESC")
-    fun getAll(): LiveData<List<Review>>
+    fun getAll(): Flow<List<ReviewEntity>>
 }

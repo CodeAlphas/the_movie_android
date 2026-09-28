@@ -1,7 +1,7 @@
 package com.codealphas.themovie.networks
 
-import com.codealphas.themovie.domain.DataResult
-import com.codealphas.themovie.domain.RemoteError
+import com.codealphas.themovie.domain.result.DataResult
+import com.codealphas.themovie.domain.result.RemoteError
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.awaitCancellation
