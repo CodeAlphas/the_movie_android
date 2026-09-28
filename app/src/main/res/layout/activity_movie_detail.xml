@@ -35,10 +35,10 @@
             android:layout_marginBottom="2dp"
             android:ellipsize="end"
             android:lines="2"
-            android:text="TextView"
             android:textColor="?attr/colorOnSurface"
             android:textSize="20dp"
             android:textStyle="bold"
+            tools:text="TextView"
             app:layout_constraintBottom_toTopOf="@id/textRelease"
             app:layout_constraintLeft_toRightOf="@id/guideline3" />
 
@@ -46,9 +46,9 @@
             android:id="@+id/textRelease"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="TextView"
             android:textColor="?attr/colorOnSurfaceVariant"
             android:textSize="17dp"
+            tools:text="TextView"
             app:layout_constraintBottom_toTopOf="@+id/guideline2"
             app:layout_constraintLeft_toRightOf="@id/guideline3"
             app:layout_constraintTop_toTopOf="parent" />
@@ -58,9 +58,9 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="7dp"
-            android:text="평점 : "
             android:textColor="?attr/colorOnSurfaceVariant"
             android:textSize="17dp"
+            tools:text="평점 : "
             app:layout_constraintLeft_toLeftOf="@+id/guideline3"
             app:layout_constraintTop_toBottomOf="@id/textRelease" />
 
@@ -110,7 +110,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="7dp"
                 android:layout_marginTop="5dp"
-                android:text="배우 정보"
+                android:text="@string/movie_detail_cast_title"
                 android:textColor="?attr/colorOnSurface"
                 android:textSize="25dp"
                 android:textStyle="bold" />
@@ -127,7 +127,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="5dp"
                 android:layout_marginTop="5dp"
-                android:text="영상"
+                android:text="@string/movie_detail_video_title"
                 android:textColor="?attr/colorOnSurface"
                 android:textSize="25dp"
                 android:textStyle="bold" />
@@ -147,7 +147,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="7dp"
                 android:layout_marginTop="10dp"
-                android:text="줄거리"
+                android:text="@string/movie_detail_overview_title"
                 android:textColor="?attr/colorOnSurface"
                 android:textSize="25dp"
                 android:textStyle="bold" />
@@ -160,9 +160,9 @@
                 android:layout_marginTop="5dp"
                 android:layout_marginRight="7dp"
                 android:layout_marginBottom="5dp"
-                android:text="TextView"
                 android:textColor="?attr/colorOnSurface"
-                android:textSize="18dp" />
+                android:textSize="18dp"
+                tools:text="TextView" />
 
         </LinearLayout>
 

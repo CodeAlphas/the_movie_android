@@ -6,6 +6,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
+import com.codealphas.themovie.R
 import com.codealphas.themovie.core.android.ui.applySystemBarInsets
 import com.codealphas.themovie.core.android.ui.setupAppBar
 import com.codealphas.themovie.databinding.ActivityMovieDetailBinding
@@ -33,7 +34,7 @@ class MovieDetailActivity : AppCompatActivity() {
 
         binding = ActivityMovieDetailBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        setupAppBar(binding.toolbar, "더 무비")
+        setupAppBar(binding.toolbar, getString(R.string.app_name))
 
         initViews()
         viewModel.remoteError.observeRemoteError(this, binding.root)
@@ -55,9 +56,9 @@ class MovieDetailActivity : AppCompatActivity() {
             .load(poster)
             .into(binding.imagePoster)
         binding.textTitle.text = title
-        binding.textRelease.text = "$releaseDate 개봉"
+        binding.textRelease.text = getString(R.string.movie_detail_release, releaseDate.toString())
         binding.textOverview.text = overview
-        binding.textGrade.text = "평점 : $voteAverage"
+        binding.textGrade.text = getString(R.string.movie_detail_rating, voteAverage.toString())
         binding.ratingBar.rating = voteAverage.toFloat() / 2
     }
 

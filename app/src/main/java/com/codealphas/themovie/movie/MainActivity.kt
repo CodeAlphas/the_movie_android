@@ -29,7 +29,12 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private val viewModel: MainViewModel by viewModels()
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
-    private val tabTitles = arrayListOf("인기", "높은 평점", "검색")
+    private val tabTitleResIds =
+        intArrayOf(
+            R.string.movie_list_tab_popular,
+            R.string.movie_list_tab_top_rated,
+            R.string.movie_list_tab_search,
+        )
     private val tabIcons =
         arrayListOf(
             R.drawable.ic_baseline_movie_popular_24,
@@ -49,7 +54,7 @@ class MainActivity : AppCompatActivity() {
         applySystemBarInsets()
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        setupAppBar(binding.toolbar, "오늘의 인기 영화", showBack = false)
+        setupAppBar(binding.toolbar, getString(R.string.movie_list_appbar_popular), showBack = false)
         initViewPager()
         initTabLayout()
         linkViewPagerAndTabLayout()
@@ -79,9 +84,9 @@ class MainActivity : AppCompatActivity() {
                     binding.viewPager.currentItem = position
 
                     when (position) {
-                        0 -> supportActionBar?.title = "오늘의 인기 영화"
-                        1 -> supportActionBar?.title = "높은 평점 영화"
-                        else -> supportActionBar?.title = "영화 검색"
+                        0 -> supportActionBar?.title = getString(R.string.movie_list_appbar_popular)
+                        1 -> supportActionBar?.title = getString(R.string.movie_list_top_rated_subtitle)
+                        else -> supportActionBar?.title = getString(R.string.movie_list_appbar_search)
                     } // 탭 클릭시 해당 탭에 맞게 앱바(액션바)의 텍스트 변경
                 }
 
@@ -94,7 +99,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun linkViewPagerAndTabLayout() {
         TabLayoutMediator(binding.tabLayout, binding.viewPager) { tab, position ->
-            tab.text = tabTitles[position]
+            tab.text = getString(tabTitleResIds[position])
             tab.icon = getDrawable(tabIcons[position])
         }.attach() // 탭 레이아웃과 뷰페이저 연결
     }

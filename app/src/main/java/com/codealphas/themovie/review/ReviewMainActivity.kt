@@ -51,7 +51,7 @@ class ReviewMainActivity :
 
         binding = ActivityReviewMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        setupAppBar(binding.toolbar, "영화 감상문")
+        setupAppBar(binding.toolbar, getString(R.string.review_list_appbar_title))
 
         initRecyclerView()
         getReviewsFromServer()
@@ -153,7 +153,7 @@ class ReviewMainActivity :
 
     override fun onDeleteIconClick(review: Review) {
         reviewViewModel.deleteReview(review)
-        Toast.makeText(this, "감상문 ${review.title}가 삭제되었습니다.", Toast.LENGTH_LONG).show()
+        Toast.makeText(this, getString(R.string.review_list_deleted, review.title), Toast.LENGTH_LONG).show()
 
         reviewDB =
             Firebase.database.reference

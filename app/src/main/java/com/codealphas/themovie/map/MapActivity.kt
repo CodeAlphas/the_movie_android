@@ -53,7 +53,7 @@ class MapActivity :
 
         binding = ActivityMapBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        setupAppBar(binding.toolbar, "내 근처 영화관")
+        setupAppBar(binding.toolbar, getString(R.string.map_appbar_title))
 
         initGoogleMap()
         initCurrentLocationButton()
@@ -131,7 +131,7 @@ class MapActivity :
             ) {
                 setMyLocationListener()
             } else {
-                Toast.makeText(this, "권한을 부여받지 못했습니다.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.map_permission_denied), Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -173,7 +173,9 @@ class MapActivity :
                 onCurrentLocationChanged(currentLocationPos)
             } catch (e: Exception) {
                 Log.e("MapActivity", "위치 정보 갱신 불가", e)
-                Toast.makeText(this@MapActivity, "위치 정보 갱신 불가", Toast.LENGTH_SHORT).show()
+                Toast
+                    .makeText(this@MapActivity, getString(R.string.map_location_unavailable), Toast.LENGTH_SHORT)
+                    .show()
             }
         }
 
@@ -222,7 +224,7 @@ class MapActivity :
                             currentLocationPos.longitude.toDouble(),
                         ),
                     )
-                    currentMarker.title("현재 위치")
+                    currentMarker.title(getString(R.string.map_current_location))
                     currentMarker.snippet(address.fullAddress)
                     googleMap.addMarker(currentMarker)
                 },

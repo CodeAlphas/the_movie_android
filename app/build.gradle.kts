@@ -28,6 +28,9 @@ android {
         viewBinding = true
         buildConfig = true
     }
+    lint {
+        error += setOf("HardcodedText", "SetTextI18n")
+    }
 }
 
 dependencies {

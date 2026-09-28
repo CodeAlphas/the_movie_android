@@ -85,7 +85,7 @@ class ReviewDetailActivity : AppCompatActivity() {
 
         binding = ActivityReviewDetailBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        setupAppBar(binding.toolbar, "영화 감상문 작성")
+        setupAppBar(binding.toolbar, getString(R.string.review_edit_appbar_title))
 
         initViewContent()
         initTitleEditText()
@@ -115,9 +115,9 @@ class ReviewDetailActivity : AppCompatActivity() {
             }
             binding.contentEditText.setText(reviewContent)
             binding.reviewRatingBar.rating = reviewRating.toFloat() / 2
-            binding.button.text = "감상문 수정" // 사용자가 감상문 편집 모드로 진입할 경우
+            binding.button.text = getString(R.string.review_edit_update)
         } else {
-            binding.button.text = "감상문 등록" // 사용자가 감상문 등록 모드로 진입할 경우
+            binding.button.text = getString(R.string.review_edit_create)
         }
     }
 
@@ -147,13 +147,13 @@ class ReviewDetailActivity : AppCompatActivity() {
     private fun showImageControlDialog() {
         AlertDialog
             .Builder(this)
-            .setTitle("사진첨부 및 삭제")
-            .setMessage("사진을 첨부하거나 이미 첨부한 사진을 삭제하세요.")
-            .setNeutralButton("삭제") { _, _ ->
+            .setTitle(getString(R.string.review_edit_photo_dialog_title))
+            .setMessage(getString(R.string.review_edit_photo_dialog_message))
+            .setNeutralButton(getString(R.string.review_edit_photo_delete)) { _, _ ->
                 deleteImage()
-            }.setPositiveButton("갤러리") { _, _ ->
+            }.setPositiveButton(getString(R.string.review_edit_photo_gallery)) { _, _ ->
                 startGallery()
-            }.setNegativeButton("카메라") { _, _ ->
+            }.setNegativeButton(getString(R.string.review_edit_photo_camera)) { _, _ ->
                 startCamera()
             }.create()
             .show()
@@ -207,11 +207,11 @@ class ReviewDetailActivity : AppCompatActivity() {
     private fun showPermissionPopup() {
         AlertDialog
             .Builder(this)
-            .setTitle("권한이 필요합니다.")
-            .setMessage("더 무비앱에서 사진을 불러오기 위해 권한이 필요합니다.")
-            .setPositiveButton("허용") { _, _ ->
+            .setTitle(getString(R.string.review_edit_permission_title))
+            .setMessage(getString(R.string.review_edit_permission_gallery))
+            .setPositiveButton(getString(R.string.review_edit_permission_allow)) { _, _ ->
                 requestPermissions(arrayOf(readPermission), READ_PERMISSION_REQUEST_CODE)
-            }.setNegativeButton("차단") { _, _ -> }
+            }.setNegativeButton(getString(R.string.review_edit_permission_deny)) { _, _ -> }
             .create()
             .show()
     }
@@ -219,11 +219,11 @@ class ReviewDetailActivity : AppCompatActivity() {
     private fun showCameraPermissionPopup() {
         AlertDialog
             .Builder(this)
-            .setTitle("권한이 필요합니다.")
-            .setMessage("더 무비앱에서 사진을 촬영하기 위해 권한이 필요합니다.")
-            .setPositiveButton("허용") { _, _ ->
+            .setTitle(getString(R.string.review_edit_permission_title))
+            .setMessage(getString(R.string.review_edit_permission_camera))
+            .setPositiveButton(getString(R.string.review_edit_permission_allow)) { _, _ ->
                 requestPermissions(arrayOf(cameraPermission), CAMERA_PERMISSION_REQUEST_CODE)
-            }.setNegativeButton("차단") { _, _ -> }
+            }.setNegativeButton(getString(R.string.review_edit_permission_deny)) { _, _ -> }
             .create()
             .show()
     }
@@ -239,14 +239,14 @@ class ReviewDetailActivity : AppCompatActivity() {
                 if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     getPhoto() // 권한이 부여됨
                 } else {
-                    Toast.makeText(this, "권한을 거부하셨습니다.", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, getString(R.string.review_edit_permission_denied), Toast.LENGTH_SHORT).show()
                 }
             }
             CAMERA_PERMISSION_REQUEST_CODE -> {
                 if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     activateCamera() // 권한이 부여됨
                 } else {
-                    Toast.makeText(this, "권한을 거부하셨습니다.", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, getString(R.string.review_edit_permission_denied), Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -282,11 +282,11 @@ class ReviewDetailActivity : AppCompatActivity() {
                             .centerCrop()
                             .into(binding.imageView) // 사진을 올바르게 돌려서 imageView에 보여주기 위해 Glide 라이브러리 사용
                     } else {
-                        Toast.makeText(this, "사진을 가져오지 못했습니다.", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, getString(R.string.review_edit_photo_failed), Toast.LENGTH_SHORT).show()
                     }
                 }
                 else -> {
-                    Toast.makeText(this, "사진을 가져오지 못했습니다.", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, getString(R.string.review_edit_photo_failed), Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -303,11 +303,11 @@ class ReviewDetailActivity : AppCompatActivity() {
                             .centerCrop()
                             .into(binding.imageView) // 사진을 올바르게 돌려서 imageView에 보여주기 위해 Glide 라이브러리 사용
                     } else {
-                        Toast.makeText(this, "사진을 가져오지 못했습니다.22", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, getString(R.string.review_edit_photo_failed), Toast.LENGTH_SHORT).show()
                     }
                 }
                 else -> {
-                    Toast.makeText(this, "사진을 가져오지 못했습니다.11", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, getString(R.string.review_edit_photo_failed), Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -359,11 +359,13 @@ class ReviewDetailActivity : AppCompatActivity() {
                         currentRating,
                     )
 
-                    Toast.makeText(applicationContext, "감상문이 수정되었습니다.", Toast.LENGTH_LONG).show()
+                    Toast
+                        .makeText(applicationContext, getString(R.string.review_edit_updated), Toast.LENGTH_LONG)
+                        .show()
                     returnToReviewMain()
                 } else {
                     Toast
-                        .makeText(applicationContext, "제목과 내용을 모두 입력해주세요.", Toast.LENGTH_LONG)
+                        .makeText(applicationContext, getString(R.string.review_edit_input_required), Toast.LENGTH_LONG)
                         .show()
                 }
             } else {
@@ -393,7 +395,7 @@ class ReviewDetailActivity : AppCompatActivity() {
                                     Toast
                                         .makeText(
                                             applicationContext,
-                                            "감상문이 등록되었습니다.",
+                                            getString(R.string.review_edit_created),
                                             Toast.LENGTH_LONG,
                                         ).show()
                                     returnToReviewMain()
@@ -402,7 +404,7 @@ class ReviewDetailActivity : AppCompatActivity() {
                         )
                 } else {
                     Toast
-                        .makeText(applicationContext, "제목과 내용을 모두 입력해주세요.", Toast.LENGTH_LONG)
+                        .makeText(applicationContext, getString(R.string.review_edit_input_required), Toast.LENGTH_LONG)
                         .show()
                 }
             }
