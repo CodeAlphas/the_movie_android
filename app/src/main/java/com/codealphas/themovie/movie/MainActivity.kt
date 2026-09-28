@@ -11,9 +11,9 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.codealphas.themovie.R
 import com.codealphas.themovie.auth.LoginActivity
+import com.codealphas.themovie.core.android.ui.applySystemBarInsets
+import com.codealphas.themovie.core.android.ui.setupAppBar
 import com.codealphas.themovie.databinding.ActivityMainBinding
-import com.codealphas.themovie.utils.applySystemBarInsets
-import com.codealphas.themovie.utils.setupAppBar
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
 import com.google.firebase.auth.FirebaseAuth

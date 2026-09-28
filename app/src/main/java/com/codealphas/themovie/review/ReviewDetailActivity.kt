@@ -26,10 +26,10 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
 import com.codealphas.themovie.R
+import com.codealphas.themovie.core.android.ui.applySystemBarInsets
+import com.codealphas.themovie.core.android.ui.setupAppBar
 import com.codealphas.themovie.databinding.ActivityReviewDetailBinding
 import com.codealphas.themovie.domain.review.Review
-import com.codealphas.themovie.utils.applySystemBarInsets
-import com.codealphas.themovie.utils.setupAppBar
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth

@@ -6,12 +6,12 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
+import com.codealphas.themovie.core.android.ui.applySystemBarInsets
+import com.codealphas.themovie.core.android.ui.setupAppBar
 import com.codealphas.themovie.databinding.ActivityMovieDetailBinding
 import com.codealphas.themovie.domain.movie.Cast
 import com.codealphas.themovie.domain.movie.Video
 import com.codealphas.themovie.ui.observeRemoteError
-import com.codealphas.themovie.utils.applySystemBarInsets
-import com.codealphas.themovie.utils.setupAppBar
 import dagger.hilt.android.AndroidEntryPoint
 
 // YouTube Android Player API는 Maven에 없어 컴파일이 막힌다. Phase 5에서 교체한다.

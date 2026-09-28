@@ -17,12 +17,12 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Observer
 import com.codealphas.themovie.R
+import com.codealphas.themovie.core.android.ui.applySystemBarInsets
+import com.codealphas.themovie.core.android.ui.setupAppBar
 import com.codealphas.themovie.databinding.ActivityMapBinding
 import com.codealphas.themovie.domain.map.Address
 import com.codealphas.themovie.domain.map.Theater
 import com.codealphas.themovie.ui.observeRemoteError
-import com.codealphas.themovie.utils.applySystemBarInsets
-import com.codealphas.themovie.utils.setupAppBar
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback

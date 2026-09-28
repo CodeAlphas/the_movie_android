@@ -4,9 +4,9 @@ import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.codealphas.themovie.core.android.ui.applySystemBarInsets
 import com.codealphas.themovie.databinding.ActivityLoginBinding
 import com.codealphas.themovie.movie.MainActivity
-import com.codealphas.themovie.utils.applySystemBarInsets
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth

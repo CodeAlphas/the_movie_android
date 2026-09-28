@@ -1,4 +1,4 @@
-package com.codealphas.themovie.utils
+package com.codealphas.themovie.core.android.ui
 
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.appbar.MaterialToolbar

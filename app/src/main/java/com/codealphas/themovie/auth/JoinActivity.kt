@@ -4,8 +4,8 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.widget.doAfterTextChanged
+import com.codealphas.themovie.core.android.ui.applySystemBarInsets
 import com.codealphas.themovie.databinding.ActivityJoinBinding
-import com.codealphas.themovie.utils.applySystemBarInsets
 import com.google.android.material.color.MaterialColors
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth

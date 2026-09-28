@@ -1,4 +1,4 @@
-package com.codealphas.themovie.utils
+package com.codealphas.themovie.core.android.ui
 
 import android.view.ViewGroup
 import androidx.activity.enableEdgeToEdge
