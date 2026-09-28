@@ -3,12 +3,12 @@ package com.codealphas.themovie.data.map.remote
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class PoisFromServer(
+internal data class PoisFromServer(
     val searchPoiInfo: SearchPoiInfo,
 )
 
 @Serializable
-data class SearchPoiInfo(
+internal data class SearchPoiInfo(
     val totalCount: Int,
     val count: Int,
     val page: Int,
@@ -16,12 +16,12 @@ data class SearchPoiInfo(
 )
 
 @Serializable
-data class Pois(
+internal data class Pois(
     val poi: List<PoiItem>,
 )
 
 @Serializable
-data class PoiItem(
+internal data class PoiItem(
     val id: String,
     val name: String,
     val telNo: String,

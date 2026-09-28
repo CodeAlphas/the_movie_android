@@ -3,7 +3,7 @@ package com.codealphas.themovie.data.review
 import com.codealphas.themovie.data.review.local.ReviewEntity
 import com.codealphas.themovie.domain.review.Review
 
-fun ReviewEntity.toReview(): Review =
+internal fun ReviewEntity.toReview(): Review =
     Review(
         title = title,
         image = image,
@@ -14,7 +14,7 @@ fun ReviewEntity.toReview(): Review =
         id = id,
     )
 
-fun Review.toEntity(): ReviewEntity =
+internal fun Review.toEntity(): ReviewEntity =
     ReviewEntity(
         title = title,
         image = image,

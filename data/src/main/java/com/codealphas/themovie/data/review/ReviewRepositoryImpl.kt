@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
-class ReviewRepositoryImpl
+internal class ReviewRepositoryImpl
     @Inject
     constructor(
         private val reviewDao: ReviewDao,

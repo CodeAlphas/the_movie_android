@@ -13,7 +13,7 @@ import com.codealphas.themovie.domain.result.DataResult
 import com.codealphas.themovie.domain.result.map
 import javax.inject.Inject
 
-class MovieRepositoryImpl
+internal class MovieRepositoryImpl
     @Inject
     constructor(
         private val service: TmdbApiService,

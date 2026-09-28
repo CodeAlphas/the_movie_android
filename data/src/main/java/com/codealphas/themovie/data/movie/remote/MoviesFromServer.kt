@@ -4,13 +4,13 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class MoviesFromServer(
+internal data class MoviesFromServer(
     val page: Int,
     val results: List<MovieItem>,
 ) // TMDB 서버로부터 받은 영화 정보
 
 @Serializable
-data class MovieItem(
+internal data class MovieItem(
     val adult: Boolean,
     // TMDB는 이미지가 없는 영화에 backdrop_path, poster_path를 null로 주므로, 응답 전체가 파싱에 실패하지 않도록 두 경로를 nullable로 선언
     @SerialName("backdrop_path")

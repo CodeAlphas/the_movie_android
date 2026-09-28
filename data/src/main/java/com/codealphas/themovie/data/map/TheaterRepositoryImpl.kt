@@ -9,7 +9,7 @@ import com.codealphas.themovie.domain.result.DataResult
 import com.codealphas.themovie.domain.result.map
 import javax.inject.Inject
 
-class TheaterRepositoryImpl
+internal class TheaterRepositoryImpl
     @Inject
     constructor(
         private val service: MapApiService,

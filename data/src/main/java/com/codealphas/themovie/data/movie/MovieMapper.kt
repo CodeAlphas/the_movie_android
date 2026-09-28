@@ -12,7 +12,7 @@ private const val TMDB_W500_IMAGE_URL = "https://image.tmdb.org/t/p/w500"
 // poster_path, profile_path가 null이면 w500null을 요청하므로, 경로가 있을 때만 이미지 주소를 붙이도록 처리
 private fun tmdbImageUrl(path: String?): String? = path?.let { "$TMDB_W500_IMAGE_URL$it" }
 
-fun MovieItem.toMovie(): Movie =
+internal fun MovieItem.toMovie(): Movie =
     Movie(
         id = id,
         title = title,
@@ -22,11 +22,11 @@ fun MovieItem.toMovie(): Movie =
         voteAverage = voteAverage,
     )
 
-fun CreditItem.toCast(): Cast =
+internal fun CreditItem.toCast(): Cast =
     Cast(
         name = name,
         character = character,
         profileUrl = tmdbImageUrl(profilePath),
     )
 
-fun VideoItem.toVideo(): Video = Video(key = key)
+internal fun VideoItem.toVideo(): Video = Video(key = key)

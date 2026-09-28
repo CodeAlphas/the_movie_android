@@ -4,7 +4,7 @@ import okhttp3.Interceptor
 import okhttp3.Response
 
 // TMDB는 인증을 api_key 쿼리로 받으므로, 요청 URL에 키를 붙이도록 처리
-class TmdbApiKeyInterceptor(
+internal class TmdbApiKeyInterceptor(
     private val apiKey: String,
 ) : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {

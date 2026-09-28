@@ -6,9 +6,9 @@ import com.codealphas.themovie.data.map.remote.PoisFromServer
 import com.codealphas.themovie.domain.map.Address
 import com.codealphas.themovie.domain.map.Theater
 
-fun PoisFromServer.toTheaters(): List<Theater> = searchPoiInfo.pois.poi.map(PoiItem::toTheater)
+internal fun PoisFromServer.toTheaters(): List<Theater> = searchPoiInfo.pois.poi.map(PoiItem::toTheater)
 
-fun PoiItem.toTheater(): Theater =
+internal fun PoiItem.toTheater(): Theater =
     Theater(
         name = name,
         // MapActivity가 noorLat와 noorLon으로 마커를 찍고 있었으므로,
@@ -18,4 +18,4 @@ fun PoiItem.toTheater(): Theater =
         address = "$upperAddrName $middleAddrName $lowerAddrName $detailAddrName",
     )
 
-fun AddressFromServer.toAddress(): Address = Address(fullAddress = addressInfo.fullAddress)
+internal fun AddressFromServer.toAddress(): Address = Address(fullAddress = addressInfo.fullAddress)

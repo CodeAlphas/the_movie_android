@@ -4,7 +4,7 @@ import com.codealphas.themovie.domain.auth.AuthRepository
 import com.google.firebase.auth.FirebaseAuth
 import javax.inject.Inject
 
-class AuthRepositoryImpl
+internal class AuthRepositoryImpl
     @Inject
     constructor(
         private val auth: FirebaseAuth,

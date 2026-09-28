@@ -3,7 +3,7 @@ package com.codealphas.themovie.data.map.remote
 import retrofit2.http.GET
 import retrofit2.http.Query
 
-interface MapApiService {
+internal interface MapApiService {
     // 현재 위치(좌표)의 주소 정보 요청
     @GET("tmap/geo/reversegeocoding")
     suspend fun getCurrentAddress(

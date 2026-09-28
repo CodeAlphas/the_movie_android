@@ -5,7 +5,7 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 
 @Entity(tableName = "reviewTable")
-class ReviewEntity(
+internal class ReviewEntity(
     @ColumnInfo(name = "title")
     val title: String,
     @ColumnInfo(name = "image")

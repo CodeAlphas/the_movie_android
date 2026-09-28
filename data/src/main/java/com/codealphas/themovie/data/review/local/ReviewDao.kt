@@ -10,7 +10,7 @@ import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 
 @Dao
-interface ReviewDao {
+internal interface ReviewDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(review: ReviewEntity)
 

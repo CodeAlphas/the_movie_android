@@ -5,7 +5,7 @@ import okhttp3.Request
 import okhttp3.Response
 import java.io.IOException
 
-class RetryInterceptor(
+internal class RetryInterceptor(
     private val sleeper: (Long) -> Unit = { Thread.sleep(it) },
     private val random: () -> Double = { java.lang.Math.random() },
 ) : Interceptor {

@@ -8,7 +8,7 @@ import retrofit2.HttpException
 import java.io.IOException
 import java.net.SocketTimeoutException
 
-suspend fun <T> safeApiCall(block: suspend () -> T): DataResult<T> =
+internal suspend fun <T> safeApiCall(block: suspend () -> T): DataResult<T> =
     try {
         DataResult.Success(block())
     } catch (e: CancellationException) {
