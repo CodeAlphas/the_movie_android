@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/cardView"
     android:layout_width="180dp"
     android:layout_height="300dp"
@@ -29,9 +30,9 @@
             android:layout_margin="3dp"
             android:ellipsize="end"
             android:maxLines="1"
-            android:text="MovieTitle"
             android:textSize="18dp"
-            android:textStyle="bold" />
+            android:textStyle="bold"
+            tools:text="MovieTitle" />
 
     </LinearLayout>
 

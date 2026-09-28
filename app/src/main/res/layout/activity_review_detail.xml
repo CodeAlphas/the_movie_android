@@ -40,7 +40,7 @@
             android:layout_marginBottom="5dp"
             android:layout_weight="0.11"
             android:background="@drawable/custom_edittext"
-            android:hint="감상문 제목을 입력하세요"
+            android:hint="@string/review_edit_title_hint"
             android:padding="10dp"
             android:singleLine="true"
             android:textColor="?attr/colorOnSurfaceInverse"
@@ -72,7 +72,7 @@
             android:background="@drawable/custom_edittext"
             android:focusableInTouchMode="true"
             android:gravity="start|top"
-            android:hint="감상문 내용을 입력하세요"
+            android:hint="@string/review_edit_content_hint"
             android:inputType="textMultiLine"
             android:padding="10dp"
             android:singleLine="false"
@@ -114,9 +114,9 @@
             android:layout_gravity="center_vertical"
             android:layout_margin="10dp"
             android:background="@drawable/custom_button"
-            android:text="버튼"
             android:textAllCaps="false"
-            android:textColor="?attr/colorOnPrimary" />
+            android:textColor="?attr/colorOnPrimary"
+            tools:text="버튼" />
 
     </androidx.appcompat.widget.LinearLayoutCompat>
 
