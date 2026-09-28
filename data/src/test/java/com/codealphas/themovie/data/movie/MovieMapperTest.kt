@@ -1,8 +1,8 @@
 package com.codealphas.themovie.data.movie
 
-import com.codealphas.themovie.data.movie.remote.CreditItem
-import com.codealphas.themovie.data.movie.remote.MovieItem
-import com.codealphas.themovie.data.movie.remote.VideoItem
+import com.codealphas.themovie.data.movie.remote.CreditDto
+import com.codealphas.themovie.data.movie.remote.MovieDto
+import com.codealphas.themovie.data.movie.remote.VideoDto
 import com.codealphas.themovie.domain.movie.Cast
 import com.codealphas.themovie.domain.movie.Movie
 import com.codealphas.themovie.domain.movie.Video
@@ -94,8 +94,8 @@ private fun movieItem(
     releaseDate: String = "2024-01-02",
     overview: String = "줄거리",
     voteAverage: Double = 7.5,
-): MovieItem =
-    MovieItem(
+): MovieDto =
+    MovieDto(
         adult = false,
         backdropPath = "/backdrop.jpg",
         genreIds = emptyList(),
@@ -116,8 +116,8 @@ private fun creditItem(
     name: String = "이름",
     character: String = "배역",
     profilePath: String? = "/profile.jpg",
-): CreditItem =
-    CreditItem(
+): CreditDto =
+    CreditDto(
         adult = false,
         gender = null,
         id = 1,
@@ -132,8 +132,8 @@ private fun creditItem(
         order = 0,
     )
 
-private fun videoItem(key: String): VideoItem =
-    VideoItem(
+private fun videoItem(key: String): VideoDto =
+    VideoDto(
         iso6391 = "en",
         iso31661 = "US",
         name = "예고편",

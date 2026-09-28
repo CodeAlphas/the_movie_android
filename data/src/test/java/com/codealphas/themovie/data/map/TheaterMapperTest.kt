@@ -1,8 +1,8 @@
 package com.codealphas.themovie.data.map
 
-import com.codealphas.themovie.data.map.remote.AddressFromServer
-import com.codealphas.themovie.data.map.remote.AddressItem
-import com.codealphas.themovie.data.map.remote.PoiItem
+import com.codealphas.themovie.data.map.remote.AddressDto
+import com.codealphas.themovie.data.map.remote.AddressInfoDto
+import com.codealphas.themovie.data.map.remote.PoiDto
 import com.codealphas.themovie.domain.map.Address
 import com.codealphas.themovie.domain.map.Theater
 import org.junit.Assert.assertEquals
@@ -38,8 +38,8 @@ class TheaterMapperTest {
     }
 }
 
-private fun poiItem(): PoiItem =
-    PoiItem(
+private fun poiItem(): PoiDto =
+    PoiDto(
         id = "1",
         name = "CGV 강남",
         telNo = "02-000-0000",
@@ -60,10 +60,10 @@ private fun poiItem(): PoiItem =
         parkFlag = "0",
     )
 
-private fun addressFromServer(fullAddress: String?): AddressFromServer =
-    AddressFromServer(
+private fun addressFromServer(fullAddress: String?): AddressDto =
+    AddressDto(
         addressInfo =
-            AddressItem(
+            AddressInfoDto(
                 fullAddress = fullAddress,
                 addressType = null,
                 cityDo = "경기도",

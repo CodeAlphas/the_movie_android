@@ -4,13 +4,13 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-internal data class VideosFromServer(
+internal data class VideosDto(
     val id: Int,
-    val results: List<VideoItem>,
+    val results: List<VideoDto>,
 ) // TMDB 서버로부터 받은 영화 비디오 정보
 
 @Serializable
-internal data class VideoItem(
+internal data class VideoDto(
     @SerialName("iso_639_1")
     val iso6391: String,
     @SerialName("iso_3166_1")

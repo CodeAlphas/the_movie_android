@@ -4,12 +4,12 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-internal data class AddressFromServer(
-    val addressInfo: AddressItem,
+internal data class AddressDto(
+    val addressInfo: AddressInfoDto,
 )
 
 @Serializable
-internal data class AddressItem(
+internal data class AddressInfoDto(
     val fullAddress: String?,
     val addressType: String?,
     @SerialName("city_do")

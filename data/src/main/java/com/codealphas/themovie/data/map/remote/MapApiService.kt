@@ -13,7 +13,7 @@ internal interface MapApiService {
         @Query("coordType") coordType: String? = null,
         @Query("addressType") addressType: String? = null,
         @Query("callback") callback: String? = null,
-    ): AddressFromServer
+    ): AddressDto
 
     // 현재 위치를 기준으로 주변 영화관 정보 요청
     @GET("tmap/pois/search/around")
@@ -27,5 +27,5 @@ internal interface MapApiService {
         @Query("radius") radius: Int = 7, // 검색 반경, 1~33km
         @Query("multiPoint") multiPoint: String = "Y", // Y/N : 멀티입구점 미지원/지원
         @Query("callback") callback: String? = null,
-    ): PoisFromServer
+    ): PoisDto
 }

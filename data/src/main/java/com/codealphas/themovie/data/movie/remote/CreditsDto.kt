@@ -4,13 +4,13 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-internal data class CreditsFromServer(
+internal data class CreditsDto(
     val id: Int,
-    val cast: List<CreditItem>,
+    val cast: List<CreditDto>,
 ) // TMDB 서버로부터 받은 영화 관계자 정보
 
 @Serializable
-internal data class CreditItem(
+internal data class CreditDto(
     val adult: Boolean,
     val gender: Int?,
     val id: Int,
