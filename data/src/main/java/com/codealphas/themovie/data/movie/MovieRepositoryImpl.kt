@@ -1,16 +1,15 @@
 package com.codealphas.themovie.data.movie
 
-import com.codealphas.themovie.data.movie.remote.CreditDto
 import com.codealphas.themovie.data.movie.remote.MovieDto
 import com.codealphas.themovie.data.movie.remote.TmdbApiService
-import com.codealphas.themovie.data.movie.remote.VideoDto
 import com.codealphas.themovie.data.remote.safeApiCall
-import com.codealphas.themovie.domain.movie.Cast
 import com.codealphas.themovie.domain.movie.Movie
+import com.codealphas.themovie.domain.movie.MovieDetailResult
 import com.codealphas.themovie.domain.movie.MovieRepository
-import com.codealphas.themovie.domain.movie.Video
 import com.codealphas.themovie.domain.result.DataResult
 import com.codealphas.themovie.domain.result.map
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import javax.inject.Inject
 
 internal class MovieRepositoryImpl
@@ -27,9 +26,12 @@ internal class MovieRepositoryImpl
         override suspend fun searchMovies(query: String): DataResult<List<Movie>> =
             safeApiCall { service.getSearchedMovieList(query = query) }.map { it.results.map(MovieDto::toMovie) }
 
-        override suspend fun getVideos(movieId: Int): DataResult<List<Video>> =
-            safeApiCall { service.getVideosList(movieId = movieId) }.map { it.results.map(VideoDto::toVideo) }
-
-        override suspend fun getCast(movieId: Int): DataResult<List<Cast>> =
-            safeApiCall { service.getCreditsList(movieId = movieId) }.map { it.cast.map(CreditDto::toCast) }
+        override suspend fun getMovieDetail(movieId: Int): MovieDetailResult =
+            coroutineScope {
+                // 세 요청을 순서대로 기다리면 로딩이 요청마다 이어지므로, 같이 보낸 뒤 한 결과로 합침
+                val detail = async { safeApiCall { service.getMovieDetail(movieId = movieId) } }
+                val cast = async { safeApiCall { service.getCreditsList(movieId = movieId) } }
+                val videos = async { safeApiCall { service.getVideosList(movieId = movieId) } }
+                toMovieDetailResult(detail.await(), cast.await(), videos.await())
+            }
     }

@@ -135,7 +135,7 @@ class FragmentPopularMovieList : Fragment() {
     }
 
     private fun openMovieDetail(movie: Movie) {
-        startActivity(MovieDetailActivity.createIntent(requireContext(), movie))
+        startActivity(MovieDetailActivity.createIntent(requireContext(), movie.id))
     }
 
     private fun initFloatingActionButton() {

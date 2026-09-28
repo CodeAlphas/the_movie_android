@@ -1,10 +1,9 @@
 package com.codealphas.themovie.movie
 
 import androidx.lifecycle.viewModelScope
-import com.codealphas.themovie.domain.movie.Cast
 import com.codealphas.themovie.domain.movie.Movie
+import com.codealphas.themovie.domain.movie.MovieDetailResult
 import com.codealphas.themovie.domain.movie.MovieRepository
-import com.codealphas.themovie.domain.movie.Video
 import com.codealphas.themovie.domain.result.DataResult
 import com.codealphas.themovie.domain.result.RemoteError
 import kotlinx.coroutines.Dispatchers
@@ -205,7 +204,5 @@ private class FakeSearchMovieRepository(
 
     override suspend fun getTopRatedMovies(): DataResult<List<Movie>> = error("사용하지 않음")
 
-    override suspend fun getVideos(movieId: Int): DataResult<List<Video>> = error("사용하지 않음")
-
-    override suspend fun getCast(movieId: Int): DataResult<List<Cast>> = error("사용하지 않음")
+    override suspend fun getMovieDetail(movieId: Int): MovieDetailResult = error("사용하지 않음")
 }
