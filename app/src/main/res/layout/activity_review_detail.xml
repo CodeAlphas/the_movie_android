@@ -7,7 +7,7 @@
     android:background="?attr/colorSurface"
     android:clickable="true"
     android:focusableInTouchMode="true"
-    tools:context=".views.ReviewDetailActivity">
+    tools:context=".review.ReviewDetailActivity">
 
     <com.google.android.material.appbar.MaterialToolbar
         android:id="@+id/toolbar"

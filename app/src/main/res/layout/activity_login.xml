@@ -7,7 +7,7 @@
     android:background="?attr/colorSurface"
     android:gravity="center_horizontal"
     android:orientation="vertical"
-    tools:context=".views.LoginActivity">
+    tools:context=".auth.LoginActivity">
 
     <ImageView
         android:layout_width="260dp"

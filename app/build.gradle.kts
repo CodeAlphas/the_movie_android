@@ -1,33 +1,16 @@
 plugins {
-    alias(libs.plugins.android.application)
+    id("movie.android.application")
+    id("movie.android.hilt")
+    id("movie.quality")
     alias(libs.plugins.google.services)
-    alias(libs.plugins.ksp)
     alias(libs.plugins.secrets)
-    alias(libs.plugins.ktlint)
-    alias(libs.plugins.detekt)
-}
-
-ktlint {
-    android.set(true)
-}
-
-detekt {
-    buildUponDefaultConfig = true
-    config.setFrom(rootProject.file("config/detekt/detekt.yml"))
-    parallel = true
-    baseline = file("detekt-baseline.xml")
 }
 
 android {
     namespace = "com.codealphas.themovie"
-    compileSdk {
-        version = release(37)
-    }
 
     defaultConfig {
         applicationId = "com.codealphas.themovie"
-        minSdk = 24
-        targetSdk = 37
         versionCode = 1
         versionName = "1.0"
 
@@ -41,10 +24,6 @@ android {
             }
         }
     }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
-    }
     buildFeatures {
         viewBinding = true
         buildConfig = true
@@ -52,6 +31,9 @@ android {
 }
 
 dependencies {
+    implementation(project(":domain"))
+    implementation(project(":data"))
+    implementation(project(":core-android"))
     implementation(libs.androidx.activity.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.constraintlayout)
@@ -62,13 +44,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.androidx.recyclerview)
     implementation(libs.androidx.viewpager2)
-    implementation(libs.androidx.room.runtime)
-    implementation(libs.androidx.room.ktx)
-    ksp(libs.androidx.room.compiler)
     implementation(libs.material)
-    implementation(libs.retrofit)
-    implementation(libs.retrofit.converter.gson)
-    implementation(libs.gson)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.kotlinx.coroutines.play.services)
     implementation(libs.glide)
@@ -79,6 +55,7 @@ dependencies {
     implementation(libs.firebase.storage)
     implementation(libs.firebase.messaging)
     testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)
 }
