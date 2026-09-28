@@ -18,9 +18,9 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.Observer
 import com.codealphas.themovie.R
 import com.codealphas.themovie.databinding.ActivityMapBinding
-import com.codealphas.themovie.models.AddressFromServer
+import com.codealphas.themovie.domain.map.Address
+import com.codealphas.themovie.domain.map.Theater
 import com.codealphas.themovie.models.LocationLatLng
-import com.codealphas.themovie.models.PoisFromServer
 import com.codealphas.themovie.utils.applySystemBarInsets
 import com.codealphas.themovie.utils.setupAppBar
 import com.codealphas.themovie.viewmodels.MapViewModel
@@ -213,57 +213,42 @@ class MapActivity :
         viewModel.currentAddress
             .observe(
                 this,
-                Observer<AddressFromServer> {
-                    if (it != null) {
-                        googleMap.clear()
-                        it.addressInfo.apply {
-                            val currentMarker = MarkerOptions()
+                Observer<Address> { address ->
+                    googleMap.clear()
+                    val currentMarker = MarkerOptions()
 
-                            currentMarker.position(
-                                LatLng(
-                                    currentLocationPos.latitude.toDouble(),
-                                    currentLocationPos.longitude.toDouble(),
-                                ),
-                            )
-                            currentMarker.title("현재 위치")
-                            currentMarker.snippet(this.fullAddress)
-                            googleMap.addMarker(currentMarker)
-                        }
-                    } else {
-                        // Log.d(TAG, "에러 발생")
-                    }
+                    currentMarker.position(
+                        LatLng(
+                            currentLocationPos.latitude.toDouble(),
+                            currentLocationPos.longitude.toDouble(),
+                        ),
+                    )
+                    currentMarker.title("현재 위치")
+                    currentMarker.snippet(address.fullAddress)
+                    googleMap.addMarker(currentMarker)
                 },
             )
     }
 
     private fun showNearTheater(currentLocationPos: LocationLatLng) {
-        val categories = "영화관"
         val centerLat = currentLocationPos.latitude.toDouble()
         val centerLon = currentLocationPos.longitude.toDouble()
 
-        viewModel.makeTheaterListApiCall(categories, centerLat, centerLon)
+        viewModel.makeTheaterListApiCall(centerLat, centerLon)
         viewModel.allTheater
             .observe(
                 this,
-                Observer<PoisFromServer> {
-                    if (it != null) {
-                        it.searchPoiInfo.pois.apply {
-                            this.poi.forEach {
-                                val poiMarker = MarkerOptions()
-                                val bmDescriptor =
-                                    BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)
+                Observer<List<Theater>> { theaters ->
+                    theaters.forEach { theater ->
+                        val poiMarker = MarkerOptions()
+                        val bmDescriptor =
+                            BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)
 
-                                poiMarker.icon(bmDescriptor)
-                                poiMarker.position(LatLng(it.noorLat, it.noorLon))
-                                poiMarker.title(it.name)
-                                poiMarker.snippet(
-                                    "${it.upperAddrName} ${it.middleAddrName} ${it.lowerAddrName} ${it.detailAddrName}",
-                                )
-                                googleMap.addMarker(poiMarker)
-                            }
-                        }
-                    } else {
-                        // Log.d(TAG, "에러 발생")
+                        poiMarker.icon(bmDescriptor)
+                        poiMarker.position(LatLng(theater.latitude, theater.longitude))
+                        poiMarker.title(theater.name)
+                        poiMarker.snippet(theater.address)
+                        googleMap.addMarker(poiMarker)
                     }
                 },
             )

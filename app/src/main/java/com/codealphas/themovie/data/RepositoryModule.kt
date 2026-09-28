@@ -1,7 +1,9 @@
 package com.codealphas.themovie.data
 
+import com.codealphas.themovie.data.map.TheaterRepositoryImpl
 import com.codealphas.themovie.data.movie.MovieRepositoryImpl
 import com.codealphas.themovie.data.review.ReviewRepositoryImpl
+import com.codealphas.themovie.domain.map.TheaterRepository
 import com.codealphas.themovie.domain.movie.MovieRepository
 import com.codealphas.themovie.domain.review.ReviewRepository
 import dagger.Binds
@@ -20,4 +22,8 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindReviewRepository(impl: ReviewRepositoryImpl): ReviewRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindTheaterRepository(impl: TheaterRepositoryImpl): TheaterRepository
 }
