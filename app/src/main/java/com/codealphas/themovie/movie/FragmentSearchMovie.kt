@@ -13,7 +13,9 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.Observer
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.codealphas.themovie.R
@@ -23,6 +25,7 @@ import com.codealphas.themovie.map.MapActivity
 import com.codealphas.themovie.review.ReviewMainActivity
 import com.codealphas.themovie.ui.observeRemoteError
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class FragmentSearchMovie : Fragment() {
@@ -38,8 +41,8 @@ class FragmentSearchMovie : Fragment() {
     val binding get() = _binding!!
     private var query: String? = "" // editText 뷰를 통해 검색된 영화 이름
     private var buttonClicked = false
-    private lateinit var searchMoviesRecyclerViewAdapter: SearchMoviesRecyclerViewAdapter
-    private val viewModel: MovieViewModel by viewModels()
+    private lateinit var movieAdapter: MovieAdapter
+    private val viewModel: SearchMovieViewModel by viewModels()
     private val rotateOpen: Animation by lazy { AnimationUtils.loadAnimation(context, R.anim.rotate_open_anim) }
     private val rotateClose: Animation by lazy { AnimationUtils.loadAnimation(context, R.anim.rotate_close_anim) }
     private val fromBottom: Animation by lazy { AnimationUtils.loadAnimation(context, R.anim.from_bottom_anim) }
@@ -84,8 +87,8 @@ class FragmentSearchMovie : Fragment() {
                 requireContext(),
             ),
         )
-        searchMoviesRecyclerViewAdapter = SearchMoviesRecyclerViewAdapter(requireContext())
-        binding.searchMovieRecyclerView.adapter = searchMoviesRecyclerViewAdapter
+        movieAdapter = MovieAdapter { movie -> openMovieDetail(movie) }
+        binding.searchMovieRecyclerView.adapter = movieAdapter
         binding.searchMovieRecyclerView.addOnScrollListener(
             object :
                 RecyclerView.OnScrollListener() {
@@ -155,18 +158,21 @@ class FragmentSearchMovie : Fragment() {
         }
     }
 
-    // 검색한 영화에 대한 정보를 TMDB 서버에 요청하고 해당정보를 리싸이클러뷰에 보여주는 메소드
     private fun sendRequest() {
-        if (query != null && query!!.isNotBlank()) {
-            viewModel.makeSearchMovieListApiCall(query!!)
-            viewModel.allSearchMovies
-                .observe(
-                    viewLifecycleOwner,
-                    Observer<List<Movie>> { movies ->
-                        searchMoviesRecyclerViewAdapter.setUpdatedData(movies)
-                    },
-                )
-        } // query가 화이트 스페이스로 이루어져 있지 않을 경우에만 TMDB 서버에 해당 문자열로 이루어진 영화 정보를 요청
+        val text = query
+        if (text.isNullOrBlank()) return
+        viewModel.search(text)
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.uiState.collect { state ->
+                    state.movies?.let { movies -> movieAdapter.submitList(movies) }
+                }
+            }
+        }
+    }
+
+    private fun openMovieDetail(movie: Movie) {
+        startActivity(MovieDetailActivity.createIntent(requireContext(), movie))
     }
 
     private fun addButtonClicked() {
