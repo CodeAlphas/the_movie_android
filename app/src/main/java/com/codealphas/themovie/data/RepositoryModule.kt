@@ -1,8 +1,10 @@
 package com.codealphas.themovie.data
 
+import com.codealphas.themovie.data.auth.AuthRepositoryImpl
 import com.codealphas.themovie.data.map.TheaterRepositoryImpl
 import com.codealphas.themovie.data.movie.MovieRepositoryImpl
 import com.codealphas.themovie.data.review.ReviewRepositoryImpl
+import com.codealphas.themovie.domain.auth.AuthRepository
 import com.codealphas.themovie.domain.map.TheaterRepository
 import com.codealphas.themovie.domain.movie.MovieRepository
 import com.codealphas.themovie.domain.review.ReviewRepository
@@ -26,4 +28,8 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindTheaterRepository(impl: TheaterRepositoryImpl): TheaterRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindAuthRepository(impl: AuthRepositoryImpl): AuthRepository
 }
