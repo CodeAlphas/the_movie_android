@@ -1,12 +1,12 @@
 package com.codealphas.themovie.data.map
 
+import com.codealphas.themovie.data.map.remote.MapApiService
+import com.codealphas.themovie.data.remote.safeApiCall
 import com.codealphas.themovie.domain.map.Address
 import com.codealphas.themovie.domain.map.Theater
 import com.codealphas.themovie.domain.map.TheaterRepository
 import com.codealphas.themovie.domain.result.DataResult
 import com.codealphas.themovie.domain.result.map
-import com.codealphas.themovie.networks.MapApiService
-import com.codealphas.themovie.networks.safeApiCall
 import javax.inject.Inject
 
 class TheaterRepositoryImpl

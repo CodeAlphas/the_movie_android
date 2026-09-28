@@ -1,10 +1,10 @@
 package com.codealphas.themovie.data.map
 
+import com.codealphas.themovie.data.map.remote.AddressFromServer
+import com.codealphas.themovie.data.map.remote.AddressItem
+import com.codealphas.themovie.data.map.remote.PoiItem
 import com.codealphas.themovie.domain.map.Address
 import com.codealphas.themovie.domain.map.Theater
-import com.codealphas.themovie.models.AddressFromServer
-import com.codealphas.themovie.models.AddressItem
-import com.codealphas.themovie.models.PoiItem
 import org.junit.Assert.assertEquals
 import org.junit.Test
 

@@ -1,11 +1,11 @@
 package com.codealphas.themovie.data.movie
 
+import com.codealphas.themovie.data.movie.remote.CreditItem
+import com.codealphas.themovie.data.movie.remote.MovieItem
+import com.codealphas.themovie.data.movie.remote.VideoItem
 import com.codealphas.themovie.domain.movie.Cast
 import com.codealphas.themovie.domain.movie.Movie
 import com.codealphas.themovie.domain.movie.Video
-import com.codealphas.themovie.models.CreditItem
-import com.codealphas.themovie.models.MovieItem
-import com.codealphas.themovie.models.VideoItem
 
 private const val TMDB_W500_IMAGE_URL = "https://image.tmdb.org/t/p/w500"
 

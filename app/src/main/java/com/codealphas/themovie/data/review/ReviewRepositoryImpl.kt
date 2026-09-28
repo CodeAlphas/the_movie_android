@@ -1,9 +1,9 @@
 package com.codealphas.themovie.data.review
 
-import com.codealphas.themovie.database.ReviewDao
+import com.codealphas.themovie.data.review.local.ReviewDao
+import com.codealphas.themovie.data.review.local.ReviewEntity
 import com.codealphas.themovie.domain.review.Review
 import com.codealphas.themovie.domain.review.ReviewRepository
-import com.codealphas.themovie.models.ReviewEntity
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject

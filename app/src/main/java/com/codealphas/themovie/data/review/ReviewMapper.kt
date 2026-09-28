@@ -1,7 +1,7 @@
 package com.codealphas.themovie.data.review
 
+import com.codealphas.themovie.data.review.local.ReviewEntity
 import com.codealphas.themovie.domain.review.Review
-import com.codealphas.themovie.models.ReviewEntity
 
 fun ReviewEntity.toReview(): Review =
     Review(

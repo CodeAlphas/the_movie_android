@@ -1,16 +1,16 @@
 package com.codealphas.themovie.data.movie
 
+import com.codealphas.themovie.data.movie.remote.CreditItem
+import com.codealphas.themovie.data.movie.remote.MovieItem
+import com.codealphas.themovie.data.movie.remote.TmdbApiService
+import com.codealphas.themovie.data.movie.remote.VideoItem
+import com.codealphas.themovie.data.remote.safeApiCall
 import com.codealphas.themovie.domain.movie.Cast
 import com.codealphas.themovie.domain.movie.Movie
 import com.codealphas.themovie.domain.movie.MovieRepository
 import com.codealphas.themovie.domain.movie.Video
 import com.codealphas.themovie.domain.result.DataResult
 import com.codealphas.themovie.domain.result.map
-import com.codealphas.themovie.models.CreditItem
-import com.codealphas.themovie.models.MovieItem
-import com.codealphas.themovie.models.VideoItem
-import com.codealphas.themovie.networks.TmdbApiService
-import com.codealphas.themovie.networks.safeApiCall
 import javax.inject.Inject
 
 class MovieRepositoryImpl
