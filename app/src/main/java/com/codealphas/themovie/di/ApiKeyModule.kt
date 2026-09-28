@@ -1,6 +1,8 @@
 package com.codealphas.themovie.di
 
 import com.codealphas.themovie.BuildConfig
+import com.codealphas.themovie.data.di.TmapApiKey
+import com.codealphas.themovie.data.di.TmdbApiKey
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

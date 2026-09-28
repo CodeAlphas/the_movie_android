@@ -20,6 +20,10 @@ gradlePlugin {
             id = "movie.jvm.library"
             implementationClass = "com.codealphas.themovie.JvmLibraryConventionPlugin"
         }
+        register("androidLibrary") {
+            id = "movie.android.library"
+            implementationClass = "com.codealphas.themovie.AndroidLibraryConventionPlugin"
+        }
     }
 }
 
