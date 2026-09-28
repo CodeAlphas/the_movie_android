@@ -39,7 +39,6 @@ class FragmentSearchMovie : Fragment() {
 
     private var _binding: SearchMovieFragmentBinding? = null
     val binding get() = _binding!!
-    private var query: String? = "" // editText 뷰를 통해 검색된 영화 이름
     private var buttonClicked = false
     private lateinit var movieAdapter: MovieAdapter
     private val viewModel: SearchMovieViewModel by viewModels()
@@ -64,11 +63,10 @@ class FragmentSearchMovie : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         initRecyclerView()
+        initViewModel()
         initFloatingActionButton()
         initSearchViews()
         clearFocusWhenImeHides()
-        // 검색어가 바뀔 때마다 sendRequest가 목록 구독을 추가하므로, 구독이 쌓이지 않도록 오류 안내는 여기서 한 번만 구독
-        viewModel.remoteError.observeRemoteError(viewLifecycleOwner, binding.root)
     }
 
     override fun onDestroyView() {
@@ -127,22 +125,34 @@ class FragmentSearchMovie : Fragment() {
         }
     }
 
+    private fun initViewModel() {
+        viewModel.remoteError.observeRemoteError(viewLifecycleOwner, binding.root)
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.uiState.collect { state ->
+                    val movies = state.movies ?: return@collect
+                    movieAdapter.submitList(movies)
+                }
+            }
+        }
+    }
+
     private fun initSearchViews() {
         binding.searchView.setOnQueryTextListener(
             object : SearchView.OnQueryTextListener {
-                override fun onQueryTextSubmit(p0: String?): Boolean {
-                    query = p0
-                    sendRequest()
-                    // SearchView는 onQueryTextSubmit이 true면 키보드를 내리지 않으므로, 검색 후 키보드가 남아 있지 않도록 포커스를 해제
+                override fun onQueryTextSubmit(query: String?): Boolean {
+                    // onQueryTextSubmit이 true를 반환하면 SearchView는 제출이 처리된 것으로 보고 키보드를 숨기지 않으므로,
+                    // 검색 뒤에 키보드가 화면에 남아 있지 않도록 포커스를 해제
                     binding.searchView.clearFocus()
                     return true
-                } // 검색 버튼을 누른 경우 호출
+                }
 
-                override fun onQueryTextChange(p0: String?): Boolean {
-                    query = p0
-                    sendRequest()
+                override fun onQueryTextChange(newText: String?): Boolean {
+                    // 검색창을 비울 때 빈 문자열을 queryText에 넣지 않으면 이전 검색어가 남고 StateFlow는 observeQuery에 같은 값을 다시 넘기지 않으므로,
+                    // 비운 뒤 같은 검색어를 다시 입력해도 요청이 나가도록 빈 문자열도 반영
+                    viewModel.onQueryChange(newText.orEmpty())
                     return true
-                } // 검색어가 입력중일 경우 호출
+                }
             },
         )
     }
@@ -155,19 +165,6 @@ class FragmentSearchMovie : Fragment() {
             if (imeVisible && !visible) binding.searchView.clearFocus()
             imeVisible = visible
             insets
-        }
-    }
-
-    private fun sendRequest() {
-        val text = query
-        if (text.isNullOrBlank()) return
-        viewModel.search(text)
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.uiState.collect { state ->
-                    state.movies?.let { movies -> movieAdapter.submitList(movies) }
-                }
-            }
         }
     }
 
