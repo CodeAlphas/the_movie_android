@@ -4,6 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.codealphas.themovie.R
 import com.codealphas.themovie.core.android.ui.applySystemBarInsets
 import com.codealphas.themovie.databinding.ActivityLoginBinding
 import com.codealphas.themovie.movie.MainActivity
@@ -35,7 +36,7 @@ class LoginActivity : AppCompatActivity() {
 
             if (id.isBlank() || pw.isBlank()) {
                 Toast
-                    .makeText(this, "로그인에 실패했습니다. 이메일 또는 비밀번호를 다시 확인해주세요.", Toast.LENGTH_SHORT)
+                    .makeText(this, getString(R.string.login_failed), Toast.LENGTH_SHORT)
                     .show()
             } else {
                 auth
@@ -48,7 +49,7 @@ class LoginActivity : AppCompatActivity() {
                             Toast
                                 .makeText(
                                     this,
-                                    "로그인에 실패했습니다. 이메일 또는 비밀번호를 다시 확인해주세요.",
+                                    getString(R.string.login_failed),
                                     Toast.LENGTH_SHORT,
                                 ).show()
                         }

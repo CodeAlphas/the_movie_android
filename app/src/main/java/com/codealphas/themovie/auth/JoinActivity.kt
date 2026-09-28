@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.widget.doAfterTextChanged
+import com.codealphas.themovie.R
 import com.codealphas.themovie.core.android.ui.applySystemBarInsets
 import com.codealphas.themovie.databinding.ActivityJoinBinding
 import com.google.android.material.color.MaterialColors
@@ -47,12 +48,12 @@ class JoinActivity : AppCompatActivity() {
         pw2: String,
     ) {
         if (pw1 == pw2) {
-            binding.checkPwTextView.text = "비밀번호와 일치합니다."
+            binding.checkPwTextView.text = getString(R.string.join_password_match)
             binding.checkPwTextView.setTextColor(
                 MaterialColors.getColor(binding.checkPwTextView, com.google.android.material.R.attr.colorPrimary),
             )
         } else {
-            binding.checkPwTextView.text = "비밀번호와 일치하지 않습니다."
+            binding.checkPwTextView.text = getString(R.string.join_password_mismatch)
             binding.checkPwTextView.setTextColor(
                 MaterialColors.getColor(binding.checkPwTextView, com.google.android.material.R.attr.colorOnSurface),
             )
@@ -66,7 +67,7 @@ class JoinActivity : AppCompatActivity() {
                     Toast
                         .makeText(
                             this,
-                            "회원가입에 실패했습니다. 이메일 또는 비밀번호를 다시 확인해주세요.",
+                            getString(R.string.join_failed_blank),
                             Toast.LENGTH_SHORT,
                         ).show()
                 } else {
@@ -77,7 +78,7 @@ class JoinActivity : AppCompatActivity() {
                                 Toast
                                     .makeText(
                                         this,
-                                        "회원가입에 성공했습니다. 로그인하기 버튼을 눌러 로그인해주세요.",
+                                        getString(R.string.join_succeeded),
                                         Toast.LENGTH_SHORT,
                                     ).show()
                                 auth.signOut()
@@ -85,14 +86,14 @@ class JoinActivity : AppCompatActivity() {
                                 Toast
                                     .makeText(
                                         this,
-                                        "이미 가입한 이메일이거나 회원가입에 실패했습니다.",
+                                        getString(R.string.join_failed_exists),
                                         Toast.LENGTH_SHORT,
                                     ).show()
                             }
                         } // 이메일 주소와 비밀번호로 회원가입(Firebase Authentication)
                 }
             } else {
-                Toast.makeText(this, "회원가입에 실패했습니다. 비밀번호를 다시 확인해주세요.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.join_failed_password), Toast.LENGTH_SHORT).show()
             }
         }
     }

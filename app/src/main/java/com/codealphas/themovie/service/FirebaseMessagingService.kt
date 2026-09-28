@@ -18,8 +18,6 @@ import com.google.firebase.messaging.RemoteMessage
 
 class FirebaseMessagingService : FirebaseMessagingService() {
     companion object {
-        private const val CHANNEL_NAME = "The Movie"
-        private const val CHANNEL_DESCRIPTION = "The Movie 채널"
         private const val CHANNEL_ID = "The Movie Channel Id"
     }
 
@@ -79,10 +77,10 @@ class FirebaseMessagingService : FirebaseMessagingService() {
             val channel =
                 NotificationChannel(
                     CHANNEL_ID,
-                    CHANNEL_NAME,
+                    getString(R.string.notification_channel_name),
                     NotificationManager.IMPORTANCE_HIGH,
                 )
-            channel.description = CHANNEL_DESCRIPTION
+            channel.description = getString(R.string.notification_channel_description)
 
             (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).createNotificationChannel(
                 channel,
