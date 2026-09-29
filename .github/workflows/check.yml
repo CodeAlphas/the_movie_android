@@ -20,8 +20,8 @@ jobs:
         run: |
           cat > local.properties << 'EOF'
           TMDB_API_KEY=dummy
-          TMAP_API_KEY=dummy
-          YOUTUBE_API_KEY=dummy
+          KAKAO_NATIVE_APP_KEY=dummy
+          KAKAO_REST_API_KEY=dummy
           EOF
 
       - name: google-services.json 더미 생성

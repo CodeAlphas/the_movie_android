@@ -1,21 +1,30 @@
 package com.codealphas.themovie.data.map
 
-import com.codealphas.themovie.data.map.remote.AddressDto
-import com.codealphas.themovie.data.map.remote.PoiDto
-import com.codealphas.themovie.data.map.remote.PoisDto
+import com.codealphas.themovie.data.map.remote.CoordToAddressDto
+import com.codealphas.themovie.data.map.remote.PlaceDto
 import com.codealphas.themovie.domain.map.Address
 import com.codealphas.themovie.domain.map.Theater
 
-internal fun PoisDto.toTheaters(): List<Theater> = searchPoiInfo.pois.poi.map(PoiDto::toTheater)
+// x, y가 숫자가 아닌 장소는 지도에 찍을 수 없으므로 제외
+internal fun List<PlaceDto>.toTheaters(): List<Theater> = mapNotNull(PlaceDto::toTheaterOrNull)
 
-internal fun PoiDto.toTheater(): Theater =
-    Theater(
-        name = name,
-        // MapActivity가 noorLat와 noorLon으로 마커를 찍고 있었으므로,
-        // 마커 위치가 바뀌지 않도록 noor 좌표를 latitude와 longitude로 매핑
-        latitude = noorLat,
-        longitude = noorLon,
-        address = "$upperAddrName $middleAddrName $lowerAddrName $detailAddrName",
-    )
+internal fun PlaceDto.toTheaterOrNull(): Theater? {
+    val latitude = y.toDoubleOrNull()
+    val longitude = x.toDoubleOrNull()
+    return if (latitude == null || longitude == null) {
+        null
+    } else {
+        Theater(
+            name = placeName,
+            latitude = latitude,
+            longitude = longitude,
+            address = roadAddressName.ifBlank { addressName },
+        )
+    }
+}
 
-internal fun AddressDto.toAddress(): Address = Address(fullAddress = addressInfo.fullAddress)
+// 도로명 주소가 없는 좌표도 있고 바다처럼 주소 자체가 없는 좌표도 있으므로, 지번 주소로 대체하고 그마저 없으면 null로 처리
+internal fun CoordToAddressDto.toAddress(): Address {
+    val document = documents.firstOrNull()
+    return Address(fullAddress = (document?.roadAddress ?: document?.address)?.addressName)
+}
