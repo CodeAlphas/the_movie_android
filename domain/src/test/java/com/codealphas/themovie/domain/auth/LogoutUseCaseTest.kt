@@ -2,6 +2,7 @@ package com.codealphas.themovie.domain.auth
 
 import com.codealphas.themovie.domain.review.Review
 import com.codealphas.themovie.domain.review.ReviewRepository
+import com.codealphas.themovie.domain.review.ReviewResult
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -49,7 +50,7 @@ private class FakeReviewRepository(
 ) : ReviewRepository {
     override fun observeAll(): Flow<List<Review>> = error("사용하지 않음")
 
-    override suspend fun insert(review: Review) = error("사용하지 않음")
+    override suspend fun syncFromRemote(): ReviewResult = error("사용하지 않음")
 
     override suspend fun update(review: Review) = error("사용하지 않음")
 

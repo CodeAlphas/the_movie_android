@@ -3,7 +3,6 @@ package com.codealphas.themovie.review
 import android.Manifest
 import android.content.ActivityNotFoundException
 import android.content.Context
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
@@ -13,7 +12,6 @@ import android.view.View
 import android.view.WindowManager
 import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
-import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
@@ -72,16 +70,6 @@ class ReviewDetailActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         // 카메라 앱을 쓰는 동안 프로세스가 종료되면 촬영 파일을 잃어 결과를 받지 못하므로, 저장한 경로 복원
         photoFile = savedInstanceState?.getString(KEY_PHOTO_PATH)?.let(::File)
-        // 예측형 뒤로 가기에서는 onKeyDown의 뒤로 키가 오지 않으므로, 감상문 목록으로 가도록 콜백 등록
-        onBackPressedDispatcher.addCallback(
-            this,
-            object : OnBackPressedCallback(true) {
-                override fun handleOnBackPressed() {
-                    startActivity(Intent(this@ReviewDetailActivity, ReviewMainActivity::class.java))
-                    finish()
-                }
-            },
-        )
         applySystemBarInsets()
 
         binding = ActivityReviewDetailBinding.inflate(layoutInflater)
@@ -331,7 +319,7 @@ class ReviewDetailActivity : AppCompatActivity() {
                 Toast
                     .makeText(applicationContext, getString(R.string.review_edit_updated), Toast.LENGTH_LONG)
                     .show()
-                returnToReviewMain()
+                finish()
             } else {
                 val updateReview =
                     Review(
@@ -361,7 +349,7 @@ class ReviewDetailActivity : AppCompatActivity() {
                                         getString(R.string.review_edit_created),
                                         Toast.LENGTH_LONG,
                                     ).show()
-                                returnToReviewMain()
+                                finish()
                             }
                         },
                     )
@@ -432,13 +420,6 @@ class ReviewDetailActivity : AppCompatActivity() {
             Log.e("ReviewDetailActivity", "Firebase 요청 실패", e)
         }
     } // 서버에 감상문 정보를 저장(Firebase Realtime Database)해주는 메소드
-
-    private fun returnToReviewMain() {
-        val intent = Intent(applicationContext, ReviewMainActivity::class.java)
-        intent.putExtra("type", "Edit")
-        startActivity(intent)
-        this.finish()
-    }
 
     private fun showProgress() {
         window.addFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE) // 화면 터치 막기

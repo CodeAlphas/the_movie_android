@@ -46,6 +46,7 @@
     <string name="review_list_empty">감상문이 존재하지 않습니다.</string>
     <string name="review_list_rating_label">평점 : </string>
     <string name="review_list_appbar_title">영화 감상문</string>
+    <string name="review_list_sync_failed">서버의 감상문을 불러오지 못했습니다.</string>
     <string name="review_list_deleted">\"%1$s\" 감상문을 삭제했습니다.</string>
     <string name="review_edit_title_hint">감상문 제목을 입력하세요</string>
     <string name="review_edit_content_hint">감상문 내용을 입력하세요</string>
