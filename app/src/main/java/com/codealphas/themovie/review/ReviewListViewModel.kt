@@ -1,57 +1,56 @@
 package com.codealphas.themovie.review
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import com.codealphas.themovie.domain.auth.LogoutUseCase
 import com.codealphas.themovie.domain.review.Review
 import com.codealphas.themovie.domain.review.ReviewRepository
+import com.codealphas.themovie.domain.review.ReviewResult
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+data class ReviewListUiState(
+    val reviews: List<Review>? = null,
+)
+
 @HiltViewModel
-class ReviewViewModel
+class ReviewListViewModel
     @Inject
     constructor(
         private val repository: ReviewRepository,
         private val logoutUseCase: LogoutUseCase,
     ) : ViewModel() {
-        val allReview: LiveData<List<Review>> = repository.observeAll().asLiveData()
+        private val _uiState = MutableStateFlow(ReviewListUiState())
+        val uiState: StateFlow<ReviewListUiState> = _uiState.asStateFlow()
 
-        private val _maxId = MutableLiveData<Int>()
-        val maxId: LiveData<Int>
-            get() = _maxId
+        private val _syncFailed = Channel<Unit>(Channel.BUFFERED)
+        val syncFailed: Flow<Unit> = _syncFailed.receiveAsFlow()
 
         private val _logoutCompleted = Channel<Unit>(Channel.BUFFERED)
         val logoutCompleted: Flow<Unit> = _logoutCompleted.receiveAsFlow()
 
+        init {
+            viewModelScope.launch {
+                repository.observeAll().collect { reviews -> _uiState.value = ReviewListUiState(reviews) }
+            }
+            // 화면을 열 때마다 동기화하면 작성 화면에서 돌아올 때 서버 값을 다시 읽으므로, ViewModel이 만들어질 때 한 번만 동기화
+            viewModelScope.launch {
+                if (repository.syncFromRemote() is ReviewResult.Failure) {
+                    _syncFailed.send(Unit)
+                }
+            }
+        }
+
         fun deleteReview(review: Review) {
             viewModelScope.launch {
                 repository.delete(review)
-            }
-        }
-
-        fun updateReview(review: Review) {
-            viewModelScope.launch {
-                repository.update(review)
-            }
-        }
-
-        fun insertReview(review: Review) {
-            viewModelScope.launch {
-                repository.insert(review)
-            }
-        }
-
-        fun insertTransaction(review: Review) {
-            viewModelScope.launch {
-                _maxId.value = repository.insertAndReturnId(review)
             }
         }
 

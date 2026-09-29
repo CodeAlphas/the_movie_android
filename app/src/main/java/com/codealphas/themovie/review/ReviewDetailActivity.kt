@@ -1,19 +1,16 @@
 package com.codealphas.themovie.review
 
 import android.Manifest
+import android.content.ActivityNotFoundException
 import android.content.Context
-import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.Uri
 import android.os.Bundle
-import android.provider.MediaStore
-import android.util.Log
 import android.view.KeyEvent
 import android.view.View
 import android.view.WindowManager
 import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
-import androidx.activity.OnBackPressedCallback
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
@@ -22,106 +19,141 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import androidx.core.view.isVisible
-import androidx.lifecycle.Observer
+import androidx.core.widget.doOnTextChanged
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import com.bumptech.glide.Glide
 import com.codealphas.themovie.R
 import com.codealphas.themovie.core.android.ui.applySystemBarInsets
 import com.codealphas.themovie.core.android.ui.setupAppBar
 import com.codealphas.themovie.databinding.ActivityReviewDetailBinding
-import com.codealphas.themovie.domain.review.Review
-import com.google.firebase.Firebase
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.auth
-import com.google.firebase.database.DatabaseReference
-import com.google.firebase.database.database
-import com.google.firebase.storage.FirebaseStorage
-import com.google.firebase.storage.storage
+import com.codealphas.themovie.domain.review.ReviewError
+import com.codealphas.themovie.domain.review.ReviewPhoto
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 import java.io.File
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 @AndroidEntryPoint
 class ReviewDetailActivity : AppCompatActivity() {
     private companion object {
-        const val READ_PERMISSION_REQUEST_CODE = 1000
-        const val CAMERA_PERMISSION_REQUEST_CODE = 1001
-        const val USER_ID_PREFIX_LENGTH = 10
+        const val KEY_PHOTO_PATH = "photo_path"
+
+        // RatingBar는 별 5개이고 감상문 점수는 10점 만점이라 두 값의 비율
+        const val RATING_SCALE = 2
     }
 
     private lateinit var binding: ActivityReviewDetailBinding
-    private val viewModel: ReviewViewModel by viewModels()
-    private lateinit var reviewDB: DatabaseReference
-    private lateinit var photoFile: File
-    private val auth: FirebaseAuth by lazy { Firebase.auth }
-    private val userId: String by lazy { auth.currentUser?.uid.orEmpty() }
-    private val storage: FirebaseStorage by lazy { Firebase.storage }
-    private val reviewType: String? by lazy { intent.getStringExtra("reviewType") }
-    private val readPermission: String by lazy { Manifest.permission.READ_EXTERNAL_STORAGE }
+    private val viewModel: ReviewEditViewModel by viewModels()
+    private var photoFile: File? = null
     private val cameraPermission: String by lazy { Manifest.permission.CAMERA }
-    private var reviewId: Int = -1
-    private var selectedImageUri: Uri? = null
-    private var imageUri: String = ""
-    private var fileName: String = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // 예측형 뒤로 가기에서는 onKeyDown의 뒤로 키가 오지 않으므로, 감상문 목록으로 가도록 콜백 등록
-        onBackPressedDispatcher.addCallback(
-            this,
-            object : OnBackPressedCallback(true) {
-                override fun handleOnBackPressed() {
-                    startActivity(Intent(this@ReviewDetailActivity, ReviewMainActivity::class.java))
-                    finish()
-                }
-            },
-        )
+        // 카메라 앱을 쓰는 동안 프로세스가 종료되면 촬영 파일을 잃어 결과를 받지 못하므로, 저장한 경로 복원
+        photoFile = savedInstanceState?.getString(KEY_PHOTO_PATH)?.let(::File)
         applySystemBarInsets()
 
         binding = ActivityReviewDetailBinding.inflate(layoutInflater)
         setContentView(binding.root)
         setupAppBar(binding.toolbar, getString(R.string.review_edit_appbar_title))
 
-        initViewContent()
         initTitleEditText()
         initImageView()
         initContentEditText()
+        initRatingBar()
         initSaveButton()
+        observeState()
+        observeEvents()
     }
 
-    private fun initViewContent() {
-        if (reviewType.equals("Edit")) {
-            val reviewTitle = intent.getStringExtra("reviewTitle")
-            val reviewImage = intent.getStringExtra("reviewImage")
-            val reviewContent = intent.getStringExtra("reviewContent")
-            val reviewRating = intent.getDoubleExtra("rating", 0.0)
-            imageUri = reviewImage!!
-            reviewId = intent.getIntExtra("reviewId", -1)
-            fileName = intent.getStringExtra("storageFileName").toString()
+    private fun observeState() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    viewModel.uiState.collect { state ->
+                        // 입력을 상태에 반영한 값과 같은데 다시 넣으면 커서가 처음으로 돌아가므로, 다를 때만 입력란에 반영
+                        if (binding.titleEditText.text.toString() != state.title) {
+                            binding.titleEditText.setText(state.title)
+                        }
+                        if (binding.contentEditText.text.toString() != state.content) {
+                            binding.contentEditText.setText(state.content)
+                        }
+                        val ratingBarValue = (state.rating / RATING_SCALE).toFloat()
+                        if (binding.reviewRatingBar.rating != ratingBarValue) {
+                            binding.reviewRatingBar.rating = ratingBarValue
+                        }
+                        binding.button.setText(
+                            if (state.isEditing) R.string.review_edit_update else R.string.review_edit_create,
+                        )
+                        setProgressVisible(state.isSaving)
+                    }
+                }
+                launch {
+                    // 입력 중에도 상태가 계속 바뀌므로, 사진이 바뀔 때만 Glide로 다시 로드
+                    viewModel.uiState
+                        .map { it.photo to it.savedImageUrl }
+                        .distinctUntilChanged()
+                        .collect { (photo, savedImageUrl) -> showPhoto(photo, savedImageUrl) }
+                }
+            }
+        }
+    }
 
-            binding.titleEditText.setText(reviewTitle)
-            if (reviewImage != "") {
+    private fun observeEvents() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.events.collect { event ->
+                    when (event) {
+                        is ReviewEditEvent.Saved -> {
+                            showToast(if (event.isNew) R.string.review_edit_created else R.string.review_edit_updated)
+                            finish()
+                        }
+                        ReviewEditEvent.InputRequired -> showToast(R.string.review_edit_input_required)
+                        is ReviewEditEvent.SaveFailed ->
+                            showToast(
+                                when (event.error) {
+                                    ReviewError.PhotoUploadFailed -> R.string.review_edit_upload_failed
+                                    ReviewError.Unknown -> R.string.review_edit_save_failed
+                                },
+                            )
+                        ReviewEditEvent.LoadFailed -> {
+                            showToast(R.string.review_edit_load_failed)
+                            finish()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun showPhoto(
+        photo: ReviewPhoto,
+        savedImageUrl: String,
+    ) {
+        when {
+            photo is ReviewPhoto.New ->
                 Glide
                     .with(this)
-                    .load(reviewImage)
+                    .load(photo.uri)
+                    .centerCrop()
+                    .into(binding.imageView) // 사진을 올바르게 돌려서 imageView에 보여주기 위해 Glide 라이브러리 사용
+            photo is ReviewPhoto.Unchanged && savedImageUrl.isNotEmpty() ->
+                Glide
+                    .with(this)
+                    .load(savedImageUrl)
                     .centerCrop()
                     .error(R.drawable.set_image) // 원본이미지를 로드할 수 없을 때 보여줄 이미지 설정
                     .into(binding.imageView) // Firebase storage에 저장된 이미지 설정
-            }
-            binding.contentEditText.setText(reviewContent)
-            binding.reviewRatingBar.rating = reviewRating.toFloat() / 2
-            binding.button.text = getString(R.string.review_edit_update)
-        } else {
-            binding.button.text = getString(R.string.review_edit_create)
+            else -> binding.imageView.setImageResource(R.drawable.set_image)
         }
     }
 
     private fun initTitleEditText() {
+        binding.titleEditText.doOnTextChanged { text, _, _, _ -> viewModel.onTitleChange(text.toString()) }
+
         binding.titleEditText.setOnKeyListener { view, i, keyEvent ->
             if ((keyEvent.action == KeyEvent.ACTION_DOWN) && (i == KeyEvent.KEYCODE_ENTER)) {
                 hideKeyboard(this, binding.titleEditText)
@@ -150,7 +182,7 @@ class ReviewDetailActivity : AppCompatActivity() {
             .setTitle(getString(R.string.review_edit_photo_dialog_title))
             .setMessage(getString(R.string.review_edit_photo_dialog_message))
             .setNeutralButton(getString(R.string.review_edit_photo_delete)) { _, _ ->
-                deleteImage()
+                viewModel.onPhotoRemoved()
             }.setPositiveButton(getString(R.string.review_edit_photo_gallery)) { _, _ ->
                 startGallery()
             }.setNegativeButton(getString(R.string.review_edit_photo_camera)) { _, _ ->
@@ -159,33 +191,9 @@ class ReviewDetailActivity : AppCompatActivity() {
             .show()
     }
 
-    private fun deleteImage() {
-        if (selectedImageUri != null) {
-            binding.imageView.setImageResource(R.drawable.set_image)
-            selectedImageUri = null
-            imageUri = ""
-        } else if (imageUri != "") {
-            binding.imageView.setImageResource(R.drawable.set_image)
-            imageUri = ""
-        }
-    }
-
     private fun startGallery() {
-        when {
-            ContextCompat.checkSelfPermission(
-                this,
-                readPermission,
-            ) == PackageManager.PERMISSION_GRANTED -> {
-                getPhoto()
-            } // 외부저장소 접근 권한이 잘 부여되어있을 때, 갤러리에서 사진을 선택
-            shouldShowRequestPermissionRationale(readPermission) -> {
-                showPermissionPopup()
-            } // 이전에 앱이 권한을 요청하고 사용자가 요청을 거부한 경우 교육용 팝업을 띄움
-            else -> {
-                requestPermissions(arrayOf(readPermission), READ_PERMISSION_REQUEST_CODE)
-            } // 권한 요청을 위한 팝업을 띄움
-        }
-    }
+        galleryLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+    } // 권한이 필요 없는 Photo Picker로 갤러리에서 사진을 선택
 
     private fun startCamera() {
         when {
@@ -199,21 +207,9 @@ class ReviewDetailActivity : AppCompatActivity() {
                 showCameraPermissionPopup()
             } // 이전에 앱이 권한을 요청하고 사용자가 요청을 거부한 경우 교육용 팝업을 띄움
             else -> {
-                requestPermissions(arrayOf(cameraPermission), CAMERA_PERMISSION_REQUEST_CODE)
+                cameraPermissionLauncher.launch(cameraPermission)
             } // 권한 요청을 위한 팝업을 띄움
         }
-    }
-
-    private fun showPermissionPopup() {
-        AlertDialog
-            .Builder(this)
-            .setTitle(getString(R.string.review_edit_permission_title))
-            .setMessage(getString(R.string.review_edit_permission_gallery))
-            .setPositiveButton(getString(R.string.review_edit_permission_allow)) { _, _ ->
-                requestPermissions(arrayOf(readPermission), READ_PERMISSION_REQUEST_CODE)
-            }.setNegativeButton(getString(R.string.review_edit_permission_deny)) { _, _ -> }
-            .create()
-            .show()
     }
 
     private fun showCameraPermissionPopup() {
@@ -222,97 +218,59 @@ class ReviewDetailActivity : AppCompatActivity() {
             .setTitle(getString(R.string.review_edit_permission_title))
             .setMessage(getString(R.string.review_edit_permission_camera))
             .setPositiveButton(getString(R.string.review_edit_permission_allow)) { _, _ ->
-                requestPermissions(arrayOf(cameraPermission), CAMERA_PERMISSION_REQUEST_CODE)
+                cameraPermissionLauncher.launch(cameraPermission)
             }.setNegativeButton(getString(R.string.review_edit_permission_deny)) { _, _ -> }
             .create()
             .show()
     }
 
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray,
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        when (requestCode) {
-            READ_PERMISSION_REQUEST_CODE -> {
-                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    getPhoto() // 권한이 부여됨
-                } else {
-                    Toast.makeText(this, getString(R.string.review_edit_permission_denied), Toast.LENGTH_SHORT).show()
-                }
-            }
-            CAMERA_PERMISSION_REQUEST_CODE -> {
-                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    activateCamera() // 권한이 부여됨
-                } else {
-                    Toast.makeText(this, getString(R.string.review_edit_permission_denied), Toast.LENGTH_SHORT).show()
-                }
-            }
-        }
-    } // requestPermissions()의 처리 결과를 반환해주는 메소드
-
-    private fun getPhoto() {
-        val intent = Intent(Intent.ACTION_GET_CONTENT)
-        intent.type = "image/*"
-        activityResult.launch(intent)
-    } // Storage Access Framework(SAF)의 기능을 이용해서 콘텐츠를 가져올 수 있는 안드로이드의 내장 엑티비티를 실행해주는 메소드
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        photoFile?.let { outState.putString(KEY_PHOTO_PATH, it.path) }
+    }
 
     private fun activateCamera() {
-        val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
-        if (intent.resolveActivity(packageManager) != null) {
-            val dir = externalCacheDir
-            val file = File.createTempFile("review_photo_", ".jpg", dir)
-            val uri = FileProvider.getUriForFile(this, "$packageName.provider", file)
-            intent.putExtra(MediaStore.EXTRA_OUTPUT, uri)
-            activityResultCamera.launch(intent)
-            photoFile = file
+        val file = File.createTempFile("review_photo_", ".jpg", externalCacheDir)
+        val uri = FileProvider.getUriForFile(this, "$packageName.provider", file)
+        photoFile = file
+        // 카메라 앱이 없는 기기에서는 실행 시 예외가 나므로, 앱 종료 대신 실패 안내 처리
+        try {
+            cameraLauncher.launch(uri)
+        } catch (ignored: ActivityNotFoundException) {
+            showToast(R.string.review_edit_photo_failed)
         }
     } // 카메라를 실행시키고 촬영한 사진을 앱의 캐시 저장소에 저장해주는 메소드
 
-    private val activityResult =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            when (result.resultCode) {
-                RESULT_OK -> {
-                    selectedImageUri = result?.data?.data
-                    if (selectedImageUri != null) {
-                        Glide
-                            .with(this)
-                            .load(selectedImageUri)
-                            .centerCrop()
-                            .into(binding.imageView) // 사진을 올바르게 돌려서 imageView에 보여주기 위해 Glide 라이브러리 사용
-                    } else {
-                        Toast.makeText(this, getString(R.string.review_edit_photo_failed), Toast.LENGTH_SHORT).show()
-                    }
-                }
-                else -> {
-                    Toast.makeText(this, getString(R.string.review_edit_photo_failed), Toast.LENGTH_SHORT).show()
-                }
+    private val cameraPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+            if (isGranted) {
+                activateCamera()
+            } else {
+                showToast(R.string.review_edit_permission_denied)
             }
         }
 
-    private val activityResultCamera =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            when (result.resultCode) {
-                RESULT_OK -> {
-                    selectedImageUri = photoFile.toUri()
-                    if (selectedImageUri != null) {
-                        Glide
-                            .with(this)
-                            .load(photoFile)
-                            .centerCrop()
-                            .into(binding.imageView) // 사진을 올바르게 돌려서 imageView에 보여주기 위해 Glide 라이브러리 사용
-                    } else {
-                        Toast.makeText(this, getString(R.string.review_edit_photo_failed), Toast.LENGTH_SHORT).show()
-                    }
-                }
-                else -> {
-                    Toast.makeText(this, getString(R.string.review_edit_photo_failed), Toast.LENGTH_SHORT).show()
-                }
+    private val galleryLauncher =
+        registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+            // 선택 없이 닫은 경우는 실패가 아니므로 안내 없이 무시
+            if (uri != null) {
+                viewModel.onPhotoSelected(uri.toString())
+            }
+        }
+
+    private val cameraLauncher =
+        registerForActivityResult(ActivityResultContracts.TakePicture()) { isSaved ->
+            val file = photoFile
+            if (isSaved && file != null) {
+                viewModel.onPhotoSelected(file.toUri().toString())
+            } else {
+                showToast(R.string.review_edit_photo_failed)
             }
         }
 
     private fun initContentEditText() {
+        binding.contentEditText.doOnTextChanged { text, _, _, _ -> viewModel.onContentChange(text.toString()) }
+
         binding.contentEditText.setOnFocusChangeListener { view, b ->
             if (!b) {
                 hideKeyboard(this, view)
@@ -320,176 +278,32 @@ class ReviewDetailActivity : AppCompatActivity() {
         }
     }
 
+    private fun initRatingBar() {
+        binding.reviewRatingBar.setOnRatingBarChangeListener { _, rating, fromUser ->
+            // 상태를 반영하려고 코드로 바꾼 별점은 이미 상태에 있는 값이므로, 사용자가 바꾼 경우만 전달
+            if (fromUser) {
+                viewModel.onRatingChange(rating.toDouble() * RATING_SCALE)
+            }
+        }
+    }
+
     private fun initSaveButton() {
         binding.button.setOnClickListener {
-            dataChanged()
+            viewModel.save()
         }
     }
 
-    private fun dataChanged() {
-        val currentReviewTitle = binding.titleEditText.text.toString()
-        val currentReviewContent = binding.contentEditText.text.toString()
-        val currentRating = binding.reviewRatingBar.rating.toDouble() * 2
-
-        lifecycleScope.launch(Dispatchers.Main) {
-            showProgress()
-            if (fileName != "" || selectedImageUri != null) {
-                deletePhotoStorage()
-            } // 사용자가 이미지를 수정하면 이전에 서버에 저장되어 있던 이미지는 삭제
-            uploadPhotoToStorage() // 이미지를 Firebase Storage에 업로드
-
-            if (reviewType.equals("Edit")) {
-                if (currentReviewTitle.isNotBlank() && currentReviewContent.isNotBlank()) {
-                    val updateReview =
-                        Review(
-                            title = currentReviewTitle,
-                            image = imageUri,
-                            content = currentReviewContent,
-                            time = getCurrentDate(),
-                            rating = currentRating,
-                            storageFileName = fileName,
-                            id = reviewId,
-                        )
-
-                    viewModel.updateReview(updateReview)
-
-                    updateFirebaseRealtimeDB(
-                        currentReviewTitle,
-                        currentReviewContent,
-                        currentRating,
-                    )
-
-                    Toast
-                        .makeText(applicationContext, getString(R.string.review_edit_updated), Toast.LENGTH_LONG)
-                        .show()
-                    returnToReviewMain()
-                } else {
-                    Toast
-                        .makeText(applicationContext, getString(R.string.review_edit_input_required), Toast.LENGTH_LONG)
-                        .show()
-                }
-            } else {
-                if (currentReviewTitle.isNotBlank() && currentReviewContent.isNotBlank()) {
-                    val updateReview =
-                        Review(
-                            currentReviewTitle,
-                            imageUri,
-                            currentReviewContent,
-                            getCurrentDate(),
-                            currentRating,
-                            fileName,
-                        )
-
-                    viewModel.insertTransaction(updateReview)
-                    viewModel.maxId
-                        .observe(
-                            this@ReviewDetailActivity,
-                            Observer { maxId ->
-                                maxId?.let {
-                                    reviewId = it
-                                    updateFirebaseRealtimeDB(
-                                        currentReviewTitle,
-                                        currentReviewContent,
-                                        currentRating,
-                                    )
-                                    Toast
-                                        .makeText(
-                                            applicationContext,
-                                            getString(R.string.review_edit_created),
-                                            Toast.LENGTH_LONG,
-                                        ).show()
-                                    returnToReviewMain()
-                                }
-                            },
-                        )
-                } else {
-                    Toast
-                        .makeText(applicationContext, getString(R.string.review_edit_input_required), Toast.LENGTH_LONG)
-                        .show()
-                }
-            }
-            hideProgress()
-        }
+    private fun showToast(messageResId: Int) {
+        Toast.makeText(applicationContext, getString(messageResId), Toast.LENGTH_LONG).show()
     }
 
-    private suspend fun deletePhotoStorage() {
-        try {
-            storage.reference
-                .child("review/photo")
-                .child(fileName)
-                .delete()
-                .await()
-            fileName = ""
-        } catch (e: Exception) {
-            Log.e("ReviewDetailActivity", "Firebase 요청 실패", e)
+    private fun setProgressVisible(isVisible: Boolean) {
+        if (isVisible) {
+            window.addFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE) // 화면 터치 막기
+        } else {
+            window.clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE) // 화면 터치 풀기
         }
-    }
-
-    private suspend fun uploadPhotoToStorage() {
-        if (selectedImageUri == null) {
-            return
-        } // 사용자가 이미지를 감상문에 등록하지 않았다면 메소드 종료
-
-        fileName = userId.substring(
-            0,
-            USER_ID_PREFIX_LENGTH,
-        ) + "${System.currentTimeMillis()}.png" // Storage에 저장될 File의 이름을 지정
-        try {
-            imageUri =
-                storage.reference
-                    .child("review/photo")
-                    .child(fileName)
-                    .putFile(selectedImageUri!!)
-                    .await()
-                    .storage.downloadUrl
-                    .await()
-                    .toString()
-        } catch (e: Exception) {
-            Log.e("ReviewDetailActivity", "Firebase 요청 실패", e)
-        }
-    } // 이미지를 Firebase Storage의 지정된 경로에 업로드해주고 해당 이미지를 가져올 수 있는 Url을 반환해오는 메소드
-
-    private fun updateFirebaseRealtimeDB(
-        currentReviewTitle: String,
-        currentReviewContent: String,
-        currentRating: Double,
-    ) {
-        reviewDB =
-            Firebase.database.reference
-                .child("users")
-                .child(userId)
-                .child("reviews")
-                .child(reviewId.toString())
-        val review = mutableMapOf<String, Any>()
-        review["id"] = reviewId
-        review["image"] = imageUri
-        review["title"] = currentReviewTitle
-        review["content"] = currentReviewContent
-        review["time"] = getCurrentDate()
-        review["rating"] = currentRating
-        review["storageFileName"] = fileName
-        try {
-            reviewDB.updateChildren(review)
-        } catch (e: Exception) {
-            Log.e("ReviewDetailActivity", "Firebase 요청 실패", e)
-        }
-    } // 서버에 감상문 정보를 저장(Firebase Realtime Database)해주는 메소드
-
-    private fun returnToReviewMain() {
-        val intent = Intent(applicationContext, ReviewMainActivity::class.java)
-        intent.putExtra("type", "Edit")
-        startActivity(intent)
-        this.finish()
-    }
-
-    private fun showProgress() {
-        window.addFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE) // 화면 터치 막기
-        binding.progressBar.isVisible = true
-    }
-
-    private fun hideProgress() {
-        binding.progressBar.isVisible = false
-        window.clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE) // 화면 터치 풀기
+        binding.progressBar.isVisible = isVisible
     }
 
     private fun hideKeyboard(
@@ -499,10 +313,5 @@ class ReviewDetailActivity : AppCompatActivity() {
         val inputMethodManager =
             context.getSystemService(AppCompatActivity.INPUT_METHOD_SERVICE) as InputMethodManager
         inputMethodManager.hideSoftInputFromWindow(view.windowToken, 0)
-    }
-
-    private fun getCurrentDate(): String {
-        val time = SimpleDateFormat("yyyy/MM/dd HH:mm", Locale.KOREA)
-        return time.format(Date())
     }
 }
