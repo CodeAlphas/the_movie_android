@@ -1,12 +1,12 @@
 package com.codealphas.themovie.review
 
 import android.Manifest
+import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
-import android.provider.MediaStore
 import android.util.Log
 import android.view.KeyEvent
 import android.view.View
@@ -14,6 +14,7 @@ import android.view.WindowManager
 import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
@@ -49,20 +50,18 @@ import java.util.Locale
 @AndroidEntryPoint
 class ReviewDetailActivity : AppCompatActivity() {
     private companion object {
-        const val READ_PERMISSION_REQUEST_CODE = 1000
-        const val CAMERA_PERMISSION_REQUEST_CODE = 1001
+        const val KEY_PHOTO_PATH = "photo_path"
         const val USER_ID_PREFIX_LENGTH = 10
     }
 
     private lateinit var binding: ActivityReviewDetailBinding
     private val viewModel: ReviewViewModel by viewModels()
     private lateinit var reviewDB: DatabaseReference
-    private lateinit var photoFile: File
+    private var photoFile: File? = null
     private val auth: FirebaseAuth by lazy { Firebase.auth }
     private val userId: String by lazy { auth.currentUser?.uid.orEmpty() }
     private val storage: FirebaseStorage by lazy { Firebase.storage }
     private val reviewType: String? by lazy { intent.getStringExtra("reviewType") }
-    private val readPermission: String by lazy { Manifest.permission.READ_EXTERNAL_STORAGE }
     private val cameraPermission: String by lazy { Manifest.permission.CAMERA }
     private var reviewId: Int = -1
     private var selectedImageUri: Uri? = null
@@ -71,6 +70,8 @@ class ReviewDetailActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // 카메라 앱을 쓰는 동안 프로세스가 종료되면 촬영 파일을 잃어 결과를 받지 못하므로, 저장한 경로 복원
+        photoFile = savedInstanceState?.getString(KEY_PHOTO_PATH)?.let(::File)
         // 예측형 뒤로 가기에서는 onKeyDown의 뒤로 키가 오지 않으므로, 감상문 목록으로 가도록 콜백 등록
         onBackPressedDispatcher.addCallback(
             this,
@@ -171,21 +172,8 @@ class ReviewDetailActivity : AppCompatActivity() {
     }
 
     private fun startGallery() {
-        when {
-            ContextCompat.checkSelfPermission(
-                this,
-                readPermission,
-            ) == PackageManager.PERMISSION_GRANTED -> {
-                getPhoto()
-            } // 외부저장소 접근 권한이 잘 부여되어있을 때, 갤러리에서 사진을 선택
-            shouldShowRequestPermissionRationale(readPermission) -> {
-                showPermissionPopup()
-            } // 이전에 앱이 권한을 요청하고 사용자가 요청을 거부한 경우 교육용 팝업을 띄움
-            else -> {
-                requestPermissions(arrayOf(readPermission), READ_PERMISSION_REQUEST_CODE)
-            } // 권한 요청을 위한 팝업을 띄움
-        }
-    }
+        galleryLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+    } // 권한이 필요 없는 Photo Picker로 갤러리에서 사진을 선택
 
     private fun startCamera() {
         when {
@@ -199,21 +187,9 @@ class ReviewDetailActivity : AppCompatActivity() {
                 showCameraPermissionPopup()
             } // 이전에 앱이 권한을 요청하고 사용자가 요청을 거부한 경우 교육용 팝업을 띄움
             else -> {
-                requestPermissions(arrayOf(cameraPermission), CAMERA_PERMISSION_REQUEST_CODE)
+                cameraPermissionLauncher.launch(cameraPermission)
             } // 권한 요청을 위한 팝업을 띄움
         }
-    }
-
-    private fun showPermissionPopup() {
-        AlertDialog
-            .Builder(this)
-            .setTitle(getString(R.string.review_edit_permission_title))
-            .setMessage(getString(R.string.review_edit_permission_gallery))
-            .setPositiveButton(getString(R.string.review_edit_permission_allow)) { _, _ ->
-                requestPermissions(arrayOf(readPermission), READ_PERMISSION_REQUEST_CODE)
-            }.setNegativeButton(getString(R.string.review_edit_permission_deny)) { _, _ -> }
-            .create()
-            .show()
     }
 
     private fun showCameraPermissionPopup() {
@@ -222,93 +198,63 @@ class ReviewDetailActivity : AppCompatActivity() {
             .setTitle(getString(R.string.review_edit_permission_title))
             .setMessage(getString(R.string.review_edit_permission_camera))
             .setPositiveButton(getString(R.string.review_edit_permission_allow)) { _, _ ->
-                requestPermissions(arrayOf(cameraPermission), CAMERA_PERMISSION_REQUEST_CODE)
+                cameraPermissionLauncher.launch(cameraPermission)
             }.setNegativeButton(getString(R.string.review_edit_permission_deny)) { _, _ -> }
             .create()
             .show()
     }
 
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray,
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        when (requestCode) {
-            READ_PERMISSION_REQUEST_CODE -> {
-                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    getPhoto() // 권한이 부여됨
-                } else {
-                    Toast.makeText(this, getString(R.string.review_edit_permission_denied), Toast.LENGTH_SHORT).show()
-                }
-            }
-            CAMERA_PERMISSION_REQUEST_CODE -> {
-                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    activateCamera() // 권한이 부여됨
-                } else {
-                    Toast.makeText(this, getString(R.string.review_edit_permission_denied), Toast.LENGTH_SHORT).show()
-                }
-            }
-        }
-    } // requestPermissions()의 처리 결과를 반환해주는 메소드
-
-    private fun getPhoto() {
-        val intent = Intent(Intent.ACTION_GET_CONTENT)
-        intent.type = "image/*"
-        activityResult.launch(intent)
-    } // Storage Access Framework(SAF)의 기능을 이용해서 콘텐츠를 가져올 수 있는 안드로이드의 내장 엑티비티를 실행해주는 메소드
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        photoFile?.let { outState.putString(KEY_PHOTO_PATH, it.path) }
+    }
 
     private fun activateCamera() {
-        val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
-        if (intent.resolveActivity(packageManager) != null) {
-            val dir = externalCacheDir
-            val file = File.createTempFile("review_photo_", ".jpg", dir)
-            val uri = FileProvider.getUriForFile(this, "$packageName.provider", file)
-            intent.putExtra(MediaStore.EXTRA_OUTPUT, uri)
-            activityResultCamera.launch(intent)
-            photoFile = file
+        val file = File.createTempFile("review_photo_", ".jpg", externalCacheDir)
+        val uri = FileProvider.getUriForFile(this, "$packageName.provider", file)
+        photoFile = file
+        // 카메라 앱이 없는 기기에서는 실행 시 예외가 나므로, 앱 종료 대신 실패 안내 처리
+        try {
+            cameraLauncher.launch(uri)
+        } catch (ignored: ActivityNotFoundException) {
+            Toast.makeText(this, getString(R.string.review_edit_photo_failed), Toast.LENGTH_SHORT).show()
         }
     } // 카메라를 실행시키고 촬영한 사진을 앱의 캐시 저장소에 저장해주는 메소드
 
-    private val activityResult =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            when (result.resultCode) {
-                RESULT_OK -> {
-                    selectedImageUri = result?.data?.data
-                    if (selectedImageUri != null) {
-                        Glide
-                            .with(this)
-                            .load(selectedImageUri)
-                            .centerCrop()
-                            .into(binding.imageView) // 사진을 올바르게 돌려서 imageView에 보여주기 위해 Glide 라이브러리 사용
-                    } else {
-                        Toast.makeText(this, getString(R.string.review_edit_photo_failed), Toast.LENGTH_SHORT).show()
-                    }
-                }
-                else -> {
-                    Toast.makeText(this, getString(R.string.review_edit_photo_failed), Toast.LENGTH_SHORT).show()
-                }
+    private val cameraPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+            if (isGranted) {
+                activateCamera()
+            } else {
+                Toast.makeText(this, getString(R.string.review_edit_permission_denied), Toast.LENGTH_SHORT).show()
             }
         }
 
-    private val activityResultCamera =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            when (result.resultCode) {
-                RESULT_OK -> {
-                    selectedImageUri = photoFile.toUri()
-                    if (selectedImageUri != null) {
-                        Glide
-                            .with(this)
-                            .load(photoFile)
-                            .centerCrop()
-                            .into(binding.imageView) // 사진을 올바르게 돌려서 imageView에 보여주기 위해 Glide 라이브러리 사용
-                    } else {
-                        Toast.makeText(this, getString(R.string.review_edit_photo_failed), Toast.LENGTH_SHORT).show()
-                    }
-                }
-                else -> {
-                    Toast.makeText(this, getString(R.string.review_edit_photo_failed), Toast.LENGTH_SHORT).show()
-                }
+    private val galleryLauncher =
+        registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+            // 선택 없이 닫은 경우는 실패가 아니므로 안내 없이 무시
+            if (uri != null) {
+                selectedImageUri = uri
+                Glide
+                    .with(this)
+                    .load(uri)
+                    .centerCrop()
+                    .into(binding.imageView) // 사진을 올바르게 돌려서 imageView에 보여주기 위해 Glide 라이브러리 사용
+            }
+        }
+
+    private val cameraLauncher =
+        registerForActivityResult(ActivityResultContracts.TakePicture()) { isSaved ->
+            val file = photoFile
+            if (isSaved && file != null) {
+                selectedImageUri = file.toUri()
+                Glide
+                    .with(this)
+                    .load(file)
+                    .centerCrop()
+                    .into(binding.imageView) // 사진을 올바르게 돌려서 imageView에 보여주기 위해 Glide 라이브러리 사용
+            } else {
+                Toast.makeText(this, getString(R.string.review_edit_photo_failed), Toast.LENGTH_SHORT).show()
             }
         }
 
