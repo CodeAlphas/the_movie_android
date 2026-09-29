@@ -91,18 +91,12 @@ class ReviewMainActivity :
 
     override fun onDeleteIconClick(review: Review) {
         reviewViewModel.deleteReview(review)
-        Toast.makeText(this, getString(R.string.review_list_deleted, review.title), Toast.LENGTH_LONG).show()
+        Toast.makeText(this, getString(R.string.review_list_deleted), Toast.LENGTH_LONG).show()
     } // 작성한 감상문 아이템에서 X 이미지를 누르면 발생하는 이벤트 처리를 위한 메소드
 
     override fun onIconClick(review: Review) {
         val intent = Intent(this@ReviewMainActivity, ReviewDetailActivity::class.java)
-        intent.putExtra("reviewType", "Edit")
-        intent.putExtra("reviewTitle", review.title)
-        intent.putExtra("reviewImage", review.image)
-        intent.putExtra("reviewContent", review.content)
-        intent.putExtra("reviewId", review.id)
-        intent.putExtra("rating", review.rating)
-        intent.putExtra("storageFileName", review.storageFileName)
+        intent.putExtra(ReviewEditViewModel.ARG_REVIEW_ID, review.id)
         startActivity(intent)
     } // 작성한 감상문 아이템(X 이미지를 제외한 부분)을 누르면 발생하는 이벤트 처리를 위한 메소드
 

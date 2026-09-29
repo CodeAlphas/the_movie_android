@@ -20,7 +20,28 @@ internal class FirebaseReviewRealtimeDataSource
                 .children
                 .mapNotNull(DataSnapshot::toReviewOrNull)
 
-        // 오프라인이면 삭제가 연결될 때까지 완료되지 않아 화면이 멈추므로, 완료를 기다리지 않고 SDK 대기열에 맡김
+        // 오프라인이면 쓰기가 연결될 때까지 완료되지 않아 화면이 멈추므로, 완료를 기다리지 않고 SDK 대기열에 맡김.
+        // 결과를 받지 않아 서버 쓰기가 빠져도 알 수 없고, Room에서 서버로 다시 올리지 않아 그 감상문은 이 기기에만 남는 한계를 허용
+        override fun save(
+            userId: String,
+            review: Review,
+        ) {
+            val fields =
+                mapOf(
+                    "id" to review.id,
+                    "image" to review.image,
+                    "title" to review.title,
+                    "content" to review.content,
+                    "time" to review.time,
+                    "rating" to review.rating,
+                    "storageFileName" to review.storageFileName,
+                )
+            // 기기별 자동 증가 id가 키라서, 한 계정을 여러 기기에서 쓰면 키가 겹쳐 덮어써질 수 있어 단일 기기 사용을 전제로 허용
+            reviewsReference(userId).child(review.id.toString()).updateChildren(fields)
+        }
+
+        // 오프라인이면 삭제가 연결될 때까지 완료되지 않아 화면이 멈추므로, 완료를 기다리지 않고 SDK 대기열에 맡김.
+        // 결과를 받지 않아 서버 삭제가 빠져도 알 수 없고, 다음 동기화 때 삭제한 감상문이 사진 링크가 깨진 채 되살아나는 한계를 허용
         override fun delete(
             userId: String,
             reviewId: Int,

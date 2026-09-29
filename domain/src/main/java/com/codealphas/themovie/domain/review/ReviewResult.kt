@@ -10,4 +10,5 @@ sealed interface ReviewResult {
 
 enum class ReviewError {
     Unknown,
+    PhotoUploadFailed,
 }

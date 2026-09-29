@@ -5,14 +5,14 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import androidx.room.Transaction
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 internal interface ReviewDao {
+    // id가 INTEGER PRIMARY KEY라 반환되는 rowId가 저장된 감상문 id와 같고, IGNORE로 건너뛴 행은 -1
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun insert(review: ReviewEntity)
+    suspend fun insert(review: ReviewEntity): Long
 
     @Delete
     suspend fun delete(review: ReviewEntity)
@@ -20,14 +20,8 @@ internal interface ReviewDao {
     @Update
     suspend fun update(review: ReviewEntity)
 
-    @Transaction
-    suspend fun insertTransaction(review: ReviewEntity): Int {
-        insert(review)
-        return getMaxId()
-    }
-
-    @Query("SELECT MAX(id) FROM reviewTable")
-    suspend fun getMaxId(): Int
+    @Query("SELECT * FROM reviewTable WHERE id = :id")
+    suspend fun getById(id: Int): ReviewEntity?
 
     @Query("DELETE FROM reviewTable")
     suspend fun deleteAll()

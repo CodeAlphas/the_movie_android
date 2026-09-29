@@ -1,5 +1,7 @@
 package com.codealphas.themovie.data.review.di
 
+import com.codealphas.themovie.data.review.ReviewClock
+import com.codealphas.themovie.data.review.SystemReviewClock
 import com.codealphas.themovie.data.review.remote.FirebaseReviewRealtimeDataSource
 import com.codealphas.themovie.data.review.remote.FirebaseReviewStorageDataSource
 import com.codealphas.themovie.data.review.remote.ReviewRealtimeDataSource
@@ -21,4 +23,7 @@ internal abstract class ReviewRemoteModule {
     @Binds
     @Singleton
     abstract fun bindStorageDataSource(impl: FirebaseReviewStorageDataSource): ReviewStorageDataSource
+
+    @Binds
+    abstract fun bindReviewClock(impl: SystemReviewClock): ReviewClock
 }

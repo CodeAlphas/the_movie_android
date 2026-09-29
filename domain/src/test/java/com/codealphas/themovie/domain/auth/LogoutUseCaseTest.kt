@@ -1,6 +1,7 @@
 package com.codealphas.themovie.domain.auth
 
 import com.codealphas.themovie.domain.review.Review
+import com.codealphas.themovie.domain.review.ReviewDraft
 import com.codealphas.themovie.domain.review.ReviewRepository
 import com.codealphas.themovie.domain.review.ReviewResult
 import kotlinx.coroutines.flow.Flow
@@ -52,13 +53,13 @@ private class FakeReviewRepository(
 
     override suspend fun syncFromRemote(): ReviewResult = error("사용하지 않음")
 
-    override suspend fun update(review: Review) = error("사용하지 않음")
+    override suspend fun getById(id: Int): Review? = error("사용하지 않음")
+
+    override suspend fun save(draft: ReviewDraft): ReviewResult = error("사용하지 않음")
 
     override suspend fun delete(review: Review) = error("사용하지 않음")
 
     override suspend fun deleteAll() {
         calls += "deleteAll"
     }
-
-    override suspend fun insertAndReturnId(review: Review): Int = error("사용하지 않음")
 }
