@@ -58,6 +58,6 @@ Thumbs.db
 # Kotlin
 .kotlin/
 
-# Local Cursor skills and rules
-.cursor/skills/
-.cursor/rules/
+# Local AI tool settings
+.cursor/
+.claude/

@@ -1,11 +1,16 @@
 package com.codealphas.themovie.data.movie
 
 import com.codealphas.themovie.data.movie.remote.CreditDto
+import com.codealphas.themovie.data.movie.remote.CreditsDto
+import com.codealphas.themovie.data.movie.remote.MovieDetailDto
 import com.codealphas.themovie.data.movie.remote.MovieDto
 import com.codealphas.themovie.data.movie.remote.VideoDto
 import com.codealphas.themovie.domain.movie.Cast
 import com.codealphas.themovie.domain.movie.Movie
+import com.codealphas.themovie.domain.movie.MovieDetail
 import com.codealphas.themovie.domain.movie.Video
+import com.codealphas.themovie.domain.result.DataResult
+import com.codealphas.themovie.domain.result.RemoteError
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -85,6 +90,92 @@ class MovieMapperTest {
     fun `영상 응답이면 key만 매핑해야 한다`() {
         assertEquals(Video(key = "abc123"), videoItem(key = "abc123").toVideo())
     }
+
+    @Test
+    fun `상세 posterPath가 null이면 posterUrl이 null이어야 한다`() {
+        val detail =
+            movieDetail(posterPath = null).toMovieDetail(
+                cast = emptyList(),
+                videos = emptyList(),
+            )
+
+        assertNull(detail.posterUrl)
+    }
+
+    @Test
+    fun `상세 응답이면 포스터, 출연진, 영상을 한 영화 정보로 매핑해야 한다`() {
+        val detail =
+            movieDetail(
+                id = 42,
+                title = "기생충",
+                posterPath = "/parasite.jpg",
+                releaseDate = "2019-05-30",
+                overview = "줄거리",
+                voteAverage = 8.6,
+            ).toMovieDetail(
+                cast = listOf(creditItem(name = "송강호", character = "기택", profilePath = "/song.jpg")),
+                videos = listOf(videoItem(key = "abc123")),
+            )
+
+        assertEquals(
+            MovieDetail(
+                id = 42,
+                title = "기생충",
+                posterUrl = "https://image.tmdb.org/t/p/w500/parasite.jpg",
+                releaseDate = "2019-05-30",
+                overview = "줄거리",
+                voteAverage = 8.6,
+                cast =
+                    listOf(
+                        Cast(
+                            name = "송강호",
+                            character = "기택",
+                            profileUrl = "https://image.tmdb.org/t/p/w500/song.jpg",
+                        ),
+                    ),
+                videos = listOf(Video(key = "abc123")),
+            ),
+            detail,
+        )
+    }
+
+    @Test
+    fun `상세 본문이 실패하면 영화 정보 없이 그 오류만 반환해야 한다`() {
+        val result =
+            toMovieDetailResult(
+                detail = DataResult.Failure(RemoteError.Network),
+                cast = DataResult.Success(CreditsDto(id = 1, cast = listOf(creditItem()))),
+                videos = DataResult.Failure(RemoteError.Timeout),
+            )
+
+        assertNull(result.detail)
+        assertEquals(listOf(RemoteError.Network), result.errors)
+    }
+
+    @Test
+    fun `출연진과 영상이 실패하면 빈 목록과 두 오류를 반환해야 한다`() {
+        val result =
+            toMovieDetailResult(
+                detail = DataResult.Success(movieDetail(id = 7, title = "제목")),
+                cast = DataResult.Failure(RemoteError.Network),
+                videos = DataResult.Failure(RemoteError.Timeout),
+            )
+
+        assertEquals(
+            MovieDetail(
+                id = 7,
+                title = "제목",
+                posterUrl = "https://image.tmdb.org/t/p/w500/poster.jpg",
+                releaseDate = "2024-01-02",
+                overview = "줄거리",
+                voteAverage = 7.5,
+                cast = emptyList(),
+                videos = emptyList(),
+            ),
+            result.detail,
+        )
+        assertEquals(listOf(RemoteError.Network, RemoteError.Timeout), result.errors)
+    }
 }
 
 private fun movieItem(
@@ -130,6 +221,23 @@ private fun creditItem(
         character = character,
         creditId = "credit",
         order = 0,
+    )
+
+private fun movieDetail(
+    id: Int = 1,
+    title: String = "제목",
+    posterPath: String? = "/poster.jpg",
+    releaseDate: String = "2024-01-02",
+    overview: String = "줄거리",
+    voteAverage: Double = 7.5,
+): MovieDetailDto =
+    MovieDetailDto(
+        id = id,
+        title = title,
+        posterPath = posterPath,
+        releaseDate = releaseDate,
+        overview = overview,
+        voteAverage = voteAverage,
     )
 
 private fun videoItem(key: String): VideoDto =

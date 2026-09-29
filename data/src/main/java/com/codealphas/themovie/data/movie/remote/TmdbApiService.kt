@@ -26,6 +26,12 @@ internal interface TmdbApiService {
         @Query("query") query: String,
     ): MoviesDto
 
+    @GET("movie/{movie_id}")
+    suspend fun getMovieDetail(
+        @Path("movie_id") movieId: Int,
+        @Query("language") language: String = "ko",
+    ): MovieDetailDto
+
     // 영화 관계자 정보 요청
     @GET("movie/{movie_id}/credits")
     suspend fun getCreditsList(
