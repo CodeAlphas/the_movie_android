@@ -331,121 +331,133 @@ class ReviewDetailActivity : AppCompatActivity() {
         val currentReviewContent = binding.contentEditText.text.toString()
         val currentRating = binding.reviewRatingBar.rating.toDouble() * 2
 
+        // 입력 확인 전에 사진을 삭제하고 업로드하면 빈 입력으로 저장을 눌러도 사진만 바뀌므로, 입력 확인을 가장 먼저 처리
+        if (currentReviewTitle.isBlank() || currentReviewContent.isBlank()) {
+            Toast
+                .makeText(applicationContext, getString(R.string.review_edit_input_required), Toast.LENGTH_LONG)
+                .show()
+            return
+        }
+
         lifecycleScope.launch(Dispatchers.Main) {
             showProgress()
-            if (fileName != "" || selectedImageUri != null) {
-                deletePhotoStorage()
-            } // 사용자가 이미지를 수정하면 이전에 서버에 저장되어 있던 이미지는 삭제
-            uploadPhotoToStorage() // 이미지를 Firebase Storage에 업로드
+            val previousFileName = fileName
+            val isPhotoReplaced = selectedImageUri != null
+            val isPhotoRemoved = imageUri == "" && previousFileName != ""
+
+            // 기존 사진을 먼저 지우는데 새 사진 업로드가 실패하면 사진이 사라지므로, 업로드 성공 뒤에 기존 사진 삭제
+            if (isPhotoReplaced && !uploadPhotoToStorage()) {
+                Toast
+                    .makeText(applicationContext, getString(R.string.review_edit_upload_failed), Toast.LENGTH_LONG)
+                    .show()
+                hideProgress()
+                return@launch
+            }
+            // 사진을 그대로 두는데 파일을 지우면 저장된 URL이 죽은 링크가 되므로,
+            // 바꾸거나 지운 경우에만 기존 파일 삭제
+            if ((isPhotoReplaced || isPhotoRemoved) && previousFileName != "") {
+                val isDeleted = deletePhotoStorage(previousFileName)
+                if (isPhotoRemoved && isDeleted) {
+                    fileName = ""
+                }
+            }
 
             if (reviewType.equals("Edit")) {
-                if (currentReviewTitle.isNotBlank() && currentReviewContent.isNotBlank()) {
-                    val updateReview =
-                        Review(
-                            title = currentReviewTitle,
-                            image = imageUri,
-                            content = currentReviewContent,
-                            time = getCurrentDate(),
-                            rating = currentRating,
-                            storageFileName = fileName,
-                            id = reviewId,
-                        )
-
-                    viewModel.updateReview(updateReview)
-
-                    updateFirebaseRealtimeDB(
-                        currentReviewTitle,
-                        currentReviewContent,
-                        currentRating,
+                val updateReview =
+                    Review(
+                        title = currentReviewTitle,
+                        image = imageUri,
+                        content = currentReviewContent,
+                        time = getCurrentDate(),
+                        rating = currentRating,
+                        storageFileName = fileName,
+                        id = reviewId,
                     )
 
-                    Toast
-                        .makeText(applicationContext, getString(R.string.review_edit_updated), Toast.LENGTH_LONG)
-                        .show()
-                    returnToReviewMain()
-                } else {
-                    Toast
-                        .makeText(applicationContext, getString(R.string.review_edit_input_required), Toast.LENGTH_LONG)
-                        .show()
-                }
-            } else {
-                if (currentReviewTitle.isNotBlank() && currentReviewContent.isNotBlank()) {
-                    val updateReview =
-                        Review(
-                            currentReviewTitle,
-                            imageUri,
-                            currentReviewContent,
-                            getCurrentDate(),
-                            currentRating,
-                            fileName,
-                        )
+                viewModel.updateReview(updateReview)
 
-                    viewModel.insertTransaction(updateReview)
-                    viewModel.maxId
-                        .observe(
-                            this@ReviewDetailActivity,
-                            Observer { maxId ->
-                                maxId?.let {
-                                    reviewId = it
-                                    updateFirebaseRealtimeDB(
-                                        currentReviewTitle,
-                                        currentReviewContent,
-                                        currentRating,
-                                    )
-                                    Toast
-                                        .makeText(
-                                            applicationContext,
-                                            getString(R.string.review_edit_created),
-                                            Toast.LENGTH_LONG,
-                                        ).show()
-                                    returnToReviewMain()
-                                }
-                            },
-                        )
-                } else {
-                    Toast
-                        .makeText(applicationContext, getString(R.string.review_edit_input_required), Toast.LENGTH_LONG)
-                        .show()
-                }
+                updateFirebaseRealtimeDB(
+                    currentReviewTitle,
+                    currentReviewContent,
+                    currentRating,
+                )
+
+                Toast
+                    .makeText(applicationContext, getString(R.string.review_edit_updated), Toast.LENGTH_LONG)
+                    .show()
+                returnToReviewMain()
+            } else {
+                val updateReview =
+                    Review(
+                        currentReviewTitle,
+                        imageUri,
+                        currentReviewContent,
+                        getCurrentDate(),
+                        currentRating,
+                        fileName,
+                    )
+
+                viewModel.insertTransaction(updateReview)
+                viewModel.maxId
+                    .observe(
+                        this@ReviewDetailActivity,
+                        Observer { maxId ->
+                            maxId?.let {
+                                reviewId = it
+                                updateFirebaseRealtimeDB(
+                                    currentReviewTitle,
+                                    currentReviewContent,
+                                    currentRating,
+                                )
+                                Toast
+                                    .makeText(
+                                        applicationContext,
+                                        getString(R.string.review_edit_created),
+                                        Toast.LENGTH_LONG,
+                                    ).show()
+                                returnToReviewMain()
+                            }
+                        },
+                    )
             }
             hideProgress()
         }
     }
 
-    private suspend fun deletePhotoStorage() {
+    private suspend fun deletePhotoStorage(targetFileName: String): Boolean =
         try {
             storage.reference
                 .child("review/photo")
-                .child(fileName)
+                .child(targetFileName)
                 .delete()
                 .await()
-            fileName = ""
+            true
         } catch (e: Exception) {
             Log.e("ReviewDetailActivity", "Firebase 요청 실패", e)
+            false
         }
-    }
 
-    private suspend fun uploadPhotoToStorage() {
-        if (selectedImageUri == null) {
-            return
-        } // 사용자가 이미지를 감상문에 등록하지 않았다면 메소드 종료
-
-        fileName = userId.substring(
-            0,
-            USER_ID_PREFIX_LENGTH,
-        ) + "${System.currentTimeMillis()}.png" // Storage에 저장될 File의 이름을 지정
-        try {
+    private suspend fun uploadPhotoToStorage(): Boolean {
+        val uploadFileName =
+            userId.substring(
+                0,
+                USER_ID_PREFIX_LENGTH,
+            ) + "${System.currentTimeMillis()}.png" // Storage에 저장될 File의 이름을 지정
+        return try {
             imageUri =
                 storage.reference
                     .child("review/photo")
-                    .child(fileName)
+                    .child(uploadFileName)
                     .putFile(selectedImageUri!!)
                     .await()
                     .storage.downloadUrl
                     .await()
                     .toString()
+            fileName = uploadFileName
+            true
         } catch (e: Exception) {
             Log.e("ReviewDetailActivity", "Firebase 요청 실패", e)
+            false
         }
     } // 이미지를 Firebase Storage의 지정된 경로에 업로드해주고 해당 이미지를 가져올 수 있는 Url을 반환해오는 메소드
 
