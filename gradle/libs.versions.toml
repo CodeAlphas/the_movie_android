@@ -26,6 +26,8 @@ kotlinxSerialization = "1.9.0"
 coroutines = "1.10.2"
 glide = "4.16.0"
 playServicesMaps = "19.2.0"
+# 16KB 페이지 크기는 2.11.8부터 지원하므로, 도입 시점에 저장소 maven-metadata.xml의 release였던 2.15.2 사용
+kakaoMap = "2.15.2"
 firebaseBom = "34.19.0"
 googleServices = "4.5.0"
 secrets = "2.0.1"
@@ -67,6 +69,7 @@ javax-inject = { group = "javax.inject", name = "javax.inject", version.ref = "j
 kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutines" }
 kotlinx-coroutines-play-services = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-play-services", version.ref = "coroutines" }
 glide = { group = "com.github.bumptech.glide", name = "glide", version.ref = "glide" }
+kakao-map = { group = "com.kakao.maps.open", name = "android", version.ref = "kakaoMap" }
 play-services-maps = { group = "com.google.android.gms", name = "play-services-maps", version.ref = "playServicesMaps" }
 firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
 firebase-auth = { group = "com.google.firebase", name = "firebase-auth" }

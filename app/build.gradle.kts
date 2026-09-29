@@ -51,6 +51,7 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.kotlinx.coroutines.play.services)
     implementation(libs.glide)
+    implementation(libs.kakao.map)
     implementation(libs.play.services.maps)
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.messaging)
