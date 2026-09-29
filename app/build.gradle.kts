@@ -52,7 +52,7 @@ dependencies {
     implementation(libs.kotlinx.coroutines.play.services)
     implementation(libs.glide)
     implementation(libs.kakao.map)
-    implementation(libs.play.services.maps)
+    implementation(libs.play.services.location)
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.messaging)
     testImplementation(libs.junit)
