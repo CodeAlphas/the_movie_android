@@ -28,37 +28,6 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.TheMovie">
-        <activity
-            android:name=".movie.MainActivity"
-            android:exported="true"
-            android:windowSoftInputMode="adjustResize">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
-        <activity
-            android:name=".auth.LoginActivity"
-            android:exported="false"
-            android:windowSoftInputMode="adjustResize" />
-        <activity
-            android:name=".auth.JoinActivity"
-            android:exported="false"
-            android:windowSoftInputMode="adjustResize" />
-        <activity
-            android:name=".movie.MovieDetailActivity"
-            android:exported="false" />
-        <activity
-            android:name=".map.MapActivity"
-            android:exported="false" />
-        <activity
-            android:name=".review.ReviewMainActivity"
-            android:exported="false" />
-        <activity
-            android:name=".review.ReviewDetailActivity"
-            android:exported="false" />
-
         <service
             android:name=".notification.FirebaseMessagingService"
             android:exported="false">

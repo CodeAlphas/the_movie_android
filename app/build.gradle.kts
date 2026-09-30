@@ -25,7 +25,6 @@ android {
         }
     }
     buildFeatures {
-        viewBinding = true
         buildConfig = true
     }
     lint {
@@ -34,29 +33,12 @@ android {
 }
 
 dependencies {
-    implementation(project(":domain"))
+    implementation(project(":presentation"))
     implementation(project(":data"))
-    implementation(project(":core-android"))
-    implementation(libs.androidx.activity.ktx)
-    implementation(libs.androidx.appcompat)
-    implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.fragment.ktx)
-    implementation(libs.androidx.lifecycle.runtime.ktx)
-    implementation(libs.androidx.lifecycle.viewmodel.ktx)
-    implementation(libs.androidx.recyclerview)
-    implementation(libs.androidx.viewpager2)
-    implementation(libs.material)
-    implementation(libs.kotlinx.coroutines.android)
-    implementation(libs.kotlinx.coroutines.play.services)
-    implementation(libs.glide)
     implementation(libs.kakao.map)
-    implementation(libs.play.services.location)
-    implementation(libs.android.youtube.player)
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.messaging)
-    testImplementation(libs.junit)
-    testImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)
 }
