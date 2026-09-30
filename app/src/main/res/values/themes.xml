@@ -23,6 +23,7 @@
         <item name="colorOnBackground">@color/on_surface</item>
         <!-- 입력란 배경을 drawable로 바꾸면 기본 커서가 보이지 않으므로, colorPrimary 색 커서로 지정 -->
         <item name="android:textCursorDrawable">@drawable/text_cursor</item>
+        <item name="floatingActionButtonStyle">@style/Widget.TheMovie.FloatingActionButton</item>
     </style>
 
     <style name="Theme.TheMovie" parent="Base.Theme.TheMovie">
@@ -60,5 +61,15 @@
         <item name="cornerSizeTopRight">28dp</item>
         <item name="cornerSizeBottomLeft">0dp</item>
         <item name="cornerSizeBottomRight">0dp</item>
+    </style>
+
+    <!-- Material3 기본 FAB는 모서리 16dp 사각형이므로, 색과 크기는 기본 스타일을 따르고 모양만 원형으로 적용 -->
+    <style name="Widget.TheMovie.FloatingActionButton" parent="Widget.Material3.FloatingActionButton.Primary">
+        <item name="shapeAppearanceOverlay">@style/ShapeAppearance.TheMovie.Circle</item>
+    </style>
+
+    <style name="ShapeAppearance.TheMovie.Circle" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
     </style>
 </resources>
