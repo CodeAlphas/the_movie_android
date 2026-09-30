@@ -4,8 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.codealphas.themovie.domain.movie.Movie
 import com.codealphas.themovie.domain.movie.MovieRepository
-import com.codealphas.themovie.domain.result.Outcome
 import com.codealphas.themovie.domain.result.RemoteError
+import com.codealphas.themovie.domain.result.onFailure
+import com.codealphas.themovie.domain.result.onSuccess
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
@@ -20,11 +21,14 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 data class SearchMovieUiState(
     val movies: List<Movie>? = null,
+    val isLoading: Boolean = false,
+    val loadError: RemoteError? = null,
 )
 
 @HiltViewModel
@@ -56,12 +60,16 @@ class SearchMovieViewModel
                     .map(String::trim)
                     .distinctUntilChanged()
                     .filter(String::isNotBlank)
-                    .mapLatest { repository.searchMovies(it) }
-                    .collect { result ->
-                        when (result) {
-                            is Outcome.Success -> _uiState.value = SearchMovieUiState(movies = result.data)
-                            is Outcome.Failure -> _remoteError.send(result.error)
-                        }
+                    .mapLatest { query ->
+                        _uiState.update { it.copy(isLoading = true, loadError = null) }
+                        repository.searchMovies(query)
+                    }.collect { result ->
+                        result
+                            .onSuccess { movies -> _uiState.value = SearchMovieUiState(movies = movies) }
+                            .onFailure { error ->
+                                _uiState.update { it.copy(isLoading = false, loadError = error) }
+                                _remoteError.send(error)
+                            }
                     }
             }
         }

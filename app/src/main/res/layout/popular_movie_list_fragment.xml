@@ -48,6 +48,17 @@
         app:layout_constraintTop_toBottomOf="@id/textView1"
         tools:listitem="@layout/movie_item" />
 
+    <ProgressBar
+        android:id="@+id/progressBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@id/popularMovieRecyclerView"
+        app:layout_constraintEnd_toEndOf="@id/popularMovieRecyclerView"
+        app:layout_constraintStart_toStartOf="@id/popularMovieRecyclerView"
+        app:layout_constraintTop_toTopOf="@id/popularMovieRecyclerView"
+        tools:visibility="visible" />
+
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/locationFloatingButton"
         android:layout_width="wrap_content"

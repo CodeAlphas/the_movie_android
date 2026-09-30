@@ -130,6 +130,11 @@ class FragmentSearchMovie : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.uiState.collect { state ->
+                    binding.progressBar.isVisible = state.isLoading
+                    // 검색이 실패하면 목록이 앞 검색어의 결과로 남으므로,
+                    // 앞 검색어가 0건이었을 때 실패한 검색어까지 결과 없음으로 보이지 않도록 오류가 있으면 문구 표시 제외
+                    val isEmptyResult = state.movies?.isEmpty() == true && !state.isLoading
+                    binding.emptyResultText.isVisible = isEmptyResult && state.loadError == null
                     val movies = state.movies ?: return@collect
                     movieAdapter.submitList(movies)
                 }

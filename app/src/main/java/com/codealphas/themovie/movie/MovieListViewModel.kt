@@ -5,8 +5,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.codealphas.themovie.domain.movie.Movie
 import com.codealphas.themovie.domain.movie.MovieRepository
-import com.codealphas.themovie.domain.result.Outcome
 import com.codealphas.themovie.domain.result.RemoteError
+import com.codealphas.themovie.domain.result.onFailure
+import com.codealphas.themovie.domain.result.onSuccess
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -15,11 +16,14 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 data class MovieListUiState(
     val movies: List<Movie>? = null,
+    val isLoading: Boolean = false,
+    val loadError: RemoteError? = null,
 )
 
 @HiltViewModel
@@ -44,17 +48,20 @@ class MovieListViewModel
             if (_uiState.value.movies != null || loadJob?.isActive == true) return
             loadJob =
                 viewModelScope.launch {
+                    _uiState.update { it.copy(isLoading = true, loadError = null) }
                     val result =
                         when (category) {
                             MovieCategory.POPULAR -> repository.getPopularMovies()
                             MovieCategory.TOP_RATED -> repository.getTopRatedMovies()
                         }
-                    when (result) {
-                        is Outcome.Success -> _uiState.value = MovieListUiState(movies = result.data)
-                        // 실패를 빈 목록으로 넣으면 movies가 null이 아니어서,
-                        // 탭이 다시 보일 때 재요청이 멈추므로 오류만 전달
-                        is Outcome.Failure -> _remoteError.send(result.error)
-                    }
+                    result
+                        .onSuccess { movies -> _uiState.value = MovieListUiState(movies = movies) }
+                        .onFailure { error ->
+                            // 실패를 빈 목록으로 넣으면 movies가 null이 아니어서,
+                            // 탭이 다시 보일 때 재요청이 멈추므로 목록은 null로 두고 오류만 반영
+                            _uiState.update { it.copy(isLoading = false, loadError = error) }
+                            _remoteError.send(error)
+                        }
                 }
         }
 

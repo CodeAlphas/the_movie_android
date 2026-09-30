@@ -102,7 +102,90 @@ class MovieListViewModelTest {
                 Dispatchers.resetMain()
             }
         }
+
+    @Test
+    fun `인기 영화를 요청하는 동안 로딩 중이어야 한다`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository = FakeMovieRepository(hangPopular = true)
+            val viewModel = MovieListViewModel(repository, popularHandle())
+            try {
+                viewModel.loadMovies()
+                runCurrent()
+
+                assertEquals(MovieListUiState(isLoading = true), viewModel.uiState.value)
+            } finally {
+                viewModel.viewModelScope.cancel()
+                Dispatchers.resetMain()
+            }
+        }
+
+    @Test
+    fun `인기 영화 요청이 성공하면 로딩을 끝내고 영화 목록을 보여 줘야 한다`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val movies = listOf(listMovie("popular"))
+            val repository = FakeMovieRepository(popularResult = Outcome.Success(movies))
+            val viewModel = MovieListViewModel(repository, popularHandle())
+            try {
+                viewModel.loadMovies()
+                advanceUntilIdle()
+
+                assertEquals(MovieListUiState(movies = movies), viewModel.uiState.value)
+            } finally {
+                viewModel.viewModelScope.cancel()
+                Dispatchers.resetMain()
+            }
+        }
+
+    @Test
+    fun `인기 영화 요청이 실패하면 영화 목록을 보여 주지 않고 오류 상태가 되어야 한다`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository = FakeMovieRepository()
+            val viewModel = MovieListViewModel(repository, popularHandle())
+            try {
+                viewModel.loadMovies()
+                advanceUntilIdle()
+
+                // 실패를 빈 목록으로 채우면 탭이 다시 보일 때 재요청하지 않으므로, movies가 null로 남는지 확인
+                assertEquals(MovieListUiState(loadError = RemoteError.Network), viewModel.uiState.value)
+            } finally {
+                viewModel.viewModelScope.cancel()
+                Dispatchers.resetMain()
+            }
+        }
+
+    @Test
+    fun `인기 영화 요청이 실패한 뒤 다시 요청하면 오류 상태에서 로딩 중으로 바뀌어야 한다`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository = FakeMovieRepository()
+            val viewModel = MovieListViewModel(repository, popularHandle())
+            try {
+                viewModel.loadMovies()
+                advanceUntilIdle()
+                repository.hangPopular = true
+                viewModel.loadMovies()
+                runCurrent()
+
+                assertEquals(MovieListUiState(isLoading = true), viewModel.uiState.value)
+            } finally {
+                viewModel.viewModelScope.cancel()
+                Dispatchers.resetMain()
+            }
+        }
 }
+
+private fun listMovie(title: String): Movie =
+    Movie(
+        id = title.hashCode(),
+        title = title,
+        posterUrl = null,
+        releaseDate = "",
+        overview = "",
+        voteAverage = 0.0,
+    )
 
 private fun popularHandle(): SavedStateHandle =
     SavedStateHandle(mapOf(MovieListViewModel.ARG_CATEGORY to MovieCategory.POPULAR))
@@ -111,7 +194,8 @@ private fun topRatedHandle(): SavedStateHandle =
     SavedStateHandle(mapOf(MovieListViewModel.ARG_CATEGORY to MovieCategory.TOP_RATED))
 
 private class FakeMovieRepository(
-    private val hangPopular: Boolean,
+    var hangPopular: Boolean = false,
+    private val popularResult: DataResult<List<Movie>> = Outcome.Failure(RemoteError.Network),
 ) : MovieRepository {
     var popularCalls: Int = 0
     var topRatedCalls: Int = 0
@@ -119,7 +203,7 @@ private class FakeMovieRepository(
     override suspend fun getPopularMovies(): DataResult<List<Movie>> {
         popularCalls += 1
         if (hangPopular) awaitCancellation()
-        return Outcome.Failure(RemoteError.Network)
+        return popularResult
     }
 
     override suspend fun getTopRatedMovies(): DataResult<List<Movie>> {
