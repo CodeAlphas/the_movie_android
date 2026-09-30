@@ -4,14 +4,15 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.codealphas.themovie.domain.movie.Movie
 import com.codealphas.themovie.domain.movie.MovieRepository
-import com.codealphas.themovie.domain.result.DataResult
 import com.codealphas.themovie.domain.result.RemoteError
+import com.codealphas.themovie.domain.result.onFailure
+import com.codealphas.themovie.domain.result.onSuccess
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.debounce
@@ -19,11 +20,15 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
+import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 data class SearchMovieUiState(
     val movies: List<Movie>? = null,
+    val isLoading: Boolean = false,
+    val loadError: RemoteError? = null,
 )
 
 @HiltViewModel
@@ -37,8 +42,8 @@ class SearchMovieViewModel
         private val _uiState = MutableStateFlow(SearchMovieUiState())
         val uiState: StateFlow<SearchMovieUiState> = _uiState.asStateFlow()
 
-        private val _remoteError = MutableSharedFlow<RemoteError>()
-        val remoteError: SharedFlow<RemoteError> = _remoteError
+        private val _remoteError = Channel<RemoteError>(Channel.BUFFERED)
+        val remoteError: Flow<RemoteError> = _remoteError.receiveAsFlow()
 
         init {
             observeQuery()
@@ -55,12 +60,16 @@ class SearchMovieViewModel
                     .map(String::trim)
                     .distinctUntilChanged()
                     .filter(String::isNotBlank)
-                    .mapLatest { repository.searchMovies(it) }
-                    .collect { result ->
-                        when (result) {
-                            is DataResult.Success -> _uiState.value = SearchMovieUiState(movies = result.data)
-                            is DataResult.Failure -> _remoteError.emit(result.error)
-                        }
+                    .mapLatest { query ->
+                        _uiState.update { it.copy(isLoading = true, loadError = null) }
+                        repository.searchMovies(query)
+                    }.collect { result ->
+                        result
+                            .onSuccess { movies -> _uiState.value = SearchMovieUiState(movies = movies) }
+                            .onFailure { error ->
+                                _uiState.update { it.copy(isLoading = false, loadError = error) }
+                                _remoteError.send(error)
+                            }
                     }
             }
         }

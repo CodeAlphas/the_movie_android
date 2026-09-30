@@ -5,6 +5,7 @@ import com.codealphas.themovie.domain.movie.Movie
 import com.codealphas.themovie.domain.movie.MovieDetailResult
 import com.codealphas.themovie.domain.movie.MovieRepository
 import com.codealphas.themovie.domain.result.DataResult
+import com.codealphas.themovie.domain.result.Outcome
 import com.codealphas.themovie.domain.result.RemoteError
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -42,7 +43,7 @@ class SearchMovieViewModelTest {
     }
 
     @Test
-    fun `앞 검색이 끝나기 전에 검색어가 바뀌면 두 번 요청하고 나중 결과만 목록에 남아야 한다`() {
+    fun `앞 검색이 끝나기 전에 검색어가 바뀌면 두 번 요청하고 나중 검색어의 영화 목록만 보여 줘야 한다`() {
         val first = listOf(movie("first"))
         val second = listOf(movie("second"))
         val repository =
@@ -50,8 +51,8 @@ class SearchMovieViewModelTest {
                 slowQueries = setOf("first"),
                 results =
                     mapOf(
-                        "first" to DataResult.Success(first),
-                        "second" to DataResult.Success(second),
+                        "first" to Outcome.Success(first),
+                        "second" to Outcome.Success(second),
                     ),
             )
         runSearchTest(repository) { viewModel ->
@@ -72,7 +73,7 @@ class SearchMovieViewModelTest {
         val movies = listOf(movie("avatar"))
         val repository =
             FakeSearchMovieRepository(
-                results = mapOf("avatar" to DataResult.Success(movies)),
+                results = mapOf("avatar" to Outcome.Success(movies)),
             )
         runSearchTest(repository) { viewModel ->
             viewModel.onQueryChange("avatar")
@@ -123,14 +124,14 @@ class SearchMovieViewModelTest {
     }
 
     @Test
-    fun `검색이 실패한 뒤 다른 검색어를 입력하면 오류를 알리고 새 결과를 목록에 넣어야 한다`() {
+    fun `검색이 실패한 뒤 다른 검색어를 입력하면 오류를 알리고 새 검색어의 영화 목록을 보여 줘야 한다`() {
         val good = listOf(movie("good"))
         val repository =
             FakeSearchMovieRepository(
                 results =
                     mapOf(
-                        "bad" to DataResult.Failure(RemoteError.Network),
-                        "good" to DataResult.Success(good),
+                        "bad" to Outcome.Failure(RemoteError.Network),
+                        "good" to Outcome.Success(good),
                     ),
             )
         runSearchTest(repository) { viewModel ->
@@ -148,6 +149,97 @@ class SearchMovieViewModelTest {
             } finally {
                 collect.cancel()
             }
+        }
+    }
+
+    @Test
+    fun `화면이 멈춘 동안 검색이 실패하면 다시 구독할 때 오류를 받아야 한다`() {
+        val repository =
+            FakeSearchMovieRepository(
+                results = mapOf("bad" to Outcome.Failure(RemoteError.Network)),
+            )
+        runSearchTest(repository) { viewModel ->
+            viewModel.onQueryChange("bad")
+            advance(DEBOUNCE_MS)
+            val errors = mutableListOf<RemoteError>()
+            backgroundScope.launch { viewModel.remoteError.collect { errors += it } }
+            runCurrent()
+
+            assertEquals(listOf<RemoteError>(RemoteError.Network), errors)
+        }
+    }
+
+    @Test
+    fun `검색 결과가 0건이면 로딩을 끝내고 빈 영화 목록을 보여 줘야 한다`() {
+        val repository =
+            FakeSearchMovieRepository(
+                results = mapOf("zzz" to Outcome.Success(emptyList())),
+            )
+        runSearchTest(repository) { viewModel ->
+            viewModel.onQueryChange("zzz")
+            advance(DEBOUNCE_MS)
+            assertEquals(SearchMovieUiState(movies = emptyList()), viewModel.uiState.value)
+        }
+    }
+
+    @Test
+    fun `앞 검색이 끝나기 전에 검색어가 바뀌면 나중 검색어 응답이 올 때까지 로딩 중이어야 한다`() {
+        val second = listOf(movie("second"))
+        val repository =
+            FakeSearchMovieRepository(
+                slowQueries = setOf("first", "second"),
+                results = mapOf("second" to Outcome.Success(second)),
+            )
+        runSearchTest(repository) { viewModel ->
+            viewModel.onQueryChange("first")
+            advance(DEBOUNCE_MS)
+            assertEquals(true, viewModel.uiState.value.isLoading)
+            viewModel.onQueryChange("second")
+            advance(DEBOUNCE_MS)
+            assertEquals(true, viewModel.uiState.value.isLoading)
+            advance(SLOW_SEARCH_MS - 1)
+            assertEquals(true, viewModel.uiState.value.isLoading)
+            advance(1)
+            assertEquals(SearchMovieUiState(movies = second), viewModel.uiState.value)
+        }
+    }
+
+    @Test
+    fun `검색이 실패하면 앞 검색어의 영화 목록을 그대로 보여 주고 오류 상태가 되어야 한다`() {
+        val movies = listOf(movie("avatar"))
+        val repository =
+            FakeSearchMovieRepository(
+                results =
+                    mapOf(
+                        "avatar" to Outcome.Success(movies),
+                        "bad" to Outcome.Failure(RemoteError.Network),
+                    ),
+            )
+        runSearchTest(repository) { viewModel ->
+            viewModel.onQueryChange("avatar")
+            advance(DEBOUNCE_MS)
+            viewModel.onQueryChange("bad")
+            advance(DEBOUNCE_MS)
+            assertEquals(
+                SearchMovieUiState(movies = movies, loadError = RemoteError.Network),
+                viewModel.uiState.value,
+            )
+        }
+    }
+
+    @Test
+    fun `검색이 실패한 뒤 다른 검색어를 입력하면 오류 상태에서 로딩 중으로 바뀌어야 한다`() {
+        val repository =
+            FakeSearchMovieRepository(
+                slowQueries = setOf("good"),
+                results = mapOf("bad" to Outcome.Failure(RemoteError.Network)),
+            )
+        runSearchTest(repository) { viewModel ->
+            viewModel.onQueryChange("bad")
+            advance(DEBOUNCE_MS)
+            viewModel.onQueryChange("good")
+            advance(DEBOUNCE_MS)
+            assertEquals(SearchMovieUiState(isLoading = true), viewModel.uiState.value)
         }
     }
 }
@@ -174,6 +266,9 @@ private fun runSearchTest(
         body(viewModel)
     } finally {
         viewModel.viewModelScope.cancel()
+        // 검색 요청이 진행 중일 때 취소하면 mapLatest의 취소 마무리가 Main에 예약되는데,
+        // resetMain 뒤에 실행되면 Main이 없어 테스트가 실패하므로 resetMain 전에 예약된 작업 실행
+        runCurrent()
         Dispatchers.resetMain()
     }
 }
@@ -197,7 +292,7 @@ private class FakeSearchMovieRepository(
     override suspend fun searchMovies(query: String): DataResult<List<Movie>> {
         queries += query
         if (query in slowQueries) delay(SLOW_SEARCH_MS)
-        return results[query] ?: DataResult.Success(listOf(movie(query)))
+        return results[query] ?: Outcome.Success(listOf(movie(query)))
     }
 
     override suspend fun getPopularMovies(): DataResult<List<Movie>> = error("사용하지 않음")

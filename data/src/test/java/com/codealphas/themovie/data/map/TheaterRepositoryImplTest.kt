@@ -7,6 +7,7 @@ import com.codealphas.themovie.data.map.remote.KeywordSearchMetaDto
 import com.codealphas.themovie.data.map.remote.PlaceDto
 import com.codealphas.themovie.domain.map.Theater
 import com.codealphas.themovie.domain.result.DataResult
+import com.codealphas.themovie.domain.result.Outcome
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -54,7 +55,7 @@ class TheaterRepositoryImplTest {
 
             val result = TheaterRepositoryImpl(service).getNearbyTheaters(latitude = 37.5, longitude = 127.0)
 
-            assertTrue(result is DataResult.Failure)
+            assertTrue(result is Outcome.Failure)
         }
 
     @Test
@@ -68,7 +69,7 @@ class TheaterRepositoryImplTest {
         }
 }
 
-private fun DataResult<List<Theater>>.theaterNames(): List<String> = (this as DataResult.Success).data.map { it.name }
+private fun DataResult<List<Theater>>.theaterNames(): List<String> = (this as Outcome.Success).data.map { it.name }
 
 private fun page(
     name: String,

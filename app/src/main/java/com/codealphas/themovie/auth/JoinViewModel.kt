@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.codealphas.themovie.domain.auth.AuthError
 import com.codealphas.themovie.domain.auth.AuthRepository
-import com.codealphas.themovie.domain.auth.AuthResult
+import com.codealphas.themovie.domain.result.Outcome
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -79,15 +79,15 @@ class JoinViewModel
             _uiState.update { it.copy(isLoading = true) }
             viewModelScope.launch {
                 val result = authRepository.signUp(email, password)
-                if (result is AuthResult.Success) {
+                if (result is Outcome.Success) {
                     // Firebase는 가입에 성공하면 그 계정으로 로그인되므로, 가입 화면에 남은 채 로그인되지 않도록 가입 직후 로그아웃
                     authRepository.signOut()
                 }
                 _uiState.update { it.copy(isLoading = false) }
                 val event =
                     when (result) {
-                        AuthResult.Success -> JoinEvent.ShowLoginPrompt
-                        is AuthResult.Failure -> JoinEvent.ShowError(result.error)
+                        is Outcome.Success -> JoinEvent.ShowLoginPrompt
+                        is Outcome.Failure -> JoinEvent.ShowError(result.error)
                     }
                 _events.send(event)
             }

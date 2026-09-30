@@ -23,5 +23,6 @@
         <item name="android:colorBackground">@color/surface</item>
         <item name="colorOnBackground">@color/on_surface</item>
         <item name="android:textCursorDrawable">@drawable/text_cursor</item>
+        <item name="floatingActionButtonStyle">@style/Widget.TheMovie.FloatingActionButton</item>
     </style>
 </resources>

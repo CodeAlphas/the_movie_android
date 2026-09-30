@@ -36,6 +36,7 @@
     <string name="search_query_hint">검색어를 입력해 주세요.</string>
     <string name="search_result_title">Search Result</string>
     <string name="search_result_subtitle">검색 결과</string>
+    <string name="search_empty_result">검색 결과가 없습니다.</string>
     <string name="movie_detail_cast_title">배우 정보</string>
     <string name="movie_detail_video_title">영상</string>
     <string name="movie_detail_overview_title">줄거리</string>

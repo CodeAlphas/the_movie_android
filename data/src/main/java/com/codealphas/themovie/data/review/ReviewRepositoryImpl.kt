@@ -5,6 +5,7 @@ import com.codealphas.themovie.data.review.local.ReviewEntity
 import com.codealphas.themovie.data.review.remote.ReviewRealtimeDataSource
 import com.codealphas.themovie.data.review.remote.ReviewStorageDataSource
 import com.codealphas.themovie.domain.auth.AuthRepository
+import com.codealphas.themovie.domain.result.Outcome
 import com.codealphas.themovie.domain.review.Review
 import com.codealphas.themovie.domain.review.ReviewDraft
 import com.codealphas.themovie.domain.review.ReviewError
@@ -37,34 +38,34 @@ internal class ReviewRepositoryImpl
 
         // DAO insert가 IGNORE라 Room에 이미 있는 id는 서버 값으로 덮어쓰지 않음
         override suspend fun syncFromRemote(): ReviewResult {
-            val userId = authRepository.currentUserId() ?: return ReviewResult.Failure(ReviewError.Unknown)
+            val userId = authRepository.currentUserId() ?: return Outcome.Failure(ReviewError.Unknown)
             return try {
                 realtimeDataSource.getAll(userId).forEach { reviewDao.insert(it.toEntity()) }
-                ReviewResult.Success
+                Outcome.Success(Unit)
             } catch (e: CancellationException) {
                 // 취소를 Failure로 바꾸면 ViewModel이 사라진 뒤에도 실패 안내가 뜨므로, 호출한 코루틴이 멈추도록 취소 예외를 다시 던짐
                 throw e
             } catch (_: Exception) {
-                ReviewResult.Failure(ReviewError.Unknown)
+                Outcome.Failure(ReviewError.Unknown)
             }
         }
 
         override suspend fun getById(id: Int): Review? = reviewDao.getById(id)?.toReview()
 
         override suspend fun save(draft: ReviewDraft): ReviewResult {
-            val userId = authRepository.currentUserId() ?: return ReviewResult.Failure(ReviewError.Unknown)
+            val userId = authRepository.currentUserId() ?: return Outcome.Failure(ReviewError.Unknown)
             return try {
                 val previous = draft.id?.let { reviewDao.getById(it) }
                 // 수정할 감상문이 Room에 없는데 저장하면 Room은 바뀌지 않고 서버에만 쓰이므로, 저장하지 않고 실패 반환
                 if (draft.id != null && previous == null) {
-                    ReviewResult.Failure(ReviewError.Unknown)
+                    Outcome.Failure(ReviewError.Unknown)
                 } else {
                     store(draft, previous, userId)
                 }
             } catch (e: CancellationException) {
                 throw e
             } catch (_: Exception) {
-                ReviewResult.Failure(ReviewError.Unknown)
+                Outcome.Failure(ReviewError.Unknown)
             }
         }
 
@@ -75,12 +76,12 @@ internal class ReviewRepositoryImpl
         ): ReviewResult {
             val photo =
                 resolvePhoto(draft.photo, previous, userId)
-                    ?: return ReviewResult.Failure(ReviewError.PhotoUploadFailed)
+                    ?: return Outcome.Failure(ReviewError.PhotoUploadFailed)
             // 화면을 닫아 취소되면 Room에는 저장됐는데 서버에는 쓰이지 않은 상태로 남으므로,
             // 업로드가 끝난 뒤의 저장 단계는 취소되지 않고 끝까지 처리.
             // 업로드 직후 프로세스가 종료되면 코드로 막을 수 없고 드물어서, 남는 고아 사진 파일은 별도 정리 없이 허용
             withContext(NonCancellable) { persist(draft, previous, photo, userId) }
-            return ReviewResult.Success
+            return Outcome.Success(Unit)
         }
 
         // 업로드가 실패하면 null. 이때 기존 사진과 Room, 서버는 그대로

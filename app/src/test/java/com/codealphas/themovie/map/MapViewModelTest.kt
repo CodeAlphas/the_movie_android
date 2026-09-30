@@ -5,6 +5,7 @@ import com.codealphas.themovie.domain.map.Address
 import com.codealphas.themovie.domain.map.Theater
 import com.codealphas.themovie.domain.map.TheaterRepository
 import com.codealphas.themovie.domain.result.DataResult
+import com.codealphas.themovie.domain.result.Outcome
 import com.codealphas.themovie.domain.result.RemoteError
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
@@ -58,7 +59,7 @@ class MapViewModelTest {
 
     @Test
     fun `주소 요청이 실패하면 오류를 알리고 영화관은 상태에 남아야 한다`() {
-        val repository = FakeTheaterRepository(addressResult = DataResult.Failure(RemoteError.Network))
+        val repository = FakeTheaterRepository(addressResult = Outcome.Failure(RemoteError.Network))
         runMapTest(repository, FakeLocationProvider(listOf(SEOUL))) { viewModel ->
             val errors = mutableListOf<RemoteError>()
             backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
@@ -75,6 +76,40 @@ class MapViewModelTest {
     }
 
     @Test
+    fun `화면이 멈춘 동안 위치를 받지 못하면 다시 구독할 때 위치 실패를 받아야 한다`() {
+        runMapTest(FakeTheaterRepository(), FakeLocationProvider(listOf(null))) { viewModel ->
+            viewModel.loadCurrentLocationAndTheaters()
+            runCurrent()
+            var failedCount = 0
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                viewModel.locationFailed.collect { failedCount++ }
+            }
+
+            assertEquals(1, failedCount)
+        }
+    }
+
+    @Test
+    fun `화면이 멈춘 동안 위치를 받고 주소 요청이 실패하면 다시 구독할 때 위치와 오류를 받아야 한다`() {
+        val repository = FakeTheaterRepository(addressResult = Outcome.Failure(RemoteError.Network))
+        runMapTest(repository, FakeLocationProvider(listOf(SEOUL))) { viewModel ->
+            viewModel.loadCurrentLocationAndTheaters()
+            runCurrent()
+            val locations = mutableListOf<LocationLatLng>()
+            val errors = mutableListOf<RemoteError>()
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                viewModel.locationReceived.collect { locations += it }
+            }
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                viewModel.remoteError.collect { errors += it }
+            }
+
+            assertEquals(listOf(SEOUL), locations)
+            assertEquals(listOf<RemoteError>(RemoteError.Network), errors)
+        }
+    }
+
+    @Test
     fun `앞 위치의 응답이 늦게 와도 새 위치의 상태를 덮지 않아야 한다`() {
         val slowTheaters = CompletableDeferred<DataResult<List<Theater>>>()
         val repository = FakeTheaterRepository(slowTheatersAt = SEOUL, slowTheaters = slowTheaters)
@@ -83,7 +118,7 @@ class MapViewModelTest {
             runCurrent()
             viewModel.loadCurrentLocationAndTheaters()
             runCurrent()
-            slowTheaters.complete(DataResult.Success(listOf(OLD_THEATER)))
+            slowTheaters.complete(Outcome.Success(listOf(OLD_THEATER)))
             runCurrent()
 
             assertEquals(BUSAN, viewModel.uiState.value.currentLocation)
@@ -122,7 +157,7 @@ private class FakeLocationProvider(
 }
 
 private class FakeTheaterRepository(
-    private val addressResult: DataResult<Address> = DataResult.Success(Address("서울")),
+    private val addressResult: DataResult<Address> = Outcome.Success(Address("서울")),
     private val slowTheatersAt: LocationLatLng? = null,
     private val slowTheaters: CompletableDeferred<DataResult<List<Theater>>>? = null,
 ) : TheaterRepository {
@@ -144,6 +179,6 @@ private class FakeTheaterRepository(
         val location = LocationLatLng(latitude, longitude)
         theaterRequests += location
         if (location == slowTheatersAt && slowTheaters != null) return slowTheaters.await()
-        return DataResult.Success(listOf(THEATER))
+        return Outcome.Success(listOf(THEATER))
     }
 }

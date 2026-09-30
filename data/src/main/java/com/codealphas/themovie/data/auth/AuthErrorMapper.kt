@@ -2,6 +2,7 @@ package com.codealphas.themovie.data.auth
 
 import com.codealphas.themovie.domain.auth.AuthError
 import com.codealphas.themovie.domain.auth.AuthResult
+import com.codealphas.themovie.domain.result.Outcome
 import com.google.firebase.FirebaseNetworkException
 import com.google.firebase.auth.FirebaseAuthException
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
@@ -15,16 +16,16 @@ private const val ERROR_INVALID_EMAIL = "ERROR_INVALID_EMAIL"
 internal suspend fun <T> toAuthResult(block: suspend () -> T): AuthResult =
     try {
         block()
-        AuthResult.Success
+        Outcome.Success(Unit)
     } catch (cancellation: CancellationException) {
         // 취소를 실패로 바꾸면 화면이 사라진 뒤에도 로그인이나 가입 안내가 나가므로, 호출한 코루틴이 멈추도록 취소 예외를 다시 던짐
         throw cancellation
     } catch (error: FirebaseAuthException) {
-        AuthResult.Failure(error.toAuthError())
+        Outcome.Failure(error.toAuthError())
     } catch (error: FirebaseNetworkException) {
-        AuthResult.Failure(error.toAuthError())
+        Outcome.Failure(error.toAuthError())
     } catch (_: Exception) {
-        AuthResult.Failure(AuthError.Unknown)
+        Outcome.Failure(AuthError.Unknown)
     }
 
 internal fun Throwable.toAuthError(): AuthError =

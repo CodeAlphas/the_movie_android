@@ -1,12 +1,8 @@
 package com.codealphas.themovie.domain.auth
 
-sealed interface AuthResult {
-    data object Success : AuthResult
+import com.codealphas.themovie.domain.result.Outcome
 
-    data class Failure(
-        val error: AuthError,
-    ) : AuthResult
-}
+typealias AuthResult = Outcome<Unit, AuthError>
 
 sealed interface AuthError {
     data object InvalidCredentials : AuthError

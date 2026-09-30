@@ -64,6 +64,31 @@
         app:layout_constraintTop_toBottomOf="@id/textView1"
         tools:listitem="@layout/movie_item" />
 
+    <ProgressBar
+        android:id="@+id/progressBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@id/searchMovieRecyclerView"
+        app:layout_constraintEnd_toEndOf="@id/searchMovieRecyclerView"
+        app:layout_constraintStart_toStartOf="@id/searchMovieRecyclerView"
+        app:layout_constraintTop_toTopOf="@id/searchMovieRecyclerView"
+        tools:visibility="visible" />
+
+    <TextView
+        android:id="@+id/emptyResultText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/search_empty_result"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:textSize="15sp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@id/searchMovieRecyclerView"
+        app:layout_constraintEnd_toEndOf="@id/searchMovieRecyclerView"
+        app:layout_constraintStart_toStartOf="@id/searchMovieRecyclerView"
+        app:layout_constraintTop_toTopOf="@id/searchMovieRecyclerView"
+        tools:visibility="visible" />
+
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/locationFloatingButton"
         android:layout_width="wrap_content"

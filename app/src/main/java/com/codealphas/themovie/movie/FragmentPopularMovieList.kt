@@ -126,6 +126,7 @@ class FragmentPopularMovieList : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.uiState.collect { state ->
+                    binding.progressBar.isVisible = state.isLoading
                     val movies = state.movies ?: return@collect
                     movieAdapter.submitList(movies)
                     binding.floatingButton.visibility = View.VISIBLE
