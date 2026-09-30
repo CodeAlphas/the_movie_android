@@ -150,6 +150,23 @@ class SearchMovieViewModelTest {
             }
         }
     }
+
+    @Test
+    fun `화면이 멈춘 동안 검색이 실패하면 다시 구독할 때 오류를 받아야 한다`() {
+        val repository =
+            FakeSearchMovieRepository(
+                results = mapOf("bad" to DataResult.Failure(RemoteError.Network)),
+            )
+        runSearchTest(repository) { viewModel ->
+            viewModel.onQueryChange("bad")
+            advance(DEBOUNCE_MS)
+            val errors = mutableListOf<RemoteError>()
+            backgroundScope.launch { viewModel.remoteError.collect { errors += it } }
+            runCurrent()
+
+            assertEquals(listOf<RemoteError>(RemoteError.Network), errors)
+        }
+    }
 }
 
 private const val DEBOUNCE_MS = 300L

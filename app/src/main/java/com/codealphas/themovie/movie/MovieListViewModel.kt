@@ -9,11 +9,12 @@ import com.codealphas.themovie.domain.result.DataResult
 import com.codealphas.themovie.domain.result.RemoteError
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -33,8 +34,8 @@ class MovieListViewModel
         private val _uiState = MutableStateFlow(MovieListUiState())
         val uiState: StateFlow<MovieListUiState> = _uiState.asStateFlow()
 
-        private val _remoteError = MutableSharedFlow<RemoteError>()
-        val remoteError: SharedFlow<RemoteError> = _remoteError
+        private val _remoteError = Channel<RemoteError>(Channel.BUFFERED)
+        val remoteError: Flow<RemoteError> = _remoteError.receiveAsFlow()
 
         private var loadJob: Job? = null
 
@@ -52,7 +53,7 @@ class MovieListViewModel
                         is DataResult.Success -> _uiState.value = MovieListUiState(movies = result.data)
                         // 실패를 빈 목록으로 넣으면 movies가 null이 아니어서,
                         // 탭이 다시 보일 때 재요청이 멈추므로 오류만 전달
-                        is DataResult.Failure -> _remoteError.emit(result.error)
+                        is DataResult.Failure -> _remoteError.send(result.error)
                     }
                 }
         }

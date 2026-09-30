@@ -7,11 +7,12 @@ import com.codealphas.themovie.domain.movie.MovieDetail
 import com.codealphas.themovie.domain.movie.MovieRepository
 import com.codealphas.themovie.domain.result.RemoteError
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -32,8 +33,8 @@ class MovieDetailViewModel
         private val _uiState = MutableStateFlow(MovieDetailUiState())
         val uiState: StateFlow<MovieDetailUiState> = _uiState.asStateFlow()
 
-        private val _remoteError = MutableSharedFlow<RemoteError>()
-        val remoteError: SharedFlow<RemoteError> = _remoteError
+        private val _remoteError = Channel<RemoteError>(Channel.BUFFERED)
+        val remoteError: Flow<RemoteError> = _remoteError.receiveAsFlow()
 
         init {
             // 회전하면 Activity onCreate가 다시 실행되어 요청이 한 번 더 나가므로, ViewModel을 만들 때 한 번만 요청
@@ -44,7 +45,7 @@ class MovieDetailViewModel
             viewModelScope.launch {
                 val result = repository.getMovieDetail(movieId)
                 _uiState.value = MovieDetailUiState(detail = result.detail, isLoading = false)
-                result.errors.forEach { error -> _remoteError.emit(error) }
+                result.errors.forEach { error -> _remoteError.send(error) }
             }
         }
 

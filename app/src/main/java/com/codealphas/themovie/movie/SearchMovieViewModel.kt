@@ -9,9 +9,9 @@ import com.codealphas.themovie.domain.result.RemoteError
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.debounce
@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -37,8 +38,8 @@ class SearchMovieViewModel
         private val _uiState = MutableStateFlow(SearchMovieUiState())
         val uiState: StateFlow<SearchMovieUiState> = _uiState.asStateFlow()
 
-        private val _remoteError = MutableSharedFlow<RemoteError>()
-        val remoteError: SharedFlow<RemoteError> = _remoteError
+        private val _remoteError = Channel<RemoteError>(Channel.BUFFERED)
+        val remoteError: Flow<RemoteError> = _remoteError.receiveAsFlow()
 
         init {
             observeQuery()
@@ -59,7 +60,7 @@ class SearchMovieViewModel
                     .collect { result ->
                         when (result) {
                             is DataResult.Success -> _uiState.value = SearchMovieUiState(movies = result.data)
-                            is DataResult.Failure -> _remoteError.emit(result.error)
+                            is DataResult.Failure -> _remoteError.send(result.error)
                         }
                     }
             }

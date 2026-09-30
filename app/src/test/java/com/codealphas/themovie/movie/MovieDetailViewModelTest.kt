@@ -8,7 +8,6 @@ import com.codealphas.themovie.domain.movie.MovieDetailResult
 import com.codealphas.themovie.domain.movie.MovieRepository
 import com.codealphas.themovie.domain.result.DataResult
 import com.codealphas.themovie.domain.result.RemoteError
-import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel
@@ -16,6 +15,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.Assert.assertEquals
@@ -46,7 +46,7 @@ class MovieDetailViewModelTest {
         }
 
     @Test
-    fun `상세 요청이 실패하면 영화 정보 없이 오류를 전달해야 한다`() =
+    fun `화면이 멈춘 동안 상세 요청이 실패하면 다시 구독할 때 영화 정보 없이 오류를 받아야 한다`() =
         runTest {
             Dispatchers.setMain(StandardTestDispatcher(testScheduler))
             val repository =
@@ -54,27 +54,23 @@ class MovieDetailViewModelTest {
                     MovieDetailResult(detail = null, errors = listOf(RemoteError.Network)),
                 )
             val viewModel = MovieDetailViewModel(repository, movieIdHandle(42))
-            val errors = mutableListOf<RemoteError>()
-            // replay가 0이라 구독 전에 emit하면 오류가 버려지므로, 요청이 돌기 전에 구독
-            val collect =
-                launch(start = CoroutineStart.UNDISPATCHED) {
-                    viewModel.remoteError.collect { errors += it }
-                }
             try {
                 advanceUntilIdle()
+                val errors = mutableListOf<RemoteError>()
+                backgroundScope.launch { viewModel.remoteError.collect { errors += it } }
+                runCurrent()
 
                 assertNull(viewModel.uiState.value.detail)
                 assertEquals(false, viewModel.uiState.value.isLoading)
                 assertEquals(listOf(RemoteError.Network), errors)
             } finally {
-                collect.cancel()
                 viewModel.viewModelScope.cancel()
                 Dispatchers.resetMain()
             }
         }
 
     @Test
-    fun `출연진 오류가 있어도 영화 정보가 있으면 상세를 보여주고 오류를 전달해야 한다`() =
+    fun `화면이 멈춘 동안 출연진 요청만 실패하면 상세를 보여주고 다시 구독할 때 오류를 받아야 한다`() =
         runTest {
             Dispatchers.setMain(StandardTestDispatcher(testScheduler))
             val detail = movieDetail()
@@ -83,19 +79,15 @@ class MovieDetailViewModelTest {
                     MovieDetailResult(detail = detail, errors = listOf(RemoteError.Timeout)),
                 )
             val viewModel = MovieDetailViewModel(repository, movieIdHandle(detail.id))
-            val errors = mutableListOf<RemoteError>()
-            // replay가 0이라 구독 전에 emit하면 오류가 버려지므로, 요청이 돌기 전에 구독
-            val collect =
-                launch(start = CoroutineStart.UNDISPATCHED) {
-                    viewModel.remoteError.collect { errors += it }
-                }
             try {
                 advanceUntilIdle()
+                val errors = mutableListOf<RemoteError>()
+                backgroundScope.launch { viewModel.remoteError.collect { errors += it } }
+                runCurrent()
 
                 assertEquals(detail, viewModel.uiState.value.detail)
                 assertEquals(listOf(RemoteError.Timeout), errors)
             } finally {
-                collect.cancel()
                 viewModel.viewModelScope.cancel()
                 Dispatchers.resetMain()
             }

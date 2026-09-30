@@ -15,6 +15,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.Assert.assertEquals
@@ -56,6 +57,26 @@ class MovieListViewModelTest {
                 assertEquals(2, repository.popularCalls)
             } finally {
                 collect.cancel()
+                viewModel.viewModelScope.cancel()
+                Dispatchers.resetMain()
+            }
+        }
+
+    @Test
+    fun `화면이 멈춘 동안 인기 영화 요청이 실패하면 다시 구독할 때 오류를 받아야 한다`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository = FakeMovieRepository(hangPopular = false)
+            val viewModel = MovieListViewModel(repository, popularHandle())
+            try {
+                viewModel.loadMovies()
+                advanceUntilIdle()
+                val errors = mutableListOf<RemoteError>()
+                backgroundScope.launch { viewModel.remoteError.collect { errors += it } }
+                runCurrent()
+
+                assertEquals(listOf<RemoteError>(RemoteError.Network), errors)
+            } finally {
                 viewModel.viewModelScope.cancel()
                 Dispatchers.resetMain()
             }
