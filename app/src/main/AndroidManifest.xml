@@ -60,12 +60,17 @@
             android:exported="false" />
 
         <service
-            android:name=".service.FirebaseMessagingService"
+            android:name=".notification.FirebaseMessagingService"
             android:exported="false">
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
         </service>
+
+        <!-- 채널을 지정하지 않은 백그라운드 알림 메시지는 FCM이 만든 Miscellaneous 채널로 들어가므로, 앱 채널을 기본 채널로 지정 -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="@string/notification_channel_id" />
 
         <!-- Photo Picker가 없는 기기에 Google Play 서비스 백포트 모듈을 설치하기 위한 선언 -->
         <service
