@@ -85,6 +85,14 @@
     <string name="map_theater_distance_meters">%1$dm</string>
     <string name="map_theater_distance_kilometers">%1$.1fkm</string>
     <string name="map_directions_unavailable">길찾기를 열 수 있는 앱이 없습니다.</string>
+    <!-- 채널 id가 번역으로 바뀌면 기기에 새 채널이 생겨 사용자가 바꾼 알림 설정이 이어지지 않으므로, 번역 대상에서 제외 -->
+    <string name="notification_channel_id" translatable="false">The Movie Channel Id</string>
     <string name="notification_channel_name">The Movie</string>
     <string name="notification_channel_description">The Movie 채널</string>
+    <string name="notification_settings_menu">알림 설정</string>
+    <string name="notification_prompt_title">알림을 받아 보시겠어요?</string>
+    <string name="notification_prompt_message">새로 개봉하는 영화와 추천 영화 소식을 알림으로 보내 드려요.</string>
+    <string name="notification_prompt_allow">허용</string>
+    <string name="notification_prompt_later">나중에</string>
+    <string name="notification_permission_denied">알림을 받으려면 메뉴의 알림 설정에서 허용해 주세요.</string>
 </resources>
