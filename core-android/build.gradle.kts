@@ -1,5 +1,6 @@
 plugins {
     id("movie.android.library")
+    id("movie.android.compose")
     id("movie.quality")
 }
 
@@ -12,4 +13,5 @@ dependencies {
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.core.ktx)
     implementation(libs.material)
+    testImplementation(libs.junit)
 }
