@@ -1,5 +1,6 @@
 plugins {
     id("movie.android.library")
+    id("movie.android.compose")
     // app의 @HiltAndroidApp 코드 생성은 Hilt 컴파일러가 각 모듈에 남긴 메타데이터 클래스로만 @AndroidEntryPoint와 @InstallIn 모듈을 찾으므로,
     // 화면, ViewModel, LocationModule이 앱 의존성 그래프에 들어가도록 presentation에서도 Hilt 컴파일러를 실행하는 movie.android.hilt 적용
     id("movie.android.hilt")
