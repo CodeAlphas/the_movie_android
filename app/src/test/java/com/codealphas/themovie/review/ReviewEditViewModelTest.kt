@@ -182,7 +182,102 @@ class ReviewEditViewModelTest {
             assertEquals(listOf<ReviewPhoto>(ReviewPhoto.Removed), repository.savedDrafts.map(ReviewDraft::photo))
         }
     }
+
+    @Test
+    fun `별점을 별 개수로 바꾸면 10점 만점 점수로 저장하고 같은 별 개수를 보여야 한다`() {
+        runReviewEditTest(FakeReviewEditRepository(), SavedStateHandle()) { viewModel ->
+            viewModel.onStarRatingChange(3.5f)
+
+            assertEquals(7.0, viewModel.uiState.value.rating, 0.0)
+            assertEquals(3.5f, viewModel.uiState.value.starRating)
+        }
+    }
+
+    @Test
+    fun `프로세스가 종료된 뒤 다시 열면 입력과 촬영한 사진을 복원해야 한다`() {
+        val savedStateHandle = SavedStateHandle()
+        runReviewEditTest(FakeReviewEditRepository(), savedStateHandle) { viewModel ->
+            fillInput(viewModel)
+            viewModel.onCameraStarted(CAMERA_URI)
+            viewModel.onCameraResult(isSaved = true)
+
+            val restored = ReviewEditViewModel(FakeReviewEditRepository(), savedStateHandle)
+
+            val expected =
+                ReviewEditUiState(
+                    title = "기생충",
+                    content = "잘 봤다",
+                    rating = 8.0,
+                    photo = ReviewPhoto.New(CAMERA_URI),
+                )
+            assertEquals(expected, restored.uiState.value)
+        }
+    }
+
+    @Test
+    fun `Photo Picker로 고른 사진은 프로세스가 종료된 뒤 다시 열면 고르기 전 사진으로 돌아가야 한다`() {
+        val savedStateHandle = SavedStateHandle()
+        runReviewEditTest(FakeReviewEditRepository(), savedStateHandle) { viewModel ->
+            viewModel.onCameraStarted(CAMERA_URI)
+            viewModel.onCameraResult(isSaved = true)
+            viewModel.onPhotoSelected("content://photo/1")
+
+            val restored = ReviewEditViewModel(FakeReviewEditRepository(), savedStateHandle)
+
+            assertEquals(ReviewPhoto.Unchanged, restored.uiState.value.photo)
+        }
+    }
+
+    @Test
+    fun `카메라를 쓰는 동안 프로세스가 종료돼도 촬영에 성공하면 카메라에 넘긴 파일을 새 사진으로 골라야 한다`() {
+        val savedStateHandle = SavedStateHandle()
+        runReviewEditTest(FakeReviewEditRepository(), savedStateHandle) { viewModel ->
+            viewModel.onCameraStarted(CAMERA_URI)
+
+            val restored = ReviewEditViewModel(FakeReviewEditRepository(), savedStateHandle)
+            restored.onCameraResult(isSaved = true)
+
+            assertEquals(ReviewPhoto.New(CAMERA_URI), restored.uiState.value.photo)
+        }
+    }
+
+    @Test
+    fun `촬영에 실패하면 이전에 고른 사진을 그대로 둬야 한다`() {
+        runReviewEditTest(FakeReviewEditRepository(), SavedStateHandle()) { viewModel ->
+            viewModel.onPhotoSelected("content://photo/1")
+            viewModel.onCameraStarted(CAMERA_URI)
+
+            viewModel.onCameraResult(isSaved = false)
+
+            assertEquals(ReviewPhoto.New("content://photo/1"), viewModel.uiState.value.photo)
+        }
+    }
+
+    @Test
+    fun `수정 모드에서 프로세스가 종료된 뒤 다시 열면 고친 입력은 Room 값으로 덮지 않아야 한다`() {
+        val savedStateHandle = editHandle(STORED_REVIEW.id)
+        val repository = FakeReviewEditRepository(stored = STORED_REVIEW)
+        runReviewEditTest(repository, savedStateHandle) { viewModel ->
+            runCurrent()
+            viewModel.onTitleChange("기생충 다시 보기")
+
+            val restored = ReviewEditViewModel(repository, savedStateHandle)
+            runCurrent()
+
+            val expected =
+                ReviewEditUiState(
+                    title = "기생충 다시 보기",
+                    content = STORED_REVIEW.content,
+                    rating = STORED_REVIEW.rating,
+                    savedImageUrl = STORED_REVIEW.image,
+                    isEditing = true,
+                )
+            assertEquals(expected, restored.uiState.value)
+        }
+    }
 }
+
+private const val CAMERA_URI = "file:///cache/review_photo_1.jpg"
 
 private val STORED_REVIEW =
     Review(
@@ -201,7 +296,7 @@ private fun editHandle(reviewId: Int): SavedStateHandle =
 private fun fillInput(viewModel: ReviewEditViewModel) {
     viewModel.onTitleChange("기생충")
     viewModel.onContentChange("잘 봤다")
-    viewModel.onRatingChange(8.0)
+    viewModel.onStarRatingChange(4f)
 }
 
 private fun runReviewEditTest(

@@ -19,17 +19,23 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+// 화면의 별점은 별 5개이고 감상문 점수는 10점 만점이라 두 값의 비율
+private const val RATING_SCALE = 2
+
 data class ReviewEditUiState(
     val title: String = "",
     val content: String = "",
-    // 0.0~10.0 점수. 화면의 RatingBar(별 5개)는 이 값의 절반
+    // 0.0~10.0 점수
     val rating: Double = 0.0,
     val photo: ReviewPhoto = ReviewPhoto.Unchanged,
     // Unchanged일 때 화면에 보여줄, 이미 저장된 사진 URL. 사진이 없으면 빈 문자열
     val savedImageUrl: String = "",
     val isEditing: Boolean = false,
     val isSaving: Boolean = false,
-)
+) {
+    // 화면마다 별점 변환을 따로 계산하지 않도록, 별 5개 기준 값을 상태에서 제공
+    val starRating: Float get() = (rating / RATING_SCALE).toFloat()
+}
 
 sealed interface ReviewEditEvent {
     data class Saved(
@@ -50,12 +56,22 @@ class ReviewEditViewModel
     @Inject
     constructor(
         private val repository: ReviewRepository,
-        savedStateHandle: SavedStateHandle,
+        private val savedStateHandle: SavedStateHandle,
     ) : ViewModel() {
         // 작성 화면은 reviewId extra 없이 열리므로 null이면 새 감상문
         private val reviewId: Int? = savedStateHandle.get<Int>(ARG_REVIEW_ID)
 
-        private val _uiState = MutableStateFlow(ReviewEditUiState(isEditing = reviewId != null))
+        // 카메라 앱을 쓰는 동안 프로세스가 종료되면 입력이 사라지므로, SavedStateHandle에 남긴 입력으로 초기 상태 복원
+        private val _uiState =
+            MutableStateFlow(
+                ReviewEditUiState(
+                    title = savedStateHandle[KEY_TITLE] ?: "",
+                    content = savedStateHandle[KEY_CONTENT] ?: "",
+                    rating = savedStateHandle[KEY_RATING] ?: 0.0,
+                    photo = restoredPhoto(),
+                    isEditing = reviewId != null,
+                ),
+            )
         val uiState: StateFlow<ReviewEditUiState> = _uiState.asStateFlow()
 
         private val _events = Channel<ReviewEditEvent>(Channel.BUFFERED)
@@ -73,26 +89,75 @@ class ReviewEditViewModel
                     _events.send(ReviewEditEvent.LoadFailed)
                     return@launch
                 }
+                // 복원한 입력을 Room 값으로 덮으면 프로세스 종료 전에 고친 내용이 사라지므로, 남긴 입력이 없는 항목만 Room 값 반영
                 _uiState.update {
                     it.copy(
-                        title = review.title,
-                        content = review.content,
-                        rating = review.rating,
+                        title = if (KEY_TITLE in savedStateHandle) it.title else review.title,
+                        content = if (KEY_CONTENT in savedStateHandle) it.content else review.content,
+                        rating = if (KEY_RATING in savedStateHandle) it.rating else review.rating,
                         savedImageUrl = review.image,
                     )
                 }
             }
         }
 
-        fun onTitleChange(title: String) = _uiState.update { it.copy(title = title) }
+        fun onTitleChange(title: String) {
+            savedStateHandle[KEY_TITLE] = title
+            _uiState.update { it.copy(title = title) }
+        }
 
-        fun onContentChange(content: String) = _uiState.update { it.copy(content = content) }
+        fun onContentChange(content: String) {
+            savedStateHandle[KEY_CONTENT] = content
+            _uiState.update { it.copy(content = content) }
+        }
 
-        fun onRatingChange(rating: Double) = _uiState.update { it.copy(rating = rating) }
+        fun onStarRatingChange(stars: Float) {
+            val rating = stars.toDouble() * RATING_SCALE
+            savedStateHandle[KEY_RATING] = rating
+            _uiState.update { it.copy(rating = rating) }
+        }
 
-        fun onPhotoSelected(uri: String) = _uiState.update { it.copy(photo = ReviewPhoto.New(uri)) }
+        // Photo Picker uri의 읽기 권한은 프로세스가 끝나면 사라지므로, 복원하지 않도록 남긴 사진 기록 삭제
+        fun onPhotoSelected(uri: String) {
+            storePhoto(cameraUri = null, isRemoved = false)
+            _uiState.update { it.copy(photo = ReviewPhoto.New(uri)) }
+        }
 
-        fun onPhotoRemoved() = _uiState.update { it.copy(photo = ReviewPhoto.Removed) }
+        fun onPhotoRemoved() {
+            storePhoto(cameraUri = null, isRemoved = true)
+            _uiState.update { it.copy(photo = ReviewPhoto.Removed) }
+        }
+
+        // 카메라 앱을 쓰는 동안 프로세스가 종료되면 촬영 파일 위치를 잃어 결과를 받지 못하므로, 여는 순간 파일 uri 보관
+        fun onCameraStarted(fileUri: String) {
+            savedStateHandle[KEY_PENDING_CAMERA_URI] = fileUri
+        }
+
+        fun onCameraResult(isSaved: Boolean) {
+            val uri = savedStateHandle.remove<String>(KEY_PENDING_CAMERA_URI)
+            // 촬영이 끝나지 않으면 파일에 사진이 없으므로, 이전 사진 유지
+            if (!isSaved || uri == null) return
+            storePhoto(cameraUri = uri, isRemoved = false)
+            _uiState.update { it.copy(photo = ReviewPhoto.New(uri)) }
+        }
+
+        private fun storePhoto(
+            cameraUri: String?,
+            isRemoved: Boolean,
+        ) {
+            savedStateHandle[KEY_CAMERA_PHOTO_URI] = cameraUri
+            savedStateHandle[KEY_PHOTO_REMOVED] = isRemoved
+        }
+
+        // 촬영 사진은 앱 캐시 파일이라 복원 뒤에도 읽히므로, 촬영 사진과 사진 삭제만 복원
+        private fun restoredPhoto(): ReviewPhoto {
+            val cameraUri = savedStateHandle.get<String>(KEY_CAMERA_PHOTO_URI)
+            return when {
+                cameraUri != null -> ReviewPhoto.New(cameraUri)
+                savedStateHandle.get<Boolean>(KEY_PHOTO_REMOVED) == true -> ReviewPhoto.Removed
+                else -> ReviewPhoto.Unchanged
+            }
+        }
 
         fun save() {
             val state = _uiState.value
@@ -126,5 +191,11 @@ class ReviewEditViewModel
 
         companion object {
             const val ARG_REVIEW_ID = "reviewId"
+            private const val KEY_TITLE = "title"
+            private const val KEY_CONTENT = "content"
+            private const val KEY_RATING = "rating"
+            private const val KEY_CAMERA_PHOTO_URI = "cameraPhotoUri"
+            private const val KEY_PHOTO_REMOVED = "photoRemoved"
+            private const val KEY_PENDING_CAMERA_URI = "pendingCameraUri"
         }
     }

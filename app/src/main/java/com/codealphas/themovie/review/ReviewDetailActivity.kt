@@ -38,22 +38,12 @@ import java.io.File
 
 @AndroidEntryPoint
 class ReviewDetailActivity : AppCompatActivity() {
-    private companion object {
-        const val KEY_PHOTO_PATH = "photo_path"
-
-        // RatingBar는 별 5개이고 감상문 점수는 10점 만점이라 두 값의 비율
-        const val RATING_SCALE = 2
-    }
-
     private lateinit var binding: ActivityReviewDetailBinding
     private val viewModel: ReviewEditViewModel by viewModels()
-    private var photoFile: File? = null
     private val cameraPermission: String by lazy { Manifest.permission.CAMERA }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // 카메라 앱을 쓰는 동안 프로세스가 종료되면 촬영 파일을 잃어 결과를 받지 못하므로, 저장한 경로 복원
-        photoFile = savedInstanceState?.getString(KEY_PHOTO_PATH)?.let(::File)
         applySystemBarInsets()
 
         binding = ActivityReviewDetailBinding.inflate(layoutInflater)
@@ -81,9 +71,8 @@ class ReviewDetailActivity : AppCompatActivity() {
                         if (binding.contentEditText.text.toString() != state.content) {
                             binding.contentEditText.setText(state.content)
                         }
-                        val ratingBarValue = (state.rating / RATING_SCALE).toFloat()
-                        if (binding.reviewRatingBar.rating != ratingBarValue) {
-                            binding.reviewRatingBar.rating = ratingBarValue
+                        if (binding.reviewRatingBar.rating != state.starRating) {
+                            binding.reviewRatingBar.rating = state.starRating
                         }
                         binding.button.setText(
                             if (state.isEditing) R.string.review_edit_update else R.string.review_edit_create,
@@ -224,15 +213,10 @@ class ReviewDetailActivity : AppCompatActivity() {
             .show()
     }
 
-    override fun onSaveInstanceState(outState: Bundle) {
-        super.onSaveInstanceState(outState)
-        photoFile?.let { outState.putString(KEY_PHOTO_PATH, it.path) }
-    }
-
     private fun activateCamera() {
         val file = File.createTempFile("review_photo_", ".jpg", externalCacheDir)
         val uri = FileProvider.getUriForFile(this, "$packageName.provider", file)
-        photoFile = file
+        viewModel.onCameraStarted(file.toUri().toString())
         // 카메라 앱이 없는 기기에서는 실행 시 예외가 나므로, 앱 종료 대신 실패 안내 처리
         try {
             cameraLauncher.launch(uri)
@@ -260,10 +244,8 @@ class ReviewDetailActivity : AppCompatActivity() {
 
     private val cameraLauncher =
         registerForActivityResult(ActivityResultContracts.TakePicture()) { isSaved ->
-            val file = photoFile
-            if (isSaved && file != null) {
-                viewModel.onPhotoSelected(file.toUri().toString())
-            } else {
+            viewModel.onCameraResult(isSaved)
+            if (!isSaved) {
                 showToast(R.string.review_edit_photo_failed)
             }
         }
@@ -282,7 +264,7 @@ class ReviewDetailActivity : AppCompatActivity() {
         binding.reviewRatingBar.setOnRatingBarChangeListener { _, rating, fromUser ->
             // 상태를 반영하려고 코드로 바꾼 별점은 이미 상태에 있는 값이므로, 사용자가 바꾼 경우만 전달
             if (fromUser) {
-                viewModel.onRatingChange(rating.toDouble() * RATING_SCALE)
+                viewModel.onStarRatingChange(rating)
             }
         }
     }
