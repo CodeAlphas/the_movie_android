@@ -1,12 +1,8 @@
 package com.codealphas.themovie.domain.review
 
-sealed interface ReviewResult {
-    data object Success : ReviewResult
+import com.codealphas.themovie.domain.result.Outcome
 
-    data class Failure(
-        val error: ReviewError,
-    ) : ReviewResult
-}
+typealias ReviewResult = Outcome<Unit, ReviewError>
 
 enum class ReviewError {
     Unknown,

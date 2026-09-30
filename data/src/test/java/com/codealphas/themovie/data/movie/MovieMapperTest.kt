@@ -9,7 +9,7 @@ import com.codealphas.themovie.domain.movie.Cast
 import com.codealphas.themovie.domain.movie.Movie
 import com.codealphas.themovie.domain.movie.MovieDetail
 import com.codealphas.themovie.domain.movie.Video
-import com.codealphas.themovie.domain.result.DataResult
+import com.codealphas.themovie.domain.result.Outcome
 import com.codealphas.themovie.domain.result.RemoteError
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -192,9 +192,9 @@ class MovieMapperTest {
     fun `상세 본문이 실패하면 영화 정보 없이 그 오류만 반환해야 한다`() {
         val result =
             toMovieDetailResult(
-                detail = DataResult.Failure(RemoteError.Network),
-                cast = DataResult.Success(CreditsDto(id = 1, cast = listOf(creditItem()))),
-                videos = DataResult.Failure(RemoteError.Timeout),
+                detail = Outcome.Failure(RemoteError.Network),
+                cast = Outcome.Success(CreditsDto(id = 1, cast = listOf(creditItem()))),
+                videos = Outcome.Failure(RemoteError.Timeout),
             )
 
         assertNull(result.detail)
@@ -205,9 +205,9 @@ class MovieMapperTest {
     fun `출연진과 영상이 실패하면 빈 목록과 두 오류를 반환해야 한다`() {
         val result =
             toMovieDetailResult(
-                detail = DataResult.Success(movieDetail(id = 7, title = "제목")),
-                cast = DataResult.Failure(RemoteError.Network),
-                videos = DataResult.Failure(RemoteError.Timeout),
+                detail = Outcome.Success(movieDetail(id = 7, title = "제목")),
+                cast = Outcome.Failure(RemoteError.Network),
+                videos = Outcome.Failure(RemoteError.Timeout),
             )
 
         assertEquals(

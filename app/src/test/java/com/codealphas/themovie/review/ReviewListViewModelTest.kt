@@ -4,6 +4,7 @@ import androidx.lifecycle.viewModelScope
 import com.codealphas.themovie.domain.auth.AuthRepository
 import com.codealphas.themovie.domain.auth.AuthResult
 import com.codealphas.themovie.domain.auth.LogoutUseCase
+import com.codealphas.themovie.domain.result.Outcome
 import com.codealphas.themovie.domain.review.Review
 import com.codealphas.themovie.domain.review.ReviewDraft
 import com.codealphas.themovie.domain.review.ReviewError
@@ -46,7 +47,7 @@ class ReviewListViewModelTest {
 
     @Test
     fun `동기화에 실패하면 실패 안내를 한 번 보내야 한다`() {
-        val repository = FakeReviewListRepository(syncResult = ReviewResult.Failure(ReviewError.Unknown))
+        val repository = FakeReviewListRepository(syncResult = Outcome.Failure(ReviewError.Unknown))
         runReviewListTest(repository) { viewModel ->
             var failedCount = 0
             backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
@@ -62,7 +63,7 @@ class ReviewListViewModelTest {
 
     @Test
     fun `동기화에 성공하면 실패 안내를 보내지 않아야 한다`() {
-        val repository = FakeReviewListRepository(syncResult = ReviewResult.Success)
+        val repository = FakeReviewListRepository(syncResult = Outcome.Success(Unit))
         runReviewListTest(repository) { viewModel ->
             var failedCount = 0
             backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
@@ -138,7 +139,7 @@ private fun runReviewListTest(
 }
 
 private class FakeReviewListRepository(
-    private val syncResult: ReviewResult = ReviewResult.Success,
+    private val syncResult: ReviewResult = Outcome.Success(Unit),
     private val deleteAllDone: CompletableDeferred<Unit> = CompletableDeferred(Unit),
 ) : ReviewRepository {
     val reviews = MutableStateFlow(emptyList<Review>())

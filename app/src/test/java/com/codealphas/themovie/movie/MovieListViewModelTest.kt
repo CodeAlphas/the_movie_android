@@ -6,6 +6,7 @@ import com.codealphas.themovie.domain.movie.Movie
 import com.codealphas.themovie.domain.movie.MovieDetailResult
 import com.codealphas.themovie.domain.movie.MovieRepository
 import com.codealphas.themovie.domain.result.DataResult
+import com.codealphas.themovie.domain.result.Outcome
 import com.codealphas.themovie.domain.result.RemoteError
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -118,12 +119,12 @@ private class FakeMovieRepository(
     override suspend fun getPopularMovies(): DataResult<List<Movie>> {
         popularCalls += 1
         if (hangPopular) awaitCancellation()
-        return DataResult.Failure(RemoteError.Network)
+        return Outcome.Failure(RemoteError.Network)
     }
 
     override suspend fun getTopRatedMovies(): DataResult<List<Movie>> {
         topRatedCalls += 1
-        return DataResult.Failure(RemoteError.Network)
+        return Outcome.Failure(RemoteError.Network)
     }
 
     override suspend fun searchMovies(query: String): DataResult<List<Movie>> = error("사용하지 않음")

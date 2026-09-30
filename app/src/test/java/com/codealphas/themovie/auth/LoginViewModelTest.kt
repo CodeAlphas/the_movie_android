@@ -4,6 +4,7 @@ import androidx.lifecycle.viewModelScope
 import com.codealphas.themovie.domain.auth.AuthError
 import com.codealphas.themovie.domain.auth.AuthRepository
 import com.codealphas.themovie.domain.auth.AuthResult
+import com.codealphas.themovie.domain.result.Outcome
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -51,13 +52,13 @@ class LoginViewModelTest {
 
             assertEquals(1, repository.signInCalls)
             assertTrue(viewModel.uiState.value.isLoading)
-            result.complete(AuthResult.Success)
+            result.complete(Outcome.Success(Unit))
         }
     }
 
     @Test
     fun `로그인에 성공하면 로딩을 끝내고 메인 이동 이벤트를 보내야 한다`() {
-        val repository = FakeLoginAuthRepository(signInResult = CompletableDeferred(AuthResult.Success))
+        val repository = FakeLoginAuthRepository(signInResult = CompletableDeferred(Outcome.Success(Unit)))
         runLoginTest(repository) { viewModel ->
             val events = collectLoginEvents(viewModel)
 
@@ -71,7 +72,7 @@ class LoginViewModelTest {
 
     @Test
     fun `로그인에 실패하면 로딩을 끝내고 실패 이유를 보내야 한다`() {
-        val failure = AuthResult.Failure(AuthError.InvalidCredentials)
+        val failure = Outcome.Failure(AuthError.InvalidCredentials)
         val repository = FakeLoginAuthRepository(signInResult = CompletableDeferred(failure))
         runLoginTest(repository) { viewModel ->
             val events = collectLoginEvents(viewModel)

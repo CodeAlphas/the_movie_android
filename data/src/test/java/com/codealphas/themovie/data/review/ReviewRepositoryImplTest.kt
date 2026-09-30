@@ -6,11 +6,11 @@ import com.codealphas.themovie.data.review.remote.ReviewRealtimeDataSource
 import com.codealphas.themovie.data.review.remote.ReviewStorageDataSource
 import com.codealphas.themovie.domain.auth.AuthRepository
 import com.codealphas.themovie.domain.auth.AuthResult
+import com.codealphas.themovie.domain.result.Outcome
 import com.codealphas.themovie.domain.review.Review
 import com.codealphas.themovie.domain.review.ReviewDraft
 import com.codealphas.themovie.domain.review.ReviewError
 import com.codealphas.themovie.domain.review.ReviewPhoto
-import com.codealphas.themovie.domain.review.ReviewResult
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -30,7 +30,7 @@ class ReviewRepositoryImplTest {
 
             val result = repository().save(editDraft(ReviewPhoto.Unchanged))
 
-            assertEquals(ReviewResult.Success, result)
+            assertEquals(Outcome.Success(Unit), result)
             assertEquals(listOf("room.update", "server.save"), calls)
             val expected = STORED.toReview().copy(title = "수정한 제목")
             assertEquals(expected, dao.saved(STORED.id))
@@ -44,7 +44,7 @@ class ReviewRepositoryImplTest {
 
             val result = repository().save(editDraft(ReviewPhoto.New("content://photo/2")))
 
-            assertEquals(ReviewResult.Success, result)
+            assertEquals(Outcome.Success(Unit), result)
             assertEquals(
                 listOf("storage.upload:$NEW_FILE_NAME", "room.update", "server.save", "storage.delete:old.png"),
                 calls,
@@ -67,7 +67,7 @@ class ReviewRepositoryImplTest {
 
             val result = repository().save(editDraft(ReviewPhoto.New("content://photo/2")))
 
-            assertEquals(ReviewResult.Failure(ReviewError.PhotoUploadFailed), result)
+            assertEquals(Outcome.Failure(ReviewError.PhotoUploadFailed), result)
             assertEquals(listOf("storage.upload:$NEW_FILE_NAME"), calls)
             assertEquals(STORED.toReview(), dao.saved(STORED.id))
         }
@@ -79,7 +79,7 @@ class ReviewRepositoryImplTest {
 
             val result = repository().save(editDraft(ReviewPhoto.Removed))
 
-            assertEquals(ReviewResult.Success, result)
+            assertEquals(Outcome.Success(Unit), result)
             assertEquals(listOf("room.update", "server.save", "storage.delete:old.png"), calls)
             val expected = STORED.toReview().copy(title = "수정한 제목", image = "", storageFileName = "")
             assertEquals(expected, dao.saved(STORED.id))
@@ -93,7 +93,7 @@ class ReviewRepositoryImplTest {
 
             val result = repository().save(draft)
 
-            assertEquals(ReviewResult.Success, result)
+            assertEquals(Outcome.Success(Unit), result)
             assertEquals(listOf("room.insert", "server.save"), calls)
             val expected =
                 Review(
@@ -115,7 +115,7 @@ class ReviewRepositoryImplTest {
         runTest {
             val result = repository().save(editDraft(ReviewPhoto.New("content://photo/2")))
 
-            assertEquals(ReviewResult.Failure(ReviewError.Unknown), result)
+            assertEquals(Outcome.Failure(ReviewError.Unknown), result)
             assertEquals(emptyList<String>(), calls)
         }
 
@@ -126,7 +126,7 @@ class ReviewRepositoryImplTest {
 
             val result = repository(userId = null).save(editDraft(ReviewPhoto.New("content://photo/2")))
 
-            assertEquals(ReviewResult.Failure(ReviewError.Unknown), result)
+            assertEquals(Outcome.Failure(ReviewError.Unknown), result)
             assertEquals(emptyList<String>(), calls)
         }
 

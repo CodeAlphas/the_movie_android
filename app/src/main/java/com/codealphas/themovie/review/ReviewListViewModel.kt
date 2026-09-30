@@ -3,9 +3,9 @@ package com.codealphas.themovie.review
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.codealphas.themovie.domain.auth.LogoutUseCase
+import com.codealphas.themovie.domain.result.Outcome
 import com.codealphas.themovie.domain.review.Review
 import com.codealphas.themovie.domain.review.ReviewRepository
-import com.codealphas.themovie.domain.review.ReviewResult
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -42,7 +42,7 @@ class ReviewListViewModel
             }
             // 화면을 열 때마다 동기화하면 작성 화면에서 돌아올 때 서버 값을 다시 읽으므로, ViewModel이 만들어질 때 한 번만 동기화
             viewModelScope.launch {
-                if (repository.syncFromRemote() is ReviewResult.Failure) {
+                if (repository.syncFromRemote() is Outcome.Failure) {
                     _syncFailed.send(Unit)
                 }
             }

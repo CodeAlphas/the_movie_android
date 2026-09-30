@@ -2,6 +2,7 @@ package com.codealphas.themovie.review
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
+import com.codealphas.themovie.domain.result.Outcome
 import com.codealphas.themovie.domain.review.Review
 import com.codealphas.themovie.domain.review.ReviewDraft
 import com.codealphas.themovie.domain.review.ReviewError
@@ -62,13 +63,13 @@ class ReviewEditViewModelTest {
 
             assertEquals(1, repository.savedDrafts.size)
             assertTrue(viewModel.uiState.value.isSaving)
-            result.complete(ReviewResult.Success)
+            result.complete(Outcome.Success(Unit))
         }
     }
 
     @Test
     fun `새 감상문을 저장하면 Repository에 id 없이 입력과 고른 사진을 넘기고 새 감상문 저장 완료를 보내야 한다`() {
-        val repository = FakeReviewEditRepository(saveResult = CompletableDeferred(ReviewResult.Success))
+        val repository = FakeReviewEditRepository(saveResult = CompletableDeferred(Outcome.Success(Unit)))
         runReviewEditTest(repository, SavedStateHandle()) { viewModel ->
             val events = collectReviewEditEvents(viewModel)
             fillInput(viewModel)
@@ -94,7 +95,7 @@ class ReviewEditViewModelTest {
 
     @Test
     fun `저장에 실패하면 저장 중 상태를 풀고 실패 이유를 보내야 한다`() {
-        val failure = ReviewResult.Failure(ReviewError.PhotoUploadFailed)
+        val failure = Outcome.Failure(ReviewError.PhotoUploadFailed)
         val repository = FakeReviewEditRepository(saveResult = CompletableDeferred(failure))
         runReviewEditTest(repository, SavedStateHandle()) { viewModel ->
             val events = collectReviewEditEvents(viewModel)
@@ -131,7 +132,7 @@ class ReviewEditViewModelTest {
     @Test
     fun `수정 모드에서 저장하면 Repository에 같은 id와 그대로 둔 사진을 넘기고 수정 완료를 보내야 한다`() {
         val repository =
-            FakeReviewEditRepository(stored = STORED_REVIEW, saveResult = CompletableDeferred(ReviewResult.Success))
+            FakeReviewEditRepository(stored = STORED_REVIEW, saveResult = CompletableDeferred(Outcome.Success(Unit)))
         runReviewEditTest(repository, editHandle(STORED_REVIEW.id)) { viewModel ->
             val events = collectReviewEditEvents(viewModel)
             runCurrent()
@@ -169,7 +170,7 @@ class ReviewEditViewModelTest {
     @Test
     fun `사진을 지우고 저장하면 Repository에 사진 삭제를 넘겨야 한다`() {
         val repository =
-            FakeReviewEditRepository(stored = STORED_REVIEW, saveResult = CompletableDeferred(ReviewResult.Success))
+            FakeReviewEditRepository(stored = STORED_REVIEW, saveResult = CompletableDeferred(Outcome.Success(Unit)))
         runReviewEditTest(repository, editHandle(STORED_REVIEW.id)) { viewModel ->
             runCurrent()
 

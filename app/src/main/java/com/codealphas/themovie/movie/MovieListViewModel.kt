@@ -5,7 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.codealphas.themovie.domain.movie.Movie
 import com.codealphas.themovie.domain.movie.MovieRepository
-import com.codealphas.themovie.domain.result.DataResult
+import com.codealphas.themovie.domain.result.Outcome
 import com.codealphas.themovie.domain.result.RemoteError
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -50,10 +50,10 @@ class MovieListViewModel
                             MovieCategory.TOP_RATED -> repository.getTopRatedMovies()
                         }
                     when (result) {
-                        is DataResult.Success -> _uiState.value = MovieListUiState(movies = result.data)
+                        is Outcome.Success -> _uiState.value = MovieListUiState(movies = result.data)
                         // 실패를 빈 목록으로 넣으면 movies가 null이 아니어서,
                         // 탭이 다시 보일 때 재요청이 멈추므로 오류만 전달
-                        is DataResult.Failure -> _remoteError.send(result.error)
+                        is Outcome.Failure -> _remoteError.send(result.error)
                     }
                 }
         }

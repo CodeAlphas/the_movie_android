@@ -4,6 +4,7 @@ import androidx.lifecycle.viewModelScope
 import com.codealphas.themovie.domain.auth.AuthError
 import com.codealphas.themovie.domain.auth.AuthRepository
 import com.codealphas.themovie.domain.auth.AuthResult
+import com.codealphas.themovie.domain.result.Outcome
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -93,13 +94,13 @@ class JoinViewModelTest {
 
             assertEquals(listOf("signUp"), repository.calls)
             assertTrue(viewModel.uiState.value.isLoading)
-            result.complete(AuthResult.Success)
+            result.complete(Outcome.Success(Unit))
         }
     }
 
     @Test
     fun `가입에 성공하면 로그아웃한 뒤 로딩을 끝내고 로그인 안내를 보내야 한다`() {
-        val repository = FakeJoinAuthRepository(signUpResult = CompletableDeferred(AuthResult.Success))
+        val repository = FakeJoinAuthRepository(signUpResult = CompletableDeferred(Outcome.Success(Unit)))
         runJoinTest(repository) { viewModel ->
             val events = collectJoinEvents(viewModel)
 
@@ -114,7 +115,7 @@ class JoinViewModelTest {
 
     @Test
     fun `가입에 실패하면 로그아웃하지 않고 로딩을 끝내고 실패 이유를 보내야 한다`() {
-        val failure = AuthResult.Failure(AuthError.EmailAlreadyInUse)
+        val failure = Outcome.Failure(AuthError.EmailAlreadyInUse)
         val repository = FakeJoinAuthRepository(signUpResult = CompletableDeferred(failure))
         runJoinTest(repository) { viewModel ->
             val events = collectJoinEvents(viewModel)

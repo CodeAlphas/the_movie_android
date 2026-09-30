@@ -5,6 +5,7 @@ import com.codealphas.themovie.domain.movie.Movie
 import com.codealphas.themovie.domain.movie.MovieDetailResult
 import com.codealphas.themovie.domain.movie.MovieRepository
 import com.codealphas.themovie.domain.result.DataResult
+import com.codealphas.themovie.domain.result.Outcome
 import com.codealphas.themovie.domain.result.RemoteError
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -50,8 +51,8 @@ class SearchMovieViewModelTest {
                 slowQueries = setOf("first"),
                 results =
                     mapOf(
-                        "first" to DataResult.Success(first),
-                        "second" to DataResult.Success(second),
+                        "first" to Outcome.Success(first),
+                        "second" to Outcome.Success(second),
                     ),
             )
         runSearchTest(repository) { viewModel ->
@@ -72,7 +73,7 @@ class SearchMovieViewModelTest {
         val movies = listOf(movie("avatar"))
         val repository =
             FakeSearchMovieRepository(
-                results = mapOf("avatar" to DataResult.Success(movies)),
+                results = mapOf("avatar" to Outcome.Success(movies)),
             )
         runSearchTest(repository) { viewModel ->
             viewModel.onQueryChange("avatar")
@@ -129,8 +130,8 @@ class SearchMovieViewModelTest {
             FakeSearchMovieRepository(
                 results =
                     mapOf(
-                        "bad" to DataResult.Failure(RemoteError.Network),
-                        "good" to DataResult.Success(good),
+                        "bad" to Outcome.Failure(RemoteError.Network),
+                        "good" to Outcome.Success(good),
                     ),
             )
         runSearchTest(repository) { viewModel ->
@@ -155,7 +156,7 @@ class SearchMovieViewModelTest {
     fun `화면이 멈춘 동안 검색이 실패하면 다시 구독할 때 오류를 받아야 한다`() {
         val repository =
             FakeSearchMovieRepository(
-                results = mapOf("bad" to DataResult.Failure(RemoteError.Network)),
+                results = mapOf("bad" to Outcome.Failure(RemoteError.Network)),
             )
         runSearchTest(repository) { viewModel ->
             viewModel.onQueryChange("bad")
@@ -214,7 +215,7 @@ private class FakeSearchMovieRepository(
     override suspend fun searchMovies(query: String): DataResult<List<Movie>> {
         queries += query
         if (query in slowQueries) delay(SLOW_SEARCH_MS)
-        return results[query] ?: DataResult.Success(listOf(movie(query)))
+        return results[query] ?: Outcome.Success(listOf(movie(query)))
     }
 
     override suspend fun getPopularMovies(): DataResult<List<Movie>> = error("사용하지 않음")

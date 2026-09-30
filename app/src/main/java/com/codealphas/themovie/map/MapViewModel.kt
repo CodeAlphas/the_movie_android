@@ -5,7 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.codealphas.themovie.domain.map.Address
 import com.codealphas.themovie.domain.map.Theater
 import com.codealphas.themovie.domain.map.TheaterRepository
-import com.codealphas.themovie.domain.result.DataResult
+import com.codealphas.themovie.domain.result.Outcome
 import com.codealphas.themovie.domain.result.RemoteError
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -70,16 +70,16 @@ class MapViewModel
 
         private suspend fun loadAddress(location: LocationLatLng) {
             when (val result = repository.getAddress(latitude = location.latitude, longitude = location.longitude)) {
-                is DataResult.Success -> _uiState.update { it.copy(address = result.data) }
-                is DataResult.Failure -> _remoteError.send(result.error)
+                is Outcome.Success -> _uiState.update { it.copy(address = result.data) }
+                is Outcome.Failure -> _remoteError.send(result.error)
             }
         }
 
         private suspend fun loadTheaters(location: LocationLatLng) {
             val result = repository.getNearbyTheaters(latitude = location.latitude, longitude = location.longitude)
             when (result) {
-                is DataResult.Success -> _uiState.update { it.copy(theaters = result.data) }
-                is DataResult.Failure -> _remoteError.send(result.error)
+                is Outcome.Success -> _uiState.update { it.copy(theaters = result.data) }
+                is Outcome.Failure -> _remoteError.send(result.error)
             }
         }
     }

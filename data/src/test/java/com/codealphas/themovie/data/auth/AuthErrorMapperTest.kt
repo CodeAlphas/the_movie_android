@@ -1,7 +1,7 @@
 package com.codealphas.themovie.data.auth
 
 import com.codealphas.themovie.domain.auth.AuthError
-import com.codealphas.themovie.domain.auth.AuthResult
+import com.codealphas.themovie.domain.result.Outcome
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -16,7 +16,7 @@ class AuthErrorMapperTest {
     @Test
     fun `블록이 끝나면 Success를 반환해야 한다`() =
         runTest {
-            assertEquals(AuthResult.Success, toAuthResult { "uid" })
+            assertEquals(Outcome.Success(Unit), toAuthResult { "uid" })
         }
 
     @Test
@@ -35,6 +35,6 @@ class AuthErrorMapperTest {
     @Test
     fun `블록이 Firebase가 아닌 예외를 던지면 Unknown 실패를 반환해야 한다`() =
         runTest {
-            assertEquals(AuthResult.Failure(AuthError.Unknown), toAuthResult { throw IOException("연결 끊김") })
+            assertEquals(Outcome.Failure(AuthError.Unknown), toAuthResult { throw IOException("연결 끊김") })
         }
 }

@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.codealphas.themovie.domain.movie.Movie
 import com.codealphas.themovie.domain.movie.MovieRepository
-import com.codealphas.themovie.domain.result.DataResult
+import com.codealphas.themovie.domain.result.Outcome
 import com.codealphas.themovie.domain.result.RemoteError
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -59,8 +59,8 @@ class SearchMovieViewModel
                     .mapLatest { repository.searchMovies(it) }
                     .collect { result ->
                         when (result) {
-                            is DataResult.Success -> _uiState.value = SearchMovieUiState(movies = result.data)
-                            is DataResult.Failure -> _remoteError.send(result.error)
+                            is Outcome.Success -> _uiState.value = SearchMovieUiState(movies = result.data)
+                            is Outcome.Failure -> _remoteError.send(result.error)
                         }
                     }
             }

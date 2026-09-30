@@ -3,11 +3,11 @@ package com.codealphas.themovie.review
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.codealphas.themovie.domain.result.Outcome
 import com.codealphas.themovie.domain.review.ReviewDraft
 import com.codealphas.themovie.domain.review.ReviewError
 import com.codealphas.themovie.domain.review.ReviewPhoto
 import com.codealphas.themovie.domain.review.ReviewRepository
-import com.codealphas.themovie.domain.review.ReviewResult
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -115,8 +115,8 @@ class ReviewEditViewModel
                     )
                 when (val result = repository.save(draft)) {
                     // 성공 뒤 화면이 닫히기 전에 저장 버튼을 다시 누르는 것을 막기 위해 isSaving은 그대로 유지
-                    ReviewResult.Success -> _events.send(ReviewEditEvent.Saved(isNew = reviewId == null))
-                    is ReviewResult.Failure -> {
+                    is Outcome.Success -> _events.send(ReviewEditEvent.Saved(isNew = reviewId == null))
+                    is Outcome.Failure -> {
                         _uiState.update { it.copy(isSaving = false) }
                         _events.send(ReviewEditEvent.SaveFailed(result.error))
                     }

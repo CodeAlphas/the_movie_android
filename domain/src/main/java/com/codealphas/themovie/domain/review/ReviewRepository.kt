@@ -1,5 +1,6 @@
 package com.codealphas.themovie.domain.review
 
+import com.codealphas.themovie.domain.result.Outcome
 import kotlinx.coroutines.flow.Flow
 
 interface ReviewRepository {
@@ -9,7 +10,7 @@ interface ReviewRepository {
      * 서버에 저장된 감상문을 Room으로 가져온다.
      * Room에 이미 있는 id는 서버 값으로 덮어쓰지 않고, 서버에만 있는 감상문만 추가한다.
      *
-     * @return 로그인 정보가 없거나 가져오기에 실패하면 [ReviewResult.Failure]
+     * @return 로그인 정보가 없거나 가져오기에 실패하면 [Outcome.Failure]
      */
     suspend fun syncFromRemote(): ReviewResult
 

@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.codealphas.themovie.domain.auth.AuthError
 import com.codealphas.themovie.domain.auth.AuthRepository
-import com.codealphas.themovie.domain.auth.AuthResult
+import com.codealphas.themovie.domain.result.Outcome
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -55,8 +55,8 @@ class LoginViewModel
             viewModelScope.launch {
                 val event =
                     when (val result = authRepository.signIn(email, password)) {
-                        AuthResult.Success -> LoginEvent.NavigateToMain
-                        is AuthResult.Failure -> LoginEvent.ShowError(result.error)
+                        is Outcome.Success -> LoginEvent.NavigateToMain
+                        is Outcome.Failure -> LoginEvent.ShowError(result.error)
                     }
                 _uiState.update { it.copy(isLoading = false) }
                 _events.send(event)
