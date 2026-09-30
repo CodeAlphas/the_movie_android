@@ -2,8 +2,8 @@ package com.codealphas.themovie.presentation.auth
 
 import android.content.res.Configuration
 import androidx.annotation.StringRes
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -33,10 +32,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -56,101 +52,101 @@ import com.codealphas.themovie.core.android.ui.showToast
 import com.codealphas.themovie.presentation.R
 
 private val FormMaxWidth = 356.dp
-private val LogoWidth = 260.dp
-private val LogoHeight = 140.dp
-private val LogoVerticalPadding = 56.dp
 private val FieldShape = RoundedCornerShape(5.dp)
 
 @Composable
-fun LoginRoute(
-    viewModel: LoginViewModel,
-    onNavigateToMain: () -> Unit,
-    onNavigateToJoin: () -> Unit,
+fun JoinRoute(
+    viewModel: JoinViewModel,
+    onNavigateToLogin: () -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
-    val currentOnNavigateToMain by rememberUpdatedState(onNavigateToMain)
-    val currentOnNavigateToJoin by rememberUpdatedState(onNavigateToJoin)
+    val currentOnNavigateToLogin by rememberUpdatedState(onNavigateToLogin)
 
     // 화면이 멈춘 동안 보낸 안내를 돌아와서 받도록, 수집은 STARTED 동안만 하고 채널에 남은 effect는 다시 시작할 때 처리
     LaunchedEffect(viewModel, lifecycleOwner) {
         lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
             viewModel.effect.collect { effect ->
                 when (effect) {
-                    LoginEffect.NavigateToMain -> currentOnNavigateToMain()
-                    LoginEffect.NavigateToJoin -> currentOnNavigateToJoin()
-                    LoginEffect.ShowInvalidInput -> context.showToast(R.string.login_failed)
-                    is LoginEffect.ShowError -> context.showToast(loginFailureMessage(effect.error))
+                    JoinEffect.NavigateToLogin -> currentOnNavigateToLogin()
+                    JoinEffect.ShowLoginPrompt -> context.showToast(R.string.join_succeeded)
+                    JoinEffect.ShowInvalidInput -> context.showToast(R.string.join_failed_blank)
+                    JoinEffect.ShowPasswordMismatch -> context.showToast(R.string.join_failed_password)
+                    is JoinEffect.ShowError -> context.showToast(joinFailureMessage(effect.error))
                 }
             }
         }
     }
 
-    LoginScreen(state = state, onIntent = viewModel::onIntent)
+    JoinScreen(state = state, onIntent = viewModel::onIntent)
 }
 
 @Composable
-fun LoginScreen(
-    state: LoginUiState,
-    onIntent: (LoginIntent) -> Unit,
+fun JoinScreen(
+    state: JoinUiState,
+    onIntent: (JoinIntent) -> Unit,
 ) {
     // Edge-to-Edge라 시스템이 창을 줄여 주지 않으므로, 시스템 바와 키보드에 입력란이 가리지 않도록 safeDrawing만큼 안쪽 여백 적용
     Scaffold(contentWindowInsets = WindowInsets.safeDrawing) { innerPadding ->
-        Column(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = Spacing.large),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Image(
-                painter = painterResource(R.drawable.the_movie),
-                contentDescription = null,
+        BoxWithConstraints(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+            Column(
+                // verticalScroll 안은 높이 제한이 없어 Arrangement.Center만으로는 폼이 맨 위에 붙으므로,
+                // 최소 높이를 보이는 영역 높이로 잡아 폼을 세로 가운데 배치
                 modifier =
                     Modifier
-                        .padding(vertical = LogoVerticalPadding)
-                        .size(width = LogoWidth, height = LogoHeight),
-                contentScale = ContentScale.Fit,
-                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSurface),
-            )
-            LoginForm(
-                state = state,
-                onIntent = onIntent,
-                modifier = Modifier.widthIn(max = FormMaxWidth).fillMaxWidth(),
-            )
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState())
+                        .heightIn(min = maxHeight)
+                        .padding(horizontal = Spacing.large, vertical = Spacing.large),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+            ) {
+                JoinForm(
+                    state = state,
+                    onIntent = onIntent,
+                    modifier = Modifier.widthIn(max = FormMaxWidth).fillMaxWidth(),
+                )
+            }
         }
     }
 }
 
 @Composable
-private fun LoginForm(
-    state: LoginUiState,
-    onIntent: (LoginIntent) -> Unit,
+private fun JoinForm(
+    state: JoinUiState,
+    onIntent: (JoinIntent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(Spacing.medium)) {
         Text(
-            text = stringResource(R.string.login_title),
+            text = stringResource(R.string.join_title),
             style = MaterialTheme.typography.headlineSmall,
             color = MaterialTheme.colorScheme.onSurface,
         )
-        LoginTextField(
+        JoinTextField(
             value = state.email,
-            onValueChange = { onIntent(LoginIntent.EmailChanged(it)) },
+            onValueChange = { onIntent(JoinIntent.EmailChanged(it)) },
             hint = R.string.common_id_hint,
         )
-        LoginTextField(
+        JoinTextField(
             value = state.password,
-            onValueChange = { onIntent(LoginIntent.PasswordChanged(it)) },
+            onValueChange = { onIntent(JoinIntent.PasswordChanged(it)) },
             hint = R.string.common_password_hint,
             isPassword = true,
-            onDone = { onIntent(LoginIntent.LoginClicked) },
         )
+        Column(verticalArrangement = Arrangement.spacedBy(Spacing.extraSmall)) {
+            JoinTextField(
+                value = state.confirmPassword,
+                onValueChange = { onIntent(JoinIntent.ConfirmPasswordChanged(it)) },
+                hint = R.string.join_password_confirm_hint,
+                isPassword = true,
+                onDone = { onIntent(JoinIntent.JoinClicked) },
+            )
+            PasswordMatchText(passwordsMatch = state.passwordsMatch)
+        }
         Button(
-            onClick = rememberThrottledClick { onIntent(LoginIntent.LoginClicked) },
+            onClick = rememberThrottledClick { onIntent(JoinIntent.JoinClicked) },
             enabled = !state.isLoading,
             // 버튼 기본 높이가 입력란보다 낮아 폼이 들쭉날쭉하므로, 입력란과 같은 최소 높이 적용
             modifier = Modifier.fillMaxWidth().heightIn(min = TextFieldDefaults.MinHeight),
@@ -161,14 +157,14 @@ private fun LoginForm(
                     contentColor = MaterialTheme.colorScheme.onSecondary,
                 ),
         ) {
-            Text(text = stringResource(R.string.common_login), style = MaterialTheme.typography.titleMedium)
+            Text(text = stringResource(R.string.common_join), style = MaterialTheme.typography.titleMedium)
         }
         TextButton(
-            onClick = rememberThrottledClick { onIntent(LoginIntent.JoinClicked) },
+            onClick = rememberThrottledClick { onIntent(JoinIntent.LoginClicked) },
             modifier = Modifier.align(Alignment.End),
         ) {
             Text(
-                text = stringResource(R.string.common_join),
+                text = stringResource(R.string.common_login),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.tertiary,
@@ -178,12 +174,28 @@ private fun LoginForm(
 }
 
 @Composable
-private fun LoginTextField(
+private fun PasswordMatchText(passwordsMatch: Boolean?) {
+    val message =
+        when (passwordsMatch) {
+            true -> stringResource(R.string.join_password_match)
+            false -> stringResource(R.string.join_password_mismatch)
+            null -> ""
+        }
+    // 두 칸이 비어 문구가 없을 때 줄을 없애면 입력할 때마다 아래 버튼이 위아래로 밀리므로, 빈 문자열로 한 줄 높이 유지
+    Text(
+        text = message,
+        style = MaterialTheme.typography.bodyMedium,
+        color = if (passwordsMatch == true) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+    )
+}
+
+@Composable
+private fun JoinTextField(
     value: String,
     onValueChange: (String) -> Unit,
     @StringRes hint: Int,
     isPassword: Boolean = false,
-    onDone: () -> Unit = {},
+    onDone: (() -> Unit)? = null,
 ) {
     TextField(
         value = value,
@@ -192,13 +204,13 @@ private fun LoginTextField(
         textStyle = MaterialTheme.typography.bodyLarge,
         placeholder = { Text(text = stringResource(hint)) },
         visualTransformation = if (isPassword) PasswordVisualTransformation() else VisualTransformation.None,
-        // 이메일 다음 비밀번호로 이동하고 비밀번호에서 바로 로그인하도록, 칸마다 키보드 동작 적용
+        // 마지막 비밀번호 확인 칸에서 바로 가입하도록, onDone이 있는 칸만 완료 동작이고 나머지는 다음 칸으로 이동 적용
         keyboardOptions =
             KeyboardOptions(
                 keyboardType = if (isPassword) KeyboardType.Password else KeyboardType.Email,
-                imeAction = if (isPassword) ImeAction.Done else ImeAction.Next,
+                imeAction = if (onDone != null) ImeAction.Done else ImeAction.Next,
             ),
-        keyboardActions = KeyboardActions(onDone = { onDone() }),
+        keyboardActions = KeyboardActions(onDone = { onDone?.invoke() }),
         singleLine = true,
         shape = FieldShape,
         // XML 입력란처럼 밑줄 없는 채운 상자로 보이도록, 포커스와 관계없이 surfaceVariant 배경에 밑줄 색을 투명으로 적용
@@ -215,8 +227,17 @@ private fun LoginTextField(
 @Preview(name = "라이트")
 @Preview(name = "다크", uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
-private fun LoginScreenPreview() {
+private fun JoinScreenPreview() {
     TheMovieTheme {
-        LoginScreen(state = LoginUiState(email = "user@example.com"), onIntent = {})
+        JoinScreen(
+            state =
+                JoinUiState(
+                    email = "user@example.com",
+                    password = "secret",
+                    confirmPassword = "secre",
+                    passwordsMatch = false,
+                ),
+            onIntent = {},
+        )
     }
 }
