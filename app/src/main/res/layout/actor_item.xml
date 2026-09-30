@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="125dp"
     android:layout_height="wrap_content"
     android:orientation="vertical">
@@ -19,8 +20,8 @@
         android:layout_gravity="center_horizontal"
         android:ellipsize="end"
         android:maxLines="1"
-        android:text="작중 이름"
-        android:textSize="12dp" />
+        android:textSize="12dp"
+        tools:text="작중 이름" />
 
     <TextView
         android:id="@+id/actorRealNameTextView"
@@ -29,8 +30,8 @@
         android:layout_gravity="center_horizontal"
         android:ellipsize="end"
         android:maxLines="1"
-        android:text="실제 이름"
         android:textSize="12dp"
-        android:textStyle="bold" />
+        android:textStyle="bold"
+        tools:text="실제 이름" />
 
 </LinearLayout>

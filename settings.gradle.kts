@@ -20,6 +20,11 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        maven("https://devrepo.kakao.com/nexus/repository/kakaomap-releases/") {
+            content {
+                includeGroup("com.kakao.maps.open")
+            }
+        }
     }
 }
 

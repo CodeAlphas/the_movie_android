@@ -33,7 +33,7 @@
                 android:layout_height="62dp"
                 android:layout_marginBottom="20dp"
                 android:gravity="bottom"
-                android:text="로그인"
+                android:text="@string/login_title"
                 android:textColor="?attr/colorOnSurface"
                 android:textSize="25dp" />
 
@@ -43,7 +43,7 @@
                 android:layout_height="58dp"
                 android:layout_marginBottom="20dp"
                 android:background="@drawable/input_bg"
-                android:hint="아이디"
+                android:hint="@string/common_id_hint"
                 android:paddingLeft="27dp"
                 android:textColorHint="?attr/colorOnSurfaceVariant"
                 android:textSize="18dp" />
@@ -54,7 +54,7 @@
                 android:layout_height="58dp"
                 android:layout_marginBottom="30dp"
                 android:background="@drawable/input_bg"
-                android:hint="비밀번호"
+                android:hint="@string/common_password_hint"
                 android:inputType="textPassword"
                 android:paddingLeft="27dp"
                 android:textColorHint="?attr/colorOnSurfaceVariant"
@@ -67,7 +67,7 @@
                 android:layout_marginBottom="20dp"
                 android:background="@drawable/login"
                 android:gravity="center"
-                android:text="로그인하기"
+                android:text="@string/common_login"
                 android:textColor="?attr/colorOnSecondary"
                 android:textSize="20dp" />
 
@@ -76,7 +76,7 @@
                 android:layout_width="356dp"
                 android:layout_height="62dp"
                 android:gravity="right"
-                android:text="가입하기"
+                android:text="@string/common_join"
                 android:textColor="?attr/colorTertiary"
                 android:textSize="18dp"
                 android:textStyle="bold" />

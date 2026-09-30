@@ -9,7 +9,5 @@ interface MovieRepository {
 
     suspend fun searchMovies(query: String): DataResult<List<Movie>>
 
-    suspend fun getVideos(movieId: Int): DataResult<List<Video>>
-
-    suspend fun getCast(movieId: Int): DataResult<List<Cast>>
+    suspend fun getMovieDetail(movieId: Int): MovieDetailResult
 }

@@ -21,7 +21,7 @@
         android:layout_height="40dp"
         android:layout_margin="15dp"
         android:background="@drawable/searchview_background"
-        android:hint="검색어를 입력해 주세요."
+        android:hint="@string/search_query_hint"
         android:inputType="textPersonName"
         android:paddingLeft="5dp"
         app:layout_constraintBottom_toTopOf="@id/textView"
@@ -34,7 +34,7 @@
         android:layout_height="wrap_content"
         android:layout_marginLeft="18dp"
         android:layout_marginTop="15dp"
-        android:text="Search Result"
+        android:text="@string/search_result_title"
         android:textColor="?attr/colorOnSurface"
         android:textSize="20dp"
         android:textStyle="bold"
@@ -47,7 +47,7 @@
         android:layout_height="wrap_content"
         android:layout_marginLeft="18dp"
         android:layout_marginTop="10dp"
-        android:text="검색 결과"
+        android:text="@string/search_result_subtitle"
         android:textColor="?attr/colorOnSurfaceVariant"
         android:textSize="15dp"
         android:textStyle="bold"
@@ -63,6 +63,31 @@
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toBottomOf="@id/textView1"
         tools:listitem="@layout/movie_item" />
+
+    <ProgressBar
+        android:id="@+id/progressBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@id/searchMovieRecyclerView"
+        app:layout_constraintEnd_toEndOf="@id/searchMovieRecyclerView"
+        app:layout_constraintStart_toStartOf="@id/searchMovieRecyclerView"
+        app:layout_constraintTop_toTopOf="@id/searchMovieRecyclerView"
+        tools:visibility="visible" />
+
+    <TextView
+        android:id="@+id/emptyResultText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/search_empty_result"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:textSize="15sp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@id/searchMovieRecyclerView"
+        app:layout_constraintEnd_toEndOf="@id/searchMovieRecyclerView"
+        app:layout_constraintStart_toStartOf="@id/searchMovieRecyclerView"
+        app:layout_constraintTop_toTopOf="@id/searchMovieRecyclerView"
+        tools:visibility="visible" />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/locationFloatingButton"

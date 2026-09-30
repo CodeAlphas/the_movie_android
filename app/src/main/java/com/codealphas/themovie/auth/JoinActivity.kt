@@ -2,21 +2,23 @@ package com.codealphas.themovie.auth
 
 import android.os.Bundle
 import android.widget.Toast
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.widget.doAfterTextChanged
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import com.codealphas.themovie.R
 import com.codealphas.themovie.core.android.ui.applySystemBarInsets
 import com.codealphas.themovie.databinding.ActivityJoinBinding
 import com.google.android.material.color.MaterialColors
-import com.google.firebase.Firebase
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.auth
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 
+@AndroidEntryPoint
 class JoinActivity : AppCompatActivity() {
     private lateinit var binding: ActivityJoinBinding
-    private var id: String = ""
-    private var pw1: String = ""
-    private var pw2: String = ""
-    private val auth: FirebaseAuth by lazy { Firebase.auth }
+    private val viewModel: JoinViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -25,79 +27,80 @@ class JoinActivity : AppCompatActivity() {
         binding = ActivityJoinBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        initIdAndPwEditText()
+        initInputs()
         initJoinButton()
-        initLoginbutton()
+        initLoginButton()
+        observeJoin()
     }
 
-    private fun initIdAndPwEditText() {
-        binding.idInput.doAfterTextChanged { id = it.toString() }
-        binding.pwInput1.doAfterTextChanged {
-            pw1 = it.toString()
-            checkPassword(pw1, pw2)
-        }
-        binding.pwInput2.doAfterTextChanged {
-            pw2 = it.toString()
-            checkPassword(pw1, pw2)
-        }
+    private fun initInputs() {
+        binding.pwInput1.doAfterTextChanged { notifyPasswordsChanged() }
+        binding.pwInput2.doAfterTextChanged { notifyPasswordsChanged() }
     }
 
-    private fun checkPassword(
-        pw1: String,
-        pw2: String,
-    ) {
-        if (pw1 == pw2) {
-            binding.checkPwTextView.text = "비밀번호와 일치합니다."
-            binding.checkPwTextView.setTextColor(
-                MaterialColors.getColor(binding.checkPwTextView, com.google.android.material.R.attr.colorPrimary),
-            )
-        } else {
-            binding.checkPwTextView.text = "비밀번호와 일치하지 않습니다."
-            binding.checkPwTextView.setTextColor(
-                MaterialColors.getColor(binding.checkPwTextView, com.google.android.material.R.attr.colorOnSurface),
-            )
-        }
+    private fun notifyPasswordsChanged() {
+        viewModel.onPasswordsChanged(
+            binding.pwInput1.text.toString(),
+            binding.pwInput2.text.toString(),
+        )
     }
 
     private fun initJoinButton() {
         binding.joinBtn.setOnClickListener {
-            if (pw1 == pw2) {
-                if (id.isBlank() || pw1.isBlank()) {
-                    Toast
-                        .makeText(
-                            this,
-                            "회원가입에 실패했습니다. 이메일 또는 비밀번호를 다시 확인해주세요.",
-                            Toast.LENGTH_SHORT,
-                        ).show()
-                } else {
-                    auth
-                        .createUserWithEmailAndPassword(id, pw1)
-                        .addOnCompleteListener(this) {
-                            if (it.isSuccessful) {
-                                Toast
-                                    .makeText(
-                                        this,
-                                        "회원가입에 성공했습니다. 로그인하기 버튼을 눌러 로그인해주세요.",
-                                        Toast.LENGTH_SHORT,
-                                    ).show()
-                                auth.signOut()
-                            } else {
-                                Toast
-                                    .makeText(
-                                        this,
-                                        "이미 가입한 이메일이거나 회원가입에 실패했습니다.",
-                                        Toast.LENGTH_SHORT,
-                                    ).show()
-                            }
-                        } // 이메일 주소와 비밀번호로 회원가입(Firebase Authentication)
+            viewModel.signUp(
+                binding.idInput.text.toString(),
+                binding.pwInput1.text.toString(),
+                binding.pwInput2.text.toString(),
+            )
+        }
+    }
+
+    private fun initLoginButton() {
+        binding.loginBtn.setOnClickListener { finish() }
+    }
+
+    private fun observeJoin() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    viewModel.uiState.collect { state ->
+                        binding.joinBtn.isEnabled = !state.isLoading
+                        showPasswordMatch(state.passwordsMatch)
+                    }
                 }
-            } else {
-                Toast.makeText(this, "회원가입에 실패했습니다. 비밀번호를 다시 확인해주세요.", Toast.LENGTH_SHORT).show()
+                launch {
+                    viewModel.events.collect { event ->
+                        val message =
+                            when (event) {
+                                JoinEvent.ShowLoginPrompt -> R.string.join_succeeded
+                                JoinEvent.ShowInvalidInput -> R.string.join_failed_blank
+                                JoinEvent.ShowPasswordMismatch -> R.string.join_failed_password
+                                is JoinEvent.ShowError -> joinFailureMessage(event.error)
+                            }
+                        Toast.makeText(this@JoinActivity, getString(message), Toast.LENGTH_SHORT).show()
+                    }
+                }
             }
         }
     }
 
-    private fun initLoginbutton() {
-        binding.loginBtn.setOnClickListener { finish() }
+    private fun showPasswordMatch(passwordsMatch: Boolean?) {
+        when (passwordsMatch) {
+            true -> {
+                binding.checkPwTextView.text = getString(R.string.join_password_match)
+                binding.checkPwTextView.setTextColor(
+                    MaterialColors.getColor(binding.checkPwTextView, com.google.android.material.R.attr.colorPrimary),
+                )
+            }
+
+            false -> {
+                binding.checkPwTextView.text = getString(R.string.join_password_mismatch)
+                binding.checkPwTextView.setTextColor(
+                    MaterialColors.getColor(binding.checkPwTextView, com.google.android.material.R.attr.colorOnSurface),
+                )
+            }
+
+            null -> binding.checkPwTextView.text = ""
+        }
     }
 }

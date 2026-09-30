@@ -1,6 +1,6 @@
 package com.codealphas.themovie.data.remote
 
-import com.codealphas.themovie.domain.result.DataResult
+import com.codealphas.themovie.domain.result.Outcome
 import com.codealphas.themovie.domain.result.RemoteError
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineStart
@@ -23,7 +23,7 @@ class SafeApiCallTest {
     @Test
     fun `호출이 값을 돌려주면 그 값을 Success로 반환해야 한다`() =
         runTest {
-            assertEquals(DataResult.Success(1), safeApiCall { 1 })
+            assertEquals(Outcome.Success(1), safeApiCall { 1 })
         }
 
     @Test
@@ -89,6 +89,6 @@ class SafeApiCallTest {
         expected: RemoteError,
         block: suspend () -> Unit,
     ) {
-        assertEquals(DataResult.Failure(expected), safeApiCall(block))
+        assertEquals(Outcome.Failure(expected), safeApiCall(block))
     }
 }

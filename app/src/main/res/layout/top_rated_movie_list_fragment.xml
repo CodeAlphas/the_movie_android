@@ -19,7 +19,7 @@
         android:layout_height="wrap_content"
         android:layout_marginLeft="18dp"
         android:layout_marginTop="15dp"
-        android:text="Top Rated Movie"
+        android:text="@string/movie_list_top_rated_title"
         android:textColor="?attr/colorOnSurface"
         android:textSize="20dp"
         android:textStyle="bold"
@@ -32,7 +32,7 @@
         android:layout_height="wrap_content"
         android:layout_marginLeft="18dp"
         android:layout_marginTop="10dp"
-        android:text="높은 평점 영화"
+        android:text="@string/movie_list_top_rated_subtitle"
         android:textColor="?attr/colorOnSurfaceVariant"
         android:textSize="15dp"
         android:textStyle="bold"
@@ -48,6 +48,16 @@
         app:layout_constraintTop_toBottomOf="@id/textView1"
         tools:listitem="@layout/movie_item" />
 
+    <ProgressBar
+        android:id="@+id/progressBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@id/topRatedMovieRecyclerView"
+        app:layout_constraintEnd_toEndOf="@id/topRatedMovieRecyclerView"
+        app:layout_constraintStart_toStartOf="@id/topRatedMovieRecyclerView"
+        app:layout_constraintTop_toTopOf="@id/topRatedMovieRecyclerView"
+        tools:visibility="visible" />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/locationFloatingButton"

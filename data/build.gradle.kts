@@ -24,6 +24,7 @@ room {
 dependencies {
     implementation(project(":domain"))
     implementation(libs.androidx.annotation.experimental)
+    implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
@@ -32,6 +33,10 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)
+    implementation(libs.firebase.database)
+    implementation(libs.firebase.storage)
+    // Firebase Auth Task는 콜백이라 화면이 결과를 코루틴으로 받지 못하므로, await로 중단 함수가 되도록 play-services 확장 추가
+    implementation(libs.kotlinx.coroutines.play.services)
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.okhttp.mockwebserver)

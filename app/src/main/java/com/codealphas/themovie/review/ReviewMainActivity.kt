@@ -10,7 +10,6 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
 import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.Observer
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -20,16 +19,6 @@ import com.codealphas.themovie.core.android.ui.applySystemBarInsets
 import com.codealphas.themovie.core.android.ui.setupAppBar
 import com.codealphas.themovie.databinding.ActivityReviewMainBinding
 import com.codealphas.themovie.domain.review.Review
-import com.google.firebase.Firebase
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.auth
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.DatabaseReference
-import com.google.firebase.database.ValueEventListener
-import com.google.firebase.database.database
-import com.google.firebase.storage.FirebaseStorage
-import com.google.firebase.storage.storage
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -39,11 +28,7 @@ class ReviewMainActivity :
     ReviewClickInterface,
     ReviewClickDeleteInterface {
     private lateinit var binding: ActivityReviewMainBinding
-    private val reviewViewModel: ReviewViewModel by viewModels()
-    private lateinit var reviewDB: DatabaseReference
-    private val auth: FirebaseAuth by lazy { Firebase.auth }
-    private val userId: String by lazy { auth.currentUser?.uid.orEmpty() }
-    private val storage: FirebaseStorage by lazy { Firebase.storage }
+    private val reviewViewModel: ReviewListViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -51,20 +36,35 @@ class ReviewMainActivity :
 
         binding = ActivityReviewMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        setupAppBar(binding.toolbar, "영화 감상문")
+        setupAppBar(binding.toolbar, getString(R.string.review_list_appbar_title))
 
         initRecyclerView()
-        getReviewsFromServer()
         initReviewAddFloatingButton()
-        observeLogout()
+        observeEvents()
     }
 
-    private fun observeLogout() {
+    private fun observeEvents() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                reviewViewModel.logoutCompleted.collect {
-                    startActivity(Intent(applicationContext, LoginActivity::class.java))
-                    finish()
+                launch {
+                    reviewViewModel.syncFailed.collect {
+                        Toast
+                            .makeText(
+                                this@ReviewMainActivity,
+                                R.string.review_list_sync_failed,
+                                Toast.LENGTH_LONG,
+                            ).show()
+                    }
+                }
+                launch {
+                    reviewViewModel.logoutCompleted.collect {
+                        // 감상문 화면만 닫으면 로그인 화면에서 뒤로 갈 때 로그아웃된 메인 화면이 다시 열리므로, 기존 화면을 모두 비우도록 태스크 초기화 적용
+                        startActivity(
+                            Intent(applicationContext, LoginActivity::class.java)
+                                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK),
+                        )
+                        finish()
+                    }
                 }
             }
         }
@@ -75,113 +75,38 @@ class ReviewMainActivity :
         val reviewRecyclerViewAdapter =
             ReviewRecyclerViewAdapter(LayoutInflater.from(this), this, this, this)
         binding.reviewRecyclerView.adapter = reviewRecyclerViewAdapter
-        reviewViewModel.allReview.observe(
-            this@ReviewMainActivity,
-            Observer { List ->
-                List?.let {
-                    reviewRecyclerViewAdapter.updateReviewList(it)
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                reviewViewModel.uiState.collect { state ->
+                    // Room에 감상문이 이미 있으면 동기화가 그 위에 덮어쓰므로, 목록을 가리지 않도록 보여 줄 감상문이 없을 때만 로딩 표시
+                    val hasNoReviews = state.reviews.isNullOrEmpty()
+                    binding.progressBar.isVisible = hasNoReviews && state.isSyncing
+                    // 목록을 아직 읽지 못한 상태를 빈 목록으로 보면 빈 목록 안내가 먼저 깜빡이므로, 읽은 뒤에만 반영
+                    val reviews = state.reviews ?: return@collect
+                    reviewRecyclerViewAdapter.updateReviewList(reviews)
+                    // 동기화 중에는 서버 감상문이 아직 Room에 들어오지 않았으므로,
+                    // 불러오는 중을 감상문 없음으로 안내하지 않도록 동기화가 끝난 뒤에만 빈 목록 안내 표시
+                    binding.textViewCenter.isVisible = reviews.isEmpty() && !state.isSyncing
                 }
-                if (reviewRecyclerViewAdapter.itemCount == 0) {
-                    showCenterTextView()
-                } else {
-                    hideCenterTextView()
-                }
-            },
-        )
-    }
-
-    private fun getReviewsFromServer() {
-        val type = intent.getStringExtra("type")
-
-        reviewDB =
-            Firebase.database.reference
-                .child("users")
-                .child(userId)
-                .child("reviews")
-        reviewDB.addListenerForSingleValueEvent(
-            object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    if (!type.equals("Edit")) {
-                        for (data in snapshot.children) {
-                            val id = data.key.toString().toInt()
-                            val title = data.child("title").value.toString()
-                            val image = data.child("image").value.toString()
-                            val content = data.child("content").value.toString()
-                            val time = data.child("time").value.toString()
-                            val rating =
-                                data
-                                    .child("rating")
-                                    .value
-                                    .toString()
-                                    .toDouble()
-                            val storageFileName = data.child("storageFileName").value.toString()
-                            val review =
-                                Review(
-                                    title = title,
-                                    image = image,
-                                    content = content,
-                                    time = time,
-                                    rating = rating,
-                                    storageFileName = storageFileName,
-                                    id = id,
-                                )
-                            reviewViewModel.insertReview(review)
-                        }
-                    }
-                }
-
-                override fun onCancelled(error: DatabaseError) = Unit
-            },
-        ) // 서버에 저장된 감상문 정보 가져오기(Firebase Realtime Database) : MainActivity -> ReviewMainActivity 이동시
-    }
-
-    private fun showCenterTextView() {
-        binding.textViewCenter.isVisible = true
-    }
-
-    private fun hideCenterTextView() {
-        binding.textViewCenter.isVisible = false
+            }
+        }
     }
 
     private fun initReviewAddFloatingButton() {
         binding.reviewAddFloatingButton.setOnClickListener {
-            val intent = Intent(this@ReviewMainActivity, ReviewDetailActivity::class.java)
-            startActivity(intent)
-            this.finish()
+            startActivity(Intent(this@ReviewMainActivity, ReviewDetailActivity::class.java))
         }
     }
 
     override fun onDeleteIconClick(review: Review) {
         reviewViewModel.deleteReview(review)
-        Toast.makeText(this, "감상문 ${review.title}가 삭제되었습니다.", Toast.LENGTH_LONG).show()
-
-        reviewDB =
-            Firebase.database.reference
-                .child("users")
-                .child(userId)
-                .child("reviews")
-                .child(review.id.toString())
-        reviewDB.removeValue()
-
-        if (review.storageFileName != "") {
-            storage.reference
-                .child("review/photo")
-                .child(review.storageFileName)
-                .delete()
-        } // storage에 저장된 이미지 삭제
+        Toast.makeText(this, getString(R.string.review_list_deleted), Toast.LENGTH_LONG).show()
     } // 작성한 감상문 아이템에서 X 이미지를 누르면 발생하는 이벤트 처리를 위한 메소드
 
     override fun onIconClick(review: Review) {
         val intent = Intent(this@ReviewMainActivity, ReviewDetailActivity::class.java)
-        intent.putExtra("reviewType", "Edit")
-        intent.putExtra("reviewTitle", review.title)
-        intent.putExtra("reviewImage", review.image)
-        intent.putExtra("reviewContent", review.content)
-        intent.putExtra("reviewId", review.id)
-        intent.putExtra("rating", review.rating)
-        intent.putExtra("storageFileName", review.storageFileName)
+        intent.putExtra(ReviewEditViewModel.ARG_REVIEW_ID, review.id)
         startActivity(intent)
-        this.finish()
     } // 작성한 감상문 아이템(X 이미지를 제외한 부분)을 누르면 발생하는 이벤트 처리를 위한 메소드
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {

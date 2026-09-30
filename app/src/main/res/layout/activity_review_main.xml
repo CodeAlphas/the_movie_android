@@ -29,7 +29,7 @@
         android:layout_height="wrap_content"
         android:layout_marginLeft="10dp"
         android:layout_marginTop="15dp"
-        android:text="My Reviews"
+        android:text="@string/review_list_title"
         android:textColor="?attr/colorOnSurface"
         android:textSize="20dp"
         android:textStyle="bold"
@@ -42,7 +42,7 @@
         android:layout_height="wrap_content"
         android:layout_marginLeft="10dp"
         android:layout_marginTop="10dp"
-        android:text="내 영화 감상문"
+        android:text="@string/review_list_subtitle"
         android:textColor="?attr/colorOnSurfaceVariant"
         android:textSize="15dp"
         android:textStyle="bold"
@@ -87,11 +87,19 @@
             android:layout_height="wrap_content"
             android:layout_centerHorizontal="true"
             android:layout_centerVertical="true"
-            android:text="감상문이 존재하지 않습니다."
+            android:text="@string/review_list_empty"
             android:textColor="?attr/colorOnSurfaceVariant"
             android:textSize="15dp"
             android:visibility="gone"
             tools:visibility="visible" />
+
+        <ProgressBar
+            android:id="@+id/progressBar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_centerVertical="true"
+            android:visibility="gone" />
 
     </RelativeLayout>
 

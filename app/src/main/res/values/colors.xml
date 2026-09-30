@@ -18,4 +18,8 @@
     <color name="primary_gradient_start">#FFCDB8A2</color>
     <color name="primary_gradient_end">#FFB08968</color>
     <color name="on_primary_scrim">#33A34B2E</color>
+    <color name="map_marker_current">#FFE53935</color>
+    <color name="map_marker_theater">#FF1E88E5</color>
+    <color name="map_label_text">#FF212121</color>
+    <color name="map_label_stroke">#FFFFFFFF</color>
 </resources>

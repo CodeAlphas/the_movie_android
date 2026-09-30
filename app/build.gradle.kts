@@ -28,6 +28,9 @@ android {
         viewBinding = true
         buildConfig = true
     }
+    lint {
+        error += setOf("HardcodedText", "SetTextI18n")
+    }
 }
 
 dependencies {
@@ -39,7 +42,6 @@ dependencies {
     implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.fragment.ktx)
-    implementation(libs.androidx.lifecycle.livedata.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.androidx.recyclerview)
@@ -48,11 +50,10 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.kotlinx.coroutines.play.services)
     implementation(libs.glide)
-    implementation(libs.play.services.maps)
+    implementation(libs.kakao.map)
+    implementation(libs.play.services.location)
+    implementation(libs.android.youtube.player)
     implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.auth)
-    implementation(libs.firebase.database)
-    implementation(libs.firebase.storage)
     implementation(libs.firebase.messaging)
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)

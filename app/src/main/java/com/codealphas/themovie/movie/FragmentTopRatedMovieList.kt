@@ -7,10 +7,13 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.animation.Animation
 import android.view.animation.AnimationUtils
+import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.Observer
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.codealphas.themovie.R
@@ -20,22 +23,29 @@ import com.codealphas.themovie.map.MapActivity
 import com.codealphas.themovie.review.ReviewMainActivity
 import com.codealphas.themovie.ui.observeRemoteError
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class FragmentTopRatedMovieList : Fragment() {
-    private companion object {
-        const val GRID_SPAN_COUNT = 2
-        const val POSTER_WIDTH_DP = 180
+    companion object {
+        private const val GRID_SPAN_COUNT = 2
+        private const val POSTER_WIDTH_DP = 180
 
         // 왼쪽 여백, 포스터 사이, 오른쪽 여백의 너비가 같으므로, 포스터를 뺀 화면 너비를 3으로 나눔
-        const val ROW_GAP_UNIT_COUNT = 3
+        private const val ROW_GAP_UNIT_COUNT = 3
+
+        // ViewModel을 처음 만들 때 arguments가 SavedStateHandle에 복사되므로, 분류를 읽도록 생성 전에 arguments에 넣음
+        fun newInstance(): FragmentTopRatedMovieList =
+            FragmentTopRatedMovieList().apply {
+                arguments = bundleOf(MovieListViewModel.ARG_CATEGORY to MovieCategory.TOP_RATED)
+            }
     }
 
     private var _binding: TopRatedMovieListFragmentBinding? = null
     val binding get() = _binding!!
     private var buttonClicked = false
-    private lateinit var topRatedMoviesRecyclerViewAdapter: TopRatedMoviesRecyclerViewAdapter
-    private val viewModel: MovieViewModel by viewModels()
+    private lateinit var movieAdapter: MovieAdapter
+    private val viewModel: MovieListViewModel by viewModels()
     private val rotateOpen: Animation by lazy { AnimationUtils.loadAnimation(context, R.anim.rotate_open_anim) }
     private val rotateClose: Animation by lazy { AnimationUtils.loadAnimation(context, R.anim.rotate_close_anim) }
     private val fromBottom: Animation by lazy { AnimationUtils.loadAnimation(context, R.anim.from_bottom_anim) }
@@ -64,7 +74,7 @@ class FragmentTopRatedMovieList : Fragment() {
     override fun onResume() {
         super.onResume()
         // ViewPager2는 화면에 없는 탭도 STARTED로 유지해 탭을 옮길 때 onResume만 다시 호출하므로, 실패로 비어 있는 목록을 탭이 다시 보일 때 재요청
-        if (viewModel.allTopMovies.value == null) viewModel.makeTopRatedMovieListApiCall()
+        if (viewModel.uiState.value.movies == null) viewModel.loadMovies()
     }
 
     override fun onDestroyView() {
@@ -83,8 +93,8 @@ class FragmentTopRatedMovieList : Fragment() {
                 requireContext(),
             ),
         )
-        topRatedMoviesRecyclerViewAdapter = TopRatedMoviesRecyclerViewAdapter(requireContext())
-        binding.topRatedMovieRecyclerView.adapter = topRatedMoviesRecyclerViewAdapter
+        movieAdapter = MovieAdapter { movie -> openMovieDetail(movie) }
+        binding.topRatedMovieRecyclerView.adapter = movieAdapter
         binding.topRatedMovieRecyclerView.addOnScrollListener(
             object :
                 RecyclerView.OnScrollListener() {
@@ -113,14 +123,20 @@ class FragmentTopRatedMovieList : Fragment() {
 
     private fun initViewModel() {
         viewModel.remoteError.observeRemoteError(viewLifecycleOwner, binding.root)
-        viewModel.allTopMovies
-            .observe(
-                viewLifecycleOwner,
-                Observer<List<Movie>> { movies ->
-                    topRatedMoviesRecyclerViewAdapter.setUpdatedData(movies)
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.uiState.collect { state ->
+                    binding.progressBar.isVisible = state.isLoading
+                    val movies = state.movies ?: return@collect
+                    movieAdapter.submitList(movies)
                     binding.floatingButton.visibility = View.VISIBLE
-                },
-            )
+                }
+            }
+        }
+    }
+
+    private fun openMovieDetail(movie: Movie) {
+        startActivity(MovieDetailActivity.createIntent(requireContext(), movie.id))
     }
 
     private fun initFloatingActionButton() {

@@ -1,7 +1,7 @@
 package com.codealphas.themovie.data.di
 
-import com.codealphas.themovie.data.map.remote.MapApiService
-import com.codealphas.themovie.data.map.remote.TmapApiKeyInterceptor
+import com.codealphas.themovie.data.map.remote.KakaoApiKeyInterceptor
+import com.codealphas.themovie.data.map.remote.KakaoLocalService
 import com.codealphas.themovie.data.movie.remote.TmdbApiKeyInterceptor
 import com.codealphas.themovie.data.movie.remote.TmdbApiService
 import com.codealphas.themovie.data.remote.RetryInterceptor
@@ -36,7 +36,7 @@ internal object NetworkModule {
     @Singleton
     fun provideRetryInterceptor(): RetryInterceptor = RetryInterceptor()
 
-    // TMDB와 TMap은 붙이는 인증 키가 다르므로, 클라이언트도 API별로 나눔
+    // TMDB와 Kakao는 붙이는 인증 키가 다르므로, 클라이언트도 API별로 나눔
     @Provides
     @Singleton
     @TmdbOkHttp
@@ -53,16 +53,16 @@ internal object NetworkModule {
 
     @Provides
     @Singleton
-    @TmapOkHttp
-    fun provideTmapOkHttpClient(
-        @TmapApiKey apiKey: String,
+    @KakaoOkHttp
+    fun provideKakaoOkHttpClient(
+        @KakaoRestApiKey apiKey: String,
         retryInterceptor: RetryInterceptor,
     ): OkHttpClient =
         OkHttpClient
             .Builder()
             // proceed()는 다음 인터셉터로 들어가므로, 재시도마다 인증 키를 다시 붙이도록 키 인터셉터보다 먼저 등록
             .addInterceptor(retryInterceptor)
-            .addInterceptor(TmapApiKeyInterceptor(apiKey))
+            .addInterceptor(KakaoApiKeyInterceptor(apiKey))
             .build()
 
     @Provides
@@ -81,14 +81,14 @@ internal object NetworkModule {
 
     @Provides
     @Singleton
-    @TmapRetrofit
-    fun provideTmapRetrofit(
-        @TmapOkHttp client: OkHttpClient,
+    @KakaoRetrofit
+    fun provideKakaoRetrofit(
+        @KakaoOkHttp client: OkHttpClient,
         json: Json,
     ): Retrofit =
         Retrofit
             .Builder()
-            .baseUrl("https://apis.openapi.sk.com/")
+            .baseUrl("https://dapi.kakao.com/")
             .client(client)
             .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
             .build()
@@ -101,7 +101,7 @@ internal object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideMapApiService(
-        @TmapRetrofit retrofit: Retrofit,
-    ): MapApiService = retrofit.create(MapApiService::class.java)
+    fun provideKakaoLocalService(
+        @KakaoRetrofit retrofit: Retrofit,
+    ): KakaoLocalService = retrofit.create(KakaoLocalService::class.java)
 }
