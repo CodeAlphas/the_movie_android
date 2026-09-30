@@ -21,6 +21,7 @@ import com.kakao.vectormap.label.LabelTextStyle
 class MapMarkerRenderer(
     private val context: Context,
     map: KakaoMap,
+    onTheaterClick: (theaterId: String) -> Unit,
 ) {
     private val currentStyles: LabelStyles
     private val theaterStyles: LabelStyles
@@ -37,6 +38,12 @@ class MapMarkerRenderer(
         theaterStyles = checkNotNull(labelManager.addLabelStyles(LabelStyles.from(THEATER_STYLE_ID, theaterStyle)))
         currentLayer = checkNotNull(labelManager.addLayer(LabelLayerOptions.from(CURRENT_LAYER_ID)))
         theaterLayer = checkNotNull(labelManager.addLayer(LabelLayerOptions.from(THEATER_LAYER_ID)))
+        // 현재 위치 Label도 기본으로 클릭되므로, 영화관 id를 태그로 가진 Label만 처리하고 나머지는 지도 클릭으로 넘기도록 적용
+        map.setOnLabelClickListener { _, _, label ->
+            val theaterId = label.tag as? String
+            theaterId?.let(onTheaterClick)
+            theaterId != null
+        }
     }
 
     // 한쪽 응답에 다른 쪽 Label이 지워졌다 다시 생기지 않도록, 이전에 그린 상태와 달라진 레이어만 다시 그리도록 적용
@@ -71,7 +78,8 @@ class MapMarkerRenderer(
                 LabelOptions
                     .from(LatLng.from(theater.latitude, theater.longitude))
                     .setStyles(theaterStyles)
-                    .setTexts(LabelTextBuilder().setTexts(theater.name)),
+                    .setTexts(LabelTextBuilder().setTexts(theater.name))
+                    .setTag(theater.id),
             )
         }
     }

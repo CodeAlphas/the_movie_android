@@ -15,10 +15,12 @@ internal fun PlaceDto.toTheaterOrNull(): Theater? {
         null
     } else {
         Theater(
+            id = id,
             name = placeName,
             latitude = latitude,
             longitude = longitude,
             address = roadAddressName.ifBlank { addressName },
+            distanceMeters = distance.toIntOrNull(),
         )
     }
 }

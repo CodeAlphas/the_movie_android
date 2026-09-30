@@ -115,13 +115,19 @@ class MapActivity : AppCompatActivity() {
 
     private fun onKakaoMapReady(map: KakaoMap) {
         kakaoMap = map
-        markerRenderer = MapMarkerRenderer(this, map)
+        markerRenderer = MapMarkerRenderer(this, map, ::showTheaterBottomSheet)
         // 회전으로 화면이 다시 만들어지면 상태 구독이 지도 준비보다 먼저 값을 받아 그리지 못하므로, 준비 직후 저장된 상태 재적용
         val state = viewModel.uiState.value
         markerRenderer?.render(state)
         state.currentLocation?.let { location ->
             map.moveCamera(cameraUpdate(location))
         }
+    }
+
+    // 같은 Label을 빠르게 두 번 누르면 시트가 겹쳐 뜨므로, 이미 떠 있는 시트가 있으면 무시하도록 적용
+    private fun showTheaterBottomSheet(theaterId: String) {
+        if (supportFragmentManager.findFragmentByTag(TheaterBottomSheet.TAG) != null) return
+        TheaterBottomSheet.newInstance(theaterId).show(supportFragmentManager, TheaterBottomSheet.TAG)
     }
 
     private fun observeUiState() {

@@ -94,7 +94,8 @@ class MapViewModelTest {
 
 private val SEOUL = LocationLatLng(37.5, 127.0)
 private val BUSAN = LocationLatLng(35.1, 129.0)
-private val THEATER = Theater(name = "영화관", latitude = 37.5, longitude = 127.0, address = "주소")
+private val THEATER =
+    Theater(id = "1", name = "영화관", latitude = 37.5, longitude = 127.0, address = "주소", distanceMeters = 100)
 private val OLD_THEATER = THEATER.copy(name = "이전 영화관")
 
 private fun runMapTest(

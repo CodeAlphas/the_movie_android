@@ -80,6 +80,11 @@
     <string name="map_location_retry">다시 시도</string>
     <string name="map_current_location">현재 위치</string>
     <string name="map_load_failed">지도를 불러오지 못했습니다.</string>
+    <string name="map_theater_eyebrow">영화관</string>
+    <string name="map_theater_directions">길찾기</string>
+    <string name="map_theater_distance_meters">%1$dm</string>
+    <string name="map_theater_distance_kilometers">%1$.1fkm</string>
+    <string name="map_directions_unavailable">길찾기를 열 수 있는 앱이 없습니다.</string>
     <string name="notification_channel_name">The Movie</string>
     <string name="notification_channel_description">The Movie 채널</string>
 </resources>

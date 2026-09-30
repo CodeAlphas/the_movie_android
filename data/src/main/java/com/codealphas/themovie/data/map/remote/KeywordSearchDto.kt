@@ -27,4 +27,6 @@ internal data class PlaceDto(
     val roadAddressName: String = "",
     val x: String,
     val y: String,
+    // 검색 중심 좌표를 주지 않으면 빈 문자열이 오므로 String으로 받음
+    val distance: String = "",
 )
