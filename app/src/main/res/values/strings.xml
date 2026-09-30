@@ -77,6 +77,7 @@
     <string name="map_permission_settings_move">설정으로 이동</string>
     <string name="map_permission_settings_cancel">취소</string>
     <string name="map_location_unavailable">위치 정보를 갱신하지 못했습니다.</string>
+    <string name="map_location_retry">다시 시도</string>
     <string name="map_current_location">현재 위치</string>
     <string name="map_load_failed">지도를 불러오지 못했습니다.</string>
     <string name="notification_channel_name">The Movie</string>

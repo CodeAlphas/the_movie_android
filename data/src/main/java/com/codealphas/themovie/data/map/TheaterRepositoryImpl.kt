@@ -16,8 +16,8 @@ internal class TheaterRepositoryImpl
         private val service: KakaoLocalService,
     ) : TheaterRepository {
         override suspend fun getAddress(
-            latitude: String,
-            longitude: String,
+            latitude: Double,
+            longitude: Double,
         ): DataResult<Address> =
             safeApiCall { service.getAddress(longitude = longitude, latitude = latitude) }.map { it.toAddress() }
 

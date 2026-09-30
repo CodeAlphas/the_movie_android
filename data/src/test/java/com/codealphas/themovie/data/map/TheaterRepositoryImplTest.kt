@@ -62,9 +62,9 @@ class TheaterRepositoryImplTest {
         runTest {
             val service = FakeKakaoLocalService(pages = emptyList())
 
-            TheaterRepositoryImpl(service).getAddress(latitude = "37.1", longitude = "127.2")
+            TheaterRepositoryImpl(service).getAddress(latitude = 37.1, longitude = 127.2)
 
-            assertEquals("127.2" to "37.1", service.requestedAddressXy)
+            assertEquals(127.2 to 37.1, service.requestedAddressXy)
         }
 }
 
@@ -94,11 +94,11 @@ private class FakeKakaoLocalService(
     private val failFromPage: Int = Int.MAX_VALUE,
 ) : KakaoLocalService {
     val requestedPages = mutableListOf<Int>()
-    var requestedAddressXy: Pair<String, String>? = null
+    var requestedAddressXy: Pair<Double, Double>? = null
 
     override suspend fun getAddress(
-        longitude: String,
-        latitude: String,
+        longitude: Double,
+        latitude: Double,
     ): CoordToAddressDto {
         requestedAddressXy = longitude to latitude
         return CoordToAddressDto(documents = emptyList())

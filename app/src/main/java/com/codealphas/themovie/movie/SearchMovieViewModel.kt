@@ -37,8 +37,7 @@ class SearchMovieViewModel
         private val _uiState = MutableStateFlow(SearchMovieUiState())
         val uiState: StateFlow<SearchMovieUiState> = _uiState.asStateFlow()
 
-        // replay가 1이면 화면이 다시 구독할 때 마지막 오류를 또 받으므로, 같은 안내가 다시 뜨지 않도록 replay를 0으로 설정
-        private val _remoteError = MutableSharedFlow<RemoteError>(replay = 0)
+        private val _remoteError = MutableSharedFlow<RemoteError>()
         val remoteError: SharedFlow<RemoteError> = _remoteError
 
         init {
