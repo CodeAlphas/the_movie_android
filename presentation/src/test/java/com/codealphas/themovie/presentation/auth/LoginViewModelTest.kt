@@ -1,5 +1,6 @@
 package com.codealphas.themovie.presentation.auth
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.codealphas.themovie.domain.auth.AuthError
 import com.codealphas.themovie.domain.auth.AuthRepository
@@ -28,15 +29,15 @@ class LoginViewModelTest {
     fun `이메일이나 비밀번호가 비어 있거나 공백뿐이면 입력 안내를 보내야 한다`() {
         val repository = FakeLoginAuthRepository()
         runLoginTest(repository) { viewModel ->
-            val events = collectLoginEvents(viewModel)
+            val effects = collectLoginEffects(viewModel)
 
             viewModel.signIn(" ", "password")
             viewModel.signIn("user@example.com", "")
             runCurrent()
 
             assertEquals(0, repository.signInCalls)
-            assertEquals(listOf(LoginEvent.ShowInvalidInput, LoginEvent.ShowInvalidInput), events)
-            assertFalse(viewModel.uiState.value.isLoading)
+            assertEquals(listOf(LoginEffect.ShowInvalidInput, LoginEffect.ShowInvalidInput), effects)
+            assertFalse(viewModel.state.value.isLoading)
         }
     }
 
@@ -51,7 +52,7 @@ class LoginViewModelTest {
             runCurrent()
 
             assertEquals(1, repository.signInCalls)
-            assertTrue(viewModel.uiState.value.isLoading)
+            assertTrue(viewModel.state.value.isLoading)
             result.complete(Outcome.Success(Unit))
         }
     }
@@ -60,13 +61,13 @@ class LoginViewModelTest {
     fun `로그인에 성공하면 로딩을 끝내고 메인 이동 이벤트를 보내야 한다`() {
         val repository = FakeLoginAuthRepository(signInResult = CompletableDeferred(Outcome.Success(Unit)))
         runLoginTest(repository) { viewModel ->
-            val events = collectLoginEvents(viewModel)
+            val effects = collectLoginEffects(viewModel)
 
             viewModel.signIn("user@example.com", "password")
             runCurrent()
 
-            assertEquals(listOf<LoginEvent>(LoginEvent.NavigateToMain), events)
-            assertFalse(viewModel.uiState.value.isLoading)
+            assertEquals(listOf<LoginEffect>(LoginEffect.NavigateToMain), effects)
+            assertFalse(viewModel.state.value.isLoading)
         }
     }
 
@@ -75,23 +76,62 @@ class LoginViewModelTest {
         val failure = Outcome.Failure(AuthError.InvalidCredentials)
         val repository = FakeLoginAuthRepository(signInResult = CompletableDeferred(failure))
         runLoginTest(repository) { viewModel ->
-            val events = collectLoginEvents(viewModel)
+            val effects = collectLoginEffects(viewModel)
 
             viewModel.signIn("user@example.com", "password")
             runCurrent()
 
-            assertEquals(listOf<LoginEvent>(LoginEvent.ShowError(AuthError.InvalidCredentials)), events)
-            assertFalse(viewModel.uiState.value.isLoading)
+            assertEquals(listOf<LoginEffect>(LoginEffect.ShowError(AuthError.InvalidCredentials)), effects)
+            assertFalse(viewModel.state.value.isLoading)
         }
     }
+
+    @Test
+    fun `가입하기를 누르면 가입 화면 이동 이벤트를 보내야 한다`() {
+        val repository = FakeLoginAuthRepository()
+        runLoginTest(repository) { viewModel ->
+            val effects = collectLoginEffects(viewModel)
+
+            viewModel.onIntent(LoginIntent.JoinClicked)
+            runCurrent()
+
+            assertEquals(listOf<LoginEffect>(LoginEffect.NavigateToJoin), effects)
+        }
+    }
+
+    @Test
+    fun `프로세스가 종료된 뒤 로그인 화면을 복원하면 이메일은 남고 비밀번호는 비어 있어야 한다`() {
+        val savedStateHandle = SavedStateHandle()
+        val repository = FakeLoginAuthRepository()
+        runLoginTest(repository, savedStateHandle) { viewModel ->
+            viewModel.onIntent(LoginIntent.EmailChanged("user@example.com"))
+            viewModel.onIntent(LoginIntent.PasswordChanged("password"))
+        }
+
+        // 프로세스 종료 뒤에는 SavedStateHandle에 저장한 값만 남으므로, 같은 핸들로 ViewModel을 다시 만들어 복원 상황 재현
+        val restored = LoginViewModel(repository, savedStateHandle)
+
+        assertEquals("user@example.com", restored.state.value.email)
+        assertEquals("", restored.state.value.password)
+    }
+}
+
+private fun LoginViewModel.signIn(
+    email: String,
+    password: String,
+) {
+    onIntent(LoginIntent.EmailChanged(email))
+    onIntent(LoginIntent.PasswordChanged(password))
+    onIntent(LoginIntent.LoginClicked)
 }
 
 private fun runLoginTest(
     repository: FakeLoginAuthRepository,
+    savedStateHandle: SavedStateHandle = SavedStateHandle(),
     body: suspend TestScope.(LoginViewModel) -> Unit,
 ) = runTest {
     Dispatchers.setMain(StandardTestDispatcher(testScheduler))
-    val viewModel = LoginViewModel(repository)
+    val viewModel = LoginViewModel(repository, savedStateHandle)
     try {
         body(viewModel)
     } finally {
@@ -101,12 +141,12 @@ private fun runLoginTest(
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
-private fun TestScope.collectLoginEvents(viewModel: LoginViewModel): List<LoginEvent> {
-    val events = mutableListOf<LoginEvent>()
+private fun TestScope.collectLoginEffects(viewModel: LoginViewModel): List<LoginEffect> {
+    val effects = mutableListOf<LoginEffect>()
     backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
-        viewModel.events.collect { events += it }
+        viewModel.effect.collect { effects += it }
     }
-    return events
+    return effects
 }
 
 private class FakeLoginAuthRepository(

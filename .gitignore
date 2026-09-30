@@ -61,3 +61,6 @@ Thumbs.db
 # Local AI tool settings
 .cursor/
 .claude/
+
+# Local docs
+docs/
