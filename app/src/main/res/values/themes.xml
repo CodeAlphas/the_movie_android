@@ -41,4 +41,24 @@
         <item name="colorControlNormal">?attr/colorOnPrimary</item>
         <item name="android:textColorPrimary">?attr/colorOnPrimary</item>
     </style>
+
+    <!-- 기본 시트는 화면 배경과 같은 색이라 지도 위에서 카드처럼 떠 보이지 않으므로, 한 단계 밝은 표면색과 큰 모서리로 적용 -->
+    <style name="ThemeOverlay.TheMovie.BottomSheetDialog" parent="ThemeOverlay.Material3.BottomSheetDialog">
+        <item name="bottomSheetStyle">@style/Widget.TheMovie.BottomSheet</item>
+        <item name="enableEdgeToEdge">true</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+    </style>
+
+    <style name="Widget.TheMovie.BottomSheet" parent="Widget.Material3.BottomSheet.Modal">
+        <item name="backgroundTint">?attr/colorSurfaceInverse</item>
+        <item name="shapeAppearance">@style/ShapeAppearance.TheMovie.BottomSheet</item>
+    </style>
+
+    <style name="ShapeAppearance.TheMovie.BottomSheet" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSizeTopLeft">28dp</item>
+        <item name="cornerSizeTopRight">28dp</item>
+        <item name="cornerSizeBottomLeft">0dp</item>
+        <item name="cornerSizeBottomRight">0dp</item>
+    </style>
 </resources>

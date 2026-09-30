@@ -1,7 +1,7 @@
 package com.codealphas.themovie.di
 
 import com.codealphas.themovie.BuildConfig
-import com.codealphas.themovie.data.di.TmapApiKey
+import com.codealphas.themovie.data.di.KakaoRestApiKey
 import com.codealphas.themovie.data.di.TmdbApiKey
 import dagger.Module
 import dagger.Provides
@@ -17,6 +17,6 @@ object ApiKeyModule {
     fun provideTmdbApiKey(): String = BuildConfig.TMDB_API_KEY
 
     @Provides
-    @TmapApiKey
-    fun provideTmapApiKey(): String = BuildConfig.TMAP_API_KEY
+    @KakaoRestApiKey
+    fun provideKakaoRestApiKey(): String = BuildConfig.KAKAO_REST_API_KEY
 }

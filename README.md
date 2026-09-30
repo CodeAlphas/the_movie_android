@@ -46,7 +46,7 @@
    - Local DB : Room
    - Image : Glide
    - Firebase : Authentication, Realtime Database, Storage, Cloud Messaging
-   - Other : Youtube Android Player API, TMDB(The Movie Database) API, Google Maps, TMAP API
+   - Other : Youtube Android Player API, TMDB(The Movie Database) API, Kakao Map SDK, Kakao Local API
 ```
 
 ## 시연 영상

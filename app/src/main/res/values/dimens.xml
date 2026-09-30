@@ -1,3 +1,6 @@
 <resources>
     <dimen name="fab_margin">16dp</dimen>
+    <dimen name="map_marker_icon_size">32dp</dimen>
+    <dimen name="map_label_text_size">10dp</dimen>
+    <dimen name="map_label_text_stroke">1dp</dimen>
 </resources>
