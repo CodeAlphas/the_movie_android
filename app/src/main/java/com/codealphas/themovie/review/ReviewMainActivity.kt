@@ -74,10 +74,15 @@ class ReviewMainActivity :
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 reviewViewModel.uiState.collect { state ->
+                    // Room에 감상문이 이미 있으면 동기화가 그 위에 덮어쓰므로, 목록을 가리지 않도록 보여 줄 감상문이 없을 때만 로딩 표시
+                    val hasNoReviews = state.reviews.isNullOrEmpty()
+                    binding.progressBar.isVisible = hasNoReviews && state.isSyncing
                     // 목록을 아직 읽지 못한 상태를 빈 목록으로 보면 빈 목록 안내가 먼저 깜빡이므로, 읽은 뒤에만 반영
                     val reviews = state.reviews ?: return@collect
                     reviewRecyclerViewAdapter.updateReviewList(reviews)
-                    binding.textViewCenter.isVisible = reviews.isEmpty()
+                    // 동기화 중에는 서버 감상문이 아직 Room에 들어오지 않았으므로,
+                    // 불러오는 중을 감상문 없음으로 안내하지 않도록 동기화가 끝난 뒤에만 빈 목록 안내 표시
+                    binding.textViewCenter.isVisible = reviews.isEmpty() && !state.isSyncing
                 }
             }
         }

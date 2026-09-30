@@ -46,6 +46,55 @@ class ReviewListViewModelTest {
     }
 
     @Test
+    fun `서버 동기화가 끝나기 전이면 Room 목록을 받기 전부터 동기화 중 상태여야 한다`() {
+        val repository = FakeReviewListRepository(syncDone = CompletableDeferred())
+        runReviewListTest(repository) { viewModel ->
+            assertEquals(ReviewListUiState(reviews = null, isSyncing = true), viewModel.uiState.value)
+
+            runCurrent()
+
+            assertEquals(ReviewListUiState(reviews = emptyList(), isSyncing = true), viewModel.uiState.value)
+        }
+    }
+
+    @Test
+    fun `서버 동기화 중에 Room 목록이 바뀌면 바뀐 목록과 함께 동기화 중 상태를 유지해야 한다`() {
+        val repository = FakeReviewListRepository(syncDone = CompletableDeferred())
+        runReviewListTest(repository) { viewModel ->
+            runCurrent()
+
+            repository.reviews.value = listOf(REVIEW)
+            runCurrent()
+
+            assertEquals(ReviewListUiState(reviews = listOf(REVIEW), isSyncing = true), viewModel.uiState.value)
+        }
+    }
+
+    @Test
+    fun `서버 동기화에 성공하면 동기화 중 상태가 끝나야 한다`() {
+        val syncDone = CompletableDeferred<Unit>()
+        val repository = FakeReviewListRepository(syncResult = Outcome.Success(Unit), syncDone = syncDone)
+        runReviewListTest(repository) { viewModel ->
+            runCurrent()
+
+            syncDone.complete(Unit)
+            runCurrent()
+
+            assertEquals(ReviewListUiState(reviews = emptyList(), isSyncing = false), viewModel.uiState.value)
+        }
+    }
+
+    @Test
+    fun `서버 동기화에 실패하면 동기화 중 상태가 끝나야 한다`() {
+        val repository = FakeReviewListRepository(syncResult = Outcome.Failure(ReviewError.Unknown))
+        runReviewListTest(repository) { viewModel ->
+            runCurrent()
+
+            assertEquals(ReviewListUiState(reviews = emptyList(), isSyncing = false), viewModel.uiState.value)
+        }
+    }
+
+    @Test
     fun `동기화에 실패하면 실패 안내를 한 번 보내야 한다`() {
         val repository = FakeReviewListRepository(syncResult = Outcome.Failure(ReviewError.Unknown))
         runReviewListTest(repository) { viewModel ->
@@ -141,6 +190,7 @@ private fun runReviewListTest(
 private class FakeReviewListRepository(
     private val syncResult: ReviewResult = Outcome.Success(Unit),
     private val deleteAllDone: CompletableDeferred<Unit> = CompletableDeferred(Unit),
+    private val syncDone: CompletableDeferred<Unit> = CompletableDeferred(Unit),
 ) : ReviewRepository {
     val reviews = MutableStateFlow(emptyList<Review>())
     val deleted = mutableListOf<Review>()
@@ -151,6 +201,7 @@ private class FakeReviewListRepository(
 
     override suspend fun syncFromRemote(): ReviewResult {
         syncCalls += 1
+        syncDone.await()
         return syncResult
     }
 
