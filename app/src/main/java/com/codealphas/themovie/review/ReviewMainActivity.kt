@@ -58,7 +58,11 @@ class ReviewMainActivity :
                 }
                 launch {
                     reviewViewModel.logoutCompleted.collect {
-                        startActivity(Intent(applicationContext, LoginActivity::class.java))
+                        // 감상문 화면만 닫으면 로그인 화면에서 뒤로 갈 때 로그아웃된 메인 화면이 다시 열리므로, 기존 화면을 모두 비우도록 태스크 초기화 적용
+                        startActivity(
+                            Intent(applicationContext, LoginActivity::class.java)
+                                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK),
+                        )
                         finish()
                     }
                 }
