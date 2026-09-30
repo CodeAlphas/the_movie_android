@@ -5,7 +5,7 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
+import coil3.load
 import com.codealphas.themovie.domain.movie.Movie
 import com.codealphas.themovie.presentation.databinding.MovieItemBinding
 
@@ -32,11 +32,7 @@ class MovieAdapter(
         private val onMovieClick: (Movie) -> Unit,
     ) : RecyclerView.ViewHolder(itemBinding.root) {
         fun bind(movie: Movie) {
-            Glide
-                .with(itemBinding.imageViewMoviePoster)
-                .load(movie.posterUrl)
-                .centerCrop()
-                .into(itemBinding.imageViewMoviePoster)
+            itemBinding.imageViewMoviePoster.load(movie.posterUrl)
             itemBinding.textViewMovieTitle.text = movie.title
             itemBinding.cardView.setOnClickListener { onMovieClick(movie) }
         }

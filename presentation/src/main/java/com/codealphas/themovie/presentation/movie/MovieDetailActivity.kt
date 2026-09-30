@@ -10,7 +10,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.bumptech.glide.Glide
+import coil3.load
 import com.codealphas.themovie.core.android.ui.applySystemBarInsets
 import com.codealphas.themovie.core.android.ui.setupAppBar
 import com.codealphas.themovie.domain.movie.MovieDetail
@@ -52,7 +52,7 @@ class MovieDetailActivity : AppCompatActivity() {
                 LinearLayoutManager.HORIZONTAL,
                 false,
             )
-        creditsRecyclerViewAdapter = CreditsRecyclerViewAdapter(this)
+        creditsRecyclerViewAdapter = CreditsRecyclerViewAdapter()
         binding.creditsRecyclerView.adapter = creditsRecyclerViewAdapter
     }
 
@@ -72,10 +72,7 @@ class MovieDetailActivity : AppCompatActivity() {
         // 이미 초기화한 플레이어를 다시 초기화하지 않도록 같은 인스턴스는 건너뜀
         if (detail == null || detail === appliedDetail) return
         appliedDetail = detail
-        Glide
-            .with(this)
-            .load(detail.posterUrl)
-            .into(binding.imagePoster)
+        binding.imagePoster.load(detail.posterUrl)
         binding.textTitle.text = detail.title
         binding.textRelease.text = getString(R.string.movie_detail_release, detail.releaseDate)
         binding.textOverview.text = detail.overview

@@ -9,6 +9,7 @@ import android.view.KeyEvent
 import android.view.View
 import android.view.WindowManager
 import android.view.inputmethod.InputMethodManager
+import android.widget.ImageView
 import android.widget.Toast
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -23,7 +24,8 @@ import androidx.core.widget.doOnTextChanged
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import com.bumptech.glide.Glide
+import coil3.load
+import coil3.request.error
 import com.codealphas.themovie.core.android.ui.applySystemBarInsets
 import com.codealphas.themovie.core.android.ui.setupAppBar
 import com.codealphas.themovie.domain.review.ReviewError
@@ -81,7 +83,7 @@ class ReviewDetailActivity : AppCompatActivity() {
                     }
                 }
                 launch {
-                    // 입력 중에도 상태가 계속 바뀌므로, 사진이 바뀔 때만 Glide로 다시 로드
+                    // 입력 중에도 상태가 계속 바뀌므로, 사진이 바뀔 때만 다시 로드
                     viewModel.uiState
                         .map { it.photo to it.savedImageUrl }
                         .distinctUntilChanged()
@@ -122,21 +124,24 @@ class ReviewDetailActivity : AppCompatActivity() {
         photo: ReviewPhoto,
         savedImageUrl: String,
     ) {
-        when {
-            photo is ReviewPhoto.New ->
-                Glide
-                    .with(this)
-                    .load(photo.uri)
-                    .centerCrop()
-                    .into(binding.imageView) // 사진을 올바르게 돌려서 imageView에 보여주기 위해 Glide 라이브러리 사용
-            photo is ReviewPhoto.Unchanged && savedImageUrl.isNotEmpty() ->
-                Glide
-                    .with(this)
-                    .load(savedImageUrl)
-                    .centerCrop()
-                    .error(R.drawable.set_image) // 원본이미지를 로드할 수 없을 때 보여줄 이미지 설정
-                    .into(binding.imageView) // Firebase storage에 저장된 이미지 설정
-            else -> binding.imageView.setImageResource(R.drawable.set_image)
+        val imageData =
+            when (photo) {
+                is ReviewPhoto.New -> photo.uri
+                is ReviewPhoto.Unchanged if savedImageUrl.isNotEmpty() -> savedImageUrl
+                else -> null
+            }
+
+        if (imageData == null) {
+            binding.imageView.scaleType = ImageView.ScaleType.FIT_CENTER
+            // 사진을 지운 뒤 늦게 끝난 이전 로드가 기본 이미지를 덮지 않도록 기본 이미지도 Coil로 로드해 이전 로드 대체
+            binding.imageView.load(R.drawable.set_image)
+            return
+        }
+
+        binding.imageView.scaleType = ImageView.ScaleType.CENTER_CROP
+        binding.imageView.load(imageData) {
+            error(R.drawable.set_image)
+            listener(onError = { _, _ -> binding.imageView.scaleType = ImageView.ScaleType.FIT_CENTER })
         }
     }
 

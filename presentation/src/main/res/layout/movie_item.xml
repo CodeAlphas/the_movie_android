@@ -19,7 +19,7 @@
             android:id="@+id/imageViewMoviePoster"
             android:layout_width="match_parent"
             android:layout_height="270dp"
-            android:scaleType="fitXY"
+            android:scaleType="centerCrop"
             android:src="@drawable/ic_launcher_foreground" />
 
         <!-- maxLines, ellipsize 속성 : 정해진 줄을 넘으면 말 줄임표를 표시하는데 사용 -->

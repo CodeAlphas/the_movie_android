@@ -27,7 +27,7 @@ okhttp = "4.12.0"
 kotlinxSerialization = "1.9.0"
 coroutines = "1.10.2"
 datastore = "1.2.1"
-glide = "4.16.0"
+coil = "3.3.0"
 # 16KB 페이지 크기는 2.11.8부터 지원하므로, 도입 시점에 저장소 maven-metadata.xml의 release였던 2.15.2 사용
 kakaoMap = "2.15.2"
 playServicesLocation = "21.3.0"
@@ -79,7 +79,8 @@ javax-inject = { group = "javax.inject", name = "javax.inject", version.ref = "j
 kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutines" }
 kotlinx-coroutines-play-services = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-play-services", version.ref = "coroutines" }
 androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }
-glide = { group = "com.github.bumptech.glide", name = "glide", version.ref = "glide" }
+coil = { group = "io.coil-kt.coil3", name = "coil", version.ref = "coil" }
+coil-network-okhttp = { group = "io.coil-kt.coil3", name = "coil-network-okhttp", version.ref = "coil" }
 kakao-map = { group = "com.kakao.maps.open", name = "android", version.ref = "kakaoMap" }
 play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "playServicesLocation" }
 android-youtube-player = { group = "com.pierfrancescosoffritti.androidyoutubeplayer", name = "core", version.ref = "androidYoutubePlayer" }

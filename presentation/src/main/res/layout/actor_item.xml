@@ -11,7 +11,8 @@
         android:layout_height="110dp"
         android:layout_gravity="center_horizontal"
         android:layout_margin="4dp"
-        android:background="@drawable/ic_baseline_face_24" />
+        android:background="@drawable/ic_baseline_face_24"
+        android:scaleType="centerCrop" />
 
     <TextView
         android:id="@+id/actorCharacterNameTextView"

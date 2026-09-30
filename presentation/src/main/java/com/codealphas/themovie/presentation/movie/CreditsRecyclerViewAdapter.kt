@@ -1,17 +1,14 @@
 package com.codealphas.themovie.presentation.movie
 
-import android.content.Context
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
+import coil3.load
 import com.codealphas.themovie.domain.movie.Cast
 import com.codealphas.themovie.presentation.databinding.ActorItemBinding
 
 // 영화 상세화면에서 등장인물 정보를 보여주는 리싸이클러뷰를 위한 어댑터
-class CreditsRecyclerViewAdapter(
-    val context: Context,
-) : RecyclerView.Adapter<CreditsRecyclerViewAdapter.ViewHolder>() {
+class CreditsRecyclerViewAdapter : RecyclerView.Adapter<CreditsRecyclerViewAdapter.ViewHolder>() {
     private var items: List<Cast> = emptyList()
 
     inner class ViewHolder(
@@ -19,12 +16,7 @@ class CreditsRecyclerViewAdapter(
     ) : RecyclerView.ViewHolder(itemBinding.root) {
         // 뷰와 데이터를 연결해주는 메소드
         fun bind(data: Cast) {
-            // 뷰에 Glide 라이브러리를 이용하여 이미지 로드
-            Glide
-                .with(context)
-                .load(data.profileUrl)
-                .centerCrop()
-                .into(itemBinding.actorImageView)
+            itemBinding.actorImageView.load(data.profileUrl)
             itemBinding.actorCharacterNameTextView.text = data.character
             itemBinding.actorRealNameTextView.text = data.name
         }
