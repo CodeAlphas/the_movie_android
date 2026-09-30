@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- application_menu는 감상문 화면도 같이 쓰므로, 메인 화면에만 알림 설정이 보이도록 메뉴 분리 -->
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/notification_settings_action"
+        android:title="@string/notification_settings_menu"
+        app:showAsAction="never" />
+
+</menu>
