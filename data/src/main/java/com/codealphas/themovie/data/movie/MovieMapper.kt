@@ -36,7 +36,24 @@ internal fun CreditDto.toCast(): Cast =
         profileUrl = tmdbImageUrl(profilePath),
     )
 
-internal fun VideoDto.toVideo(): Video = Video(key = key)
+internal fun VideoDto.toVideo(): Video = Video(key = key, name = name, type = type)
+
+private const val YOUTUBE_SITE = "YouTube"
+private const val KOREAN_LANGUAGE = "ko"
+private val VIDEO_TYPE_ORDER = listOf("Trailer", "Teaser")
+
+// VIDEO_TYPE_ORDER에 없는 종류는 뒤로 보내도록 목록 크기를 순위로 반환
+private fun videoTypeRank(type: String): Int =
+    VIDEO_TYPE_ORDER.indexOf(type).takeIf { it >= 0 } ?: VIDEO_TYPE_ORDER.size
+
+// 플레이어는 YouTube 영상만 재생할 수 있으므로, Vimeo 등 다른 사이트 영상은 제외하고 첫 영상이 예고편이 되도록 정렬
+internal fun List<VideoDto>.toYouTubeVideos(): List<Video> =
+    filter { it.site == YOUTUBE_SITE }
+        .sortedWith(
+            compareBy<VideoDto> { videoTypeRank(it.type) }
+                .thenByDescending { it.official }
+                .thenByDescending { it.iso6391 == KOREAN_LANGUAGE },
+        ).map(VideoDto::toVideo)
 
 internal fun MovieDetailDto.toMovieDetail(
     cast: List<CreditDto>,
@@ -50,7 +67,7 @@ internal fun MovieDetailDto.toMovieDetail(
         overview = overview,
         voteAverage = voteAverage,
         cast = cast.map(CreditDto::toCast),
-        videos = videos.map(VideoDto::toVideo),
+        videos = videos.toYouTubeVideos(),
     )
 
 internal fun toMovieDetailResult(

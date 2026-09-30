@@ -87,8 +87,57 @@ class MovieMapperTest {
     }
 
     @Test
-    fun `영상 응답이면 key만 매핑해야 한다`() {
-        assertEquals(Video(key = "abc123"), videoItem(key = "abc123").toVideo())
+    fun `영상 응답이면 key, 이름, 종류를 매핑해야 한다`() {
+        assertEquals(
+            Video(key = "abc123", name = "예고편", type = "Trailer"),
+            videoItem(key = "abc123").toVideo(),
+        )
+    }
+
+    @Test
+    fun `YouTube가 아닌 사이트 영상이면 목록에서 제외해야 한다`() {
+        val videos =
+            listOf(
+                videoItem(key = "vimeo", site = "Vimeo"),
+                videoItem(key = "youtube"),
+            ).toYouTubeVideos()
+
+        assertEquals(listOf("youtube"), videos.map(Video::key))
+    }
+
+    @Test
+    fun `영상 종류가 섞여 있으면 Trailer, Teaser, 나머지 순으로 정렬해야 한다`() {
+        val videos =
+            listOf(
+                videoItem(key = "clip", type = "Clip"),
+                videoItem(key = "teaser", type = "Teaser"),
+                videoItem(key = "featurette", type = "Featurette"),
+                videoItem(key = "trailer", type = "Trailer"),
+            ).toYouTubeVideos()
+
+        assertEquals(listOf("trailer", "teaser", "clip", "featurette"), videos.map(Video::key))
+    }
+
+    @Test
+    fun `같은 종류 안에서는 공식 영상이 먼저 와야 한다`() {
+        val videos =
+            listOf(
+                videoItem(key = "fan", official = false),
+                videoItem(key = "official", official = true),
+            ).toYouTubeVideos()
+
+        assertEquals(listOf("official", "fan"), videos.map(Video::key))
+    }
+
+    @Test
+    fun `같은 종류와 공식 여부 안에서는 한국어 영상이 먼저 와야 한다`() {
+        val videos =
+            listOf(
+                videoItem(key = "english", language = "en"),
+                videoItem(key = "korean", language = "ko"),
+            ).toYouTubeVideos()
+
+        assertEquals(listOf("korean", "english"), videos.map(Video::key))
     }
 
     @Test
@@ -133,7 +182,7 @@ class MovieMapperTest {
                             profileUrl = "https://image.tmdb.org/t/p/w500/song.jpg",
                         ),
                     ),
-                videos = listOf(Video(key = "abc123")),
+                videos = listOf(Video(key = "abc123", name = "예고편", type = "Trailer")),
             ),
             detail,
         )
@@ -240,16 +289,22 @@ private fun movieDetail(
         voteAverage = voteAverage,
     )
 
-private fun videoItem(key: String): VideoDto =
+private fun videoItem(
+    key: String,
+    site: String = "YouTube",
+    type: String = "Trailer",
+    official: Boolean = true,
+    language: String = "en",
+): VideoDto =
     VideoDto(
-        iso6391 = "en",
+        iso6391 = language,
         iso31661 = "US",
         name = "예고편",
         key = key,
-        site = "YouTube",
+        site = site,
         size = 1080,
-        type = "Trailer",
-        official = true,
+        type = type,
+        official = official,
         publishedAt = "2024-01-02",
         id = "video-id",
     )

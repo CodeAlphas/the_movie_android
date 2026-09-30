@@ -39,10 +39,12 @@ internal interface TmdbApiService {
         @Query("language") language: String = "en",
     ): CreditsDto
 
-    // 영화 관련 동영상 정보 요청
+    // TMDB는 language 하나로 요청하면 그 언어 영상만 주므로,
+    // 한국 영화의 한국어 예고편과 외국 영화의 영어 예고편을 함께 받도록 두 언어 요청
     @GET("movie/{movie_id}/videos")
     suspend fun getVideosList(
         @Path("movie_id") movieId: Int,
-        @Query("language") language: String = "en",
+        @Query("language") language: String = "ko",
+        @Query("include_video_language") includeVideoLanguage: String = "ko,en",
     ): VideosDto
 }
