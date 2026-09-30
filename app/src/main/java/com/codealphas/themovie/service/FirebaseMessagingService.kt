@@ -38,7 +38,9 @@ class FirebaseMessagingService : FirebaseMessagingService() {
                 this,
                 0,
                 intent,
-                PendingIntent.FLAG_UPDATE_CURRENT, // 동일한 pendingIntent가 이미 존재하면 extra data만 갱신해서 사용
+                // targetSdk 31 이상은 가변성 플래그가 없으면 getActivity가 IllegalArgumentException을 던지므로,
+                // 메시지를 받아 알림을 만들 때 앱이 죽지 않도록 FLAG_IMMUTABLE 적용
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
             ) // Notifictaion Manager에 intent를 다룰 수 있는 권한을 줌, Notifictaion Manager가 해당 intent를 수행해야겠다고 판단할 때 수행
 
         // 알림 메시지
