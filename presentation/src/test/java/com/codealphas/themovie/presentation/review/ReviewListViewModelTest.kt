@@ -34,14 +34,14 @@ class ReviewListViewModelTest {
     fun `Room 목록이 바뀌면 바뀐 목록을 상태에 담아야 한다`() {
         val repository = FakeReviewListRepository()
         runReviewListTest(repository) { viewModel ->
-            assertNull(viewModel.uiState.value.reviews)
+            assertNull(viewModel.state.value.reviews)
 
             runCurrent()
-            assertEquals(emptyList<Review>(), viewModel.uiState.value.reviews)
+            assertEquals(emptyList<Review>(), viewModel.state.value.reviews)
 
             repository.reviews.value = listOf(REVIEW)
             runCurrent()
-            assertEquals(listOf(REVIEW), viewModel.uiState.value.reviews)
+            assertEquals(listOf(REVIEW), viewModel.state.value.reviews)
         }
     }
 
@@ -49,11 +49,11 @@ class ReviewListViewModelTest {
     fun `서버 동기화가 끝나기 전이면 Room 목록을 받기 전부터 동기화 중 상태여야 한다`() {
         val repository = FakeReviewListRepository(syncDone = CompletableDeferred())
         runReviewListTest(repository) { viewModel ->
-            assertEquals(ReviewListUiState(reviews = null, isSyncing = true), viewModel.uiState.value)
+            assertEquals(ReviewListUiState(reviews = null, isSyncing = true), viewModel.state.value)
 
             runCurrent()
 
-            assertEquals(ReviewListUiState(reviews = emptyList(), isSyncing = true), viewModel.uiState.value)
+            assertEquals(ReviewListUiState(reviews = emptyList(), isSyncing = true), viewModel.state.value)
         }
     }
 
@@ -66,7 +66,7 @@ class ReviewListViewModelTest {
             repository.reviews.value = listOf(REVIEW)
             runCurrent()
 
-            assertEquals(ReviewListUiState(reviews = listOf(REVIEW), isSyncing = true), viewModel.uiState.value)
+            assertEquals(ReviewListUiState(reviews = listOf(REVIEW), isSyncing = true), viewModel.state.value)
         }
     }
 
@@ -80,7 +80,7 @@ class ReviewListViewModelTest {
             syncDone.complete(Unit)
             runCurrent()
 
-            assertEquals(ReviewListUiState(reviews = emptyList(), isSyncing = false), viewModel.uiState.value)
+            assertEquals(ReviewListUiState(reviews = emptyList(), isSyncing = false), viewModel.state.value)
         }
     }
 
@@ -90,7 +90,7 @@ class ReviewListViewModelTest {
         runReviewListTest(repository) { viewModel ->
             runCurrent()
 
-            assertEquals(ReviewListUiState(reviews = emptyList(), isSyncing = false), viewModel.uiState.value)
+            assertEquals(ReviewListUiState(reviews = emptyList(), isSyncing = false), viewModel.state.value)
         }
     }
 
@@ -100,7 +100,7 @@ class ReviewListViewModelTest {
         runReviewListTest(repository) { viewModel ->
             var failedCount = 0
             backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
-                viewModel.syncFailed.collect { failedCount++ }
+                viewModel.effect.collect { effect -> if (effect == ReviewListEffect.ShowSyncFailed) failedCount++ }
             }
 
             runCurrent()
@@ -116,7 +116,7 @@ class ReviewListViewModelTest {
         runReviewListTest(repository) { viewModel ->
             var failedCount = 0
             backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
-                viewModel.syncFailed.collect { failedCount++ }
+                viewModel.effect.collect { effect -> if (effect == ReviewListEffect.ShowSyncFailed) failedCount++ }
             }
 
             runCurrent()
@@ -130,10 +130,30 @@ class ReviewListViewModelTest {
     fun `감상문을 지우면 Repository에 그 감상문 삭제를 요청해야 한다`() {
         val repository = FakeReviewListRepository()
         runReviewListTest(repository) { viewModel ->
-            viewModel.deleteReview(REVIEW)
+            viewModel.onIntent(ReviewListIntent.DeleteClicked(REVIEW))
             runCurrent()
 
             assertEquals(listOf(REVIEW), repository.deleted)
+        }
+    }
+
+    @Test
+    fun `감상문을 지우면 삭제가 끝난 뒤에 삭제 안내를 보내야 한다`() {
+        val deleteDone = CompletableDeferred<Unit>()
+        val repository = FakeReviewListRepository(deleteDone = deleteDone)
+        runReviewListTest(repository) { viewModel ->
+            val effects = mutableListOf<ReviewListEffect>()
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                viewModel.effect.collect { effects += it }
+            }
+
+            viewModel.onIntent(ReviewListIntent.DeleteClicked(REVIEW))
+            runCurrent()
+            assertEquals(emptyList<ReviewListEffect>(), effects)
+
+            deleteDone.complete(Unit)
+            runCurrent()
+            assertEquals(listOf(ReviewListEffect.ShowDeleted), effects)
         }
     }
 
@@ -145,10 +165,10 @@ class ReviewListViewModelTest {
         runReviewListTest(repository, authRepository) { viewModel ->
             var completedCount = 0
             backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
-                viewModel.logoutCompleted.collect { completedCount++ }
+                viewModel.effect.collect { effect -> if (effect == ReviewListEffect.NavigateToLogin) completedCount++ }
             }
 
-            viewModel.logout()
+            viewModel.onIntent(ReviewListIntent.LogoutClicked)
             runCurrent()
             assertEquals(1, authRepository.signOutCalls)
             assertEquals(0, completedCount)
@@ -191,6 +211,7 @@ private class FakeReviewListRepository(
     private val syncResult: ReviewResult = Outcome.Success(Unit),
     private val deleteAllDone: CompletableDeferred<Unit> = CompletableDeferred(Unit),
     private val syncDone: CompletableDeferred<Unit> = CompletableDeferred(Unit),
+    private val deleteDone: CompletableDeferred<Unit> = CompletableDeferred(Unit),
 ) : ReviewRepository {
     val reviews = MutableStateFlow(emptyList<Review>())
     val deleted = mutableListOf<Review>()
@@ -210,6 +231,7 @@ private class FakeReviewListRepository(
     override suspend fun save(draft: ReviewDraft): ReviewResult = error("사용하지 않음")
 
     override suspend fun delete(review: Review) {
+        deleteDone.await()
         deleted += review
     }
 

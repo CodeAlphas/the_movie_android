@@ -43,8 +43,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
@@ -65,6 +63,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import coil3.compose.AsyncImage
 import com.codealphas.themovie.core.android.theme.Spacing
 import com.codealphas.themovie.core.android.theme.TheMovieTheme
+import com.codealphas.themovie.core.android.ui.RatingStars
 import com.codealphas.themovie.domain.movie.Cast
 import com.codealphas.themovie.domain.movie.MovieDetail
 import com.codealphas.themovie.domain.movie.Video
@@ -79,7 +78,6 @@ private const val POSTER_ASPECT_RATIO = 2f / 3f
 private val CastItemWidth = 125.dp
 private val CastImageSize = 110.dp
 private const val PLAYER_ASPECT_RATIO = 16f / 9f
-private const val STAR_COUNT = 5
 private val StarSize = 18.dp
 private const val PREVIEW_CAST_COUNT = 4
 
@@ -223,35 +221,7 @@ private fun MovieSummary(detail: MovieDetail) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             // TMDB 평점은 10점 만점이고 별은 5개라서, 별 하나가 2점이 되도록 절반으로 줄여 표시
-            RatingStars(filledStars = (detail.voteAverage / 2).toFloat())
-        }
-    }
-}
-
-@Composable
-private fun RatingStars(filledStars: Float) {
-    val star = painterResource(R.drawable.ic_baseline_star_24)
-    Row {
-        repeat(STAR_COUNT) { index ->
-            val fill = (filledStars - index).coerceIn(0f, 1f)
-            Box(modifier = Modifier.size(StarSize)) {
-                Icon(
-                    painter = star,
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxSize(),
-                    tint = MaterialTheme.colorScheme.outline,
-                )
-                // Material3에는 RatingBar가 없어서, 7.3점의 네 번째 별처럼 일부만 찬 별을 그리도록 채운 별을 점수 비율만큼 잘라 겹침 적용
-                Icon(
-                    painter = star,
-                    contentDescription = null,
-                    modifier =
-                        Modifier.fillMaxSize().drawWithContent {
-                            clipRect(right = size.width * fill) { this@drawWithContent.drawContent() }
-                        },
-                    tint = MaterialTheme.colorScheme.tertiary,
-                )
-            }
+            RatingStars(filledStars = (detail.voteAverage / 2).toFloat(), starSize = StarSize)
         }
     }
 }
