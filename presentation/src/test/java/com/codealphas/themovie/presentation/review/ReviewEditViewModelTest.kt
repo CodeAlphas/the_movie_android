@@ -322,8 +322,7 @@ private val STORED_REVIEW =
         id = 3,
     )
 
-private fun editHandle(reviewId: Int): SavedStateHandle =
-    SavedStateHandle(mapOf(ReviewEditViewModel.ARG_REVIEW_ID to reviewId))
+private fun editHandle(reviewId: Int): SavedStateHandle = SavedStateHandle(mapOf("reviewId" to reviewId))
 
 private fun fillInput(viewModel: ReviewEditViewModel) {
     viewModel.onIntent(ReviewEditIntent.TitleChanged("기생충"))

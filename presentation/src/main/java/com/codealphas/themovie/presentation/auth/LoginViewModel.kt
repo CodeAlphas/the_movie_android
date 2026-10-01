@@ -53,7 +53,7 @@ class LoginViewModel
             viewModelScope.launch {
                 val effect =
                     when (val result = authRepository.signIn(current.email, current.password)) {
-                        is Outcome.Success -> LoginEffect.NavigateToMain
+                        is Outcome.Success -> LoginEffect.NavigateToHome
                         is Outcome.Failure -> LoginEffect.ShowError(result.error)
                     }
                 _state.update { it.copy(isLoading = false) }

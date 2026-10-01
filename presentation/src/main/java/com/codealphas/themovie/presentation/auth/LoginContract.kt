@@ -23,7 +23,7 @@ sealed interface LoginIntent {
 }
 
 sealed interface LoginEffect {
-    data object NavigateToMain : LoginEffect
+    data object NavigateToHome : LoginEffect
 
     data object NavigateToJoin : LoginEffect
 

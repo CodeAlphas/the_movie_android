@@ -41,6 +41,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -55,9 +56,9 @@ private val FormMaxWidth = 356.dp
 private val FieldShape = RoundedCornerShape(5.dp)
 
 @Composable
-fun JoinRoute(
-    viewModel: JoinViewModel,
+fun JoinScreen(
     onNavigateToLogin: () -> Unit,
+    viewModel: JoinViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -79,11 +80,11 @@ fun JoinRoute(
         }
     }
 
-    JoinScreen(state = state, onIntent = viewModel::onIntent)
+    JoinContent(state = state, onIntent = viewModel::onIntent)
 }
 
 @Composable
-fun JoinScreen(
+internal fun JoinContent(
     state: JoinUiState,
     onIntent: (JoinIntent) -> Unit,
 ) {
@@ -227,9 +228,9 @@ private fun JoinTextField(
 @Preview(name = "라이트")
 @Preview(name = "다크", uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
-private fun JoinScreenPreview() {
+private fun JoinContentPreview() {
     TheMovieTheme {
-        JoinScreen(
+        JoinContent(
             state =
                 JoinUiState(
                     email = "user@example.com",

@@ -1,5 +1,6 @@
 plugins {
     id("movie.android.application")
+    id("movie.android.compose")
     id("movie.android.hilt")
     id("movie.quality")
     alias(libs.plugins.google.services)
@@ -35,6 +36,7 @@ android {
 dependencies {
     implementation(project(":presentation"))
     implementation(project(":data"))
+    implementation(project(":core-android"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.kakao.map)
     implementation(platform(libs.firebase.bom))
