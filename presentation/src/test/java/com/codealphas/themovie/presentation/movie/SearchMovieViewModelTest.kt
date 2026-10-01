@@ -25,16 +25,26 @@ import org.junit.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class SearchMovieViewModelTest {
     @Test
+    fun `검색어를 입력하면 검색 요청 전에 입력창 검색어가 바로 바뀌어야 한다`() {
+        val repository = FakeSearchMovieRepository()
+        runSearchTest(repository) { viewModel ->
+            viewModel.onIntent(SearchMovieIntent.QueryChanged("a"))
+            assertEquals("a", viewModel.state.value.query)
+            assertEquals(0, repository.queries.size)
+        }
+    }
+
+    @Test
     fun `300ms 안에 검색어가 연달아 바뀌면 마지막 검색어만 한 번 요청해야 한다`() {
         val repository = FakeSearchMovieRepository()
         runSearchTest(repository) { viewModel ->
-            viewModel.onQueryChange("a")
+            viewModel.onIntent(SearchMovieIntent.QueryChanged("a"))
             advance(BETWEEN_KEYSTROKES_MS)
             assertEquals(0, repository.queries.size)
-            viewModel.onQueryChange("ab")
+            viewModel.onIntent(SearchMovieIntent.QueryChanged("ab"))
             advance(BETWEEN_KEYSTROKES_MS)
             assertEquals(0, repository.queries.size)
-            viewModel.onQueryChange("abc")
+            viewModel.onIntent(SearchMovieIntent.QueryChanged("abc"))
             advance(DEBOUNCE_MS - 1)
             assertEquals(0, repository.queries.size)
             advance(1)
@@ -56,15 +66,15 @@ class SearchMovieViewModelTest {
                     ),
             )
         runSearchTest(repository) { viewModel ->
-            viewModel.onQueryChange("first")
+            viewModel.onIntent(SearchMovieIntent.QueryChanged("first"))
             advance(DEBOUNCE_MS)
             assertEquals(listOf("first"), repository.queries)
-            viewModel.onQueryChange("second")
+            viewModel.onIntent(SearchMovieIntent.QueryChanged("second"))
             advance(DEBOUNCE_MS)
             assertEquals(listOf("first", "second"), repository.queries)
-            assertEquals(second, viewModel.uiState.value.movies)
+            assertEquals(second, viewModel.state.value.movies)
             advance(SLOW_SEARCH_MS)
-            assertEquals(second, viewModel.uiState.value.movies)
+            assertEquals(second, viewModel.state.value.movies)
         }
     }
 
@@ -76,12 +86,12 @@ class SearchMovieViewModelTest {
                 results = mapOf("avatar" to Outcome.Success(movies)),
             )
         runSearchTest(repository) { viewModel ->
-            viewModel.onQueryChange("avatar")
+            viewModel.onIntent(SearchMovieIntent.QueryChanged("avatar"))
             advance(DEBOUNCE_MS)
-            viewModel.onQueryChange("   ")
+            viewModel.onIntent(SearchMovieIntent.QueryChanged("   "))
             advance(DEBOUNCE_MS)
             assertEquals(listOf("avatar"), repository.queries)
-            assertEquals(movies, viewModel.uiState.value.movies)
+            assertEquals(movies, viewModel.state.value.movies)
         }
     }
 
@@ -89,9 +99,9 @@ class SearchMovieViewModelTest {
     fun `앞뒤 공백만 다른 같은 검색어를 넣으면 한 번만 요청해야 한다`() {
         val repository = FakeSearchMovieRepository()
         runSearchTest(repository) { viewModel ->
-            viewModel.onQueryChange("avatar")
+            viewModel.onIntent(SearchMovieIntent.QueryChanged("avatar"))
             advance(DEBOUNCE_MS)
-            viewModel.onQueryChange(" avatar ")
+            viewModel.onIntent(SearchMovieIntent.QueryChanged(" avatar "))
             advance(DEBOUNCE_MS)
             assertEquals(listOf("avatar"), repository.queries)
         }
@@ -101,9 +111,9 @@ class SearchMovieViewModelTest {
     fun `같은 검색어를 이어서 넣으면 한 번만 요청해야 한다`() {
         val repository = FakeSearchMovieRepository()
         runSearchTest(repository) { viewModel ->
-            viewModel.onQueryChange("avatar")
+            viewModel.onIntent(SearchMovieIntent.QueryChanged("avatar"))
             advance(DEBOUNCE_MS)
-            viewModel.onQueryChange("avatar")
+            viewModel.onIntent(SearchMovieIntent.QueryChanged("avatar"))
             advance(DEBOUNCE_MS)
             assertEquals(listOf("avatar"), repository.queries)
         }
@@ -113,11 +123,11 @@ class SearchMovieViewModelTest {
     fun `검색어를 지웠다가 같은 검색어를 다시 입력하면 한 번 더 요청해야 한다`() {
         val repository = FakeSearchMovieRepository()
         runSearchTest(repository) { viewModel ->
-            viewModel.onQueryChange("avatar")
+            viewModel.onIntent(SearchMovieIntent.QueryChanged("avatar"))
             advance(DEBOUNCE_MS)
-            viewModel.onQueryChange("")
+            viewModel.onIntent(SearchMovieIntent.QueryChanged(""))
             advance(DEBOUNCE_MS)
-            viewModel.onQueryChange("avatar")
+            viewModel.onIntent(SearchMovieIntent.QueryChanged("avatar"))
             advance(DEBOUNCE_MS)
             assertEquals(listOf("avatar", "avatar"), repository.queries)
         }
@@ -135,17 +145,17 @@ class SearchMovieViewModelTest {
                     ),
             )
         runSearchTest(repository) { viewModel ->
-            val errors = mutableListOf<RemoteError>()
-            val collect = launch { viewModel.remoteError.collect { errors += it } }
+            val effects = mutableListOf<SearchMovieEffect>()
+            val collect = launch { viewModel.effect.collect { effects += it } }
             try {
                 runCurrent()
-                viewModel.onQueryChange("bad")
+                viewModel.onIntent(SearchMovieIntent.QueryChanged("bad"))
                 advance(DEBOUNCE_MS)
-                viewModel.onQueryChange("good")
+                viewModel.onIntent(SearchMovieIntent.QueryChanged("good"))
                 advance(DEBOUNCE_MS)
-                assertEquals(listOf(RemoteError.Network), errors)
+                assertEquals(listOf<SearchMovieEffect>(SearchMovieEffect.ShowError(RemoteError.Network)), effects)
                 assertEquals(listOf("bad", "good"), repository.queries)
-                assertEquals(good, viewModel.uiState.value.movies)
+                assertEquals(good, viewModel.state.value.movies)
             } finally {
                 collect.cancel()
             }
@@ -159,13 +169,13 @@ class SearchMovieViewModelTest {
                 results = mapOf("bad" to Outcome.Failure(RemoteError.Network)),
             )
         runSearchTest(repository) { viewModel ->
-            viewModel.onQueryChange("bad")
+            viewModel.onIntent(SearchMovieIntent.QueryChanged("bad"))
             advance(DEBOUNCE_MS)
-            val errors = mutableListOf<RemoteError>()
-            backgroundScope.launch { viewModel.remoteError.collect { errors += it } }
+            val effects = mutableListOf<SearchMovieEffect>()
+            backgroundScope.launch { viewModel.effect.collect { effects += it } }
             runCurrent()
 
-            assertEquals(listOf<RemoteError>(RemoteError.Network), errors)
+            assertEquals(listOf<SearchMovieEffect>(SearchMovieEffect.ShowError(RemoteError.Network)), effects)
         }
     }
 
@@ -176,9 +186,9 @@ class SearchMovieViewModelTest {
                 results = mapOf("zzz" to Outcome.Success(emptyList())),
             )
         runSearchTest(repository) { viewModel ->
-            viewModel.onQueryChange("zzz")
+            viewModel.onIntent(SearchMovieIntent.QueryChanged("zzz"))
             advance(DEBOUNCE_MS)
-            assertEquals(SearchMovieUiState(movies = emptyList()), viewModel.uiState.value)
+            assertEquals(SearchMovieUiState(query = "zzz", movies = emptyList()), viewModel.state.value)
         }
     }
 
@@ -191,16 +201,16 @@ class SearchMovieViewModelTest {
                 results = mapOf("second" to Outcome.Success(second)),
             )
         runSearchTest(repository) { viewModel ->
-            viewModel.onQueryChange("first")
+            viewModel.onIntent(SearchMovieIntent.QueryChanged("first"))
             advance(DEBOUNCE_MS)
-            assertEquals(true, viewModel.uiState.value.isLoading)
-            viewModel.onQueryChange("second")
+            assertEquals(true, viewModel.state.value.isLoading)
+            viewModel.onIntent(SearchMovieIntent.QueryChanged("second"))
             advance(DEBOUNCE_MS)
-            assertEquals(true, viewModel.uiState.value.isLoading)
+            assertEquals(true, viewModel.state.value.isLoading)
             advance(SLOW_SEARCH_MS - 1)
-            assertEquals(true, viewModel.uiState.value.isLoading)
+            assertEquals(true, viewModel.state.value.isLoading)
             advance(1)
-            assertEquals(SearchMovieUiState(movies = second), viewModel.uiState.value)
+            assertEquals(SearchMovieUiState(query = "second", movies = second), viewModel.state.value)
         }
     }
 
@@ -216,13 +226,13 @@ class SearchMovieViewModelTest {
                     ),
             )
         runSearchTest(repository) { viewModel ->
-            viewModel.onQueryChange("avatar")
+            viewModel.onIntent(SearchMovieIntent.QueryChanged("avatar"))
             advance(DEBOUNCE_MS)
-            viewModel.onQueryChange("bad")
+            viewModel.onIntent(SearchMovieIntent.QueryChanged("bad"))
             advance(DEBOUNCE_MS)
             assertEquals(
-                SearchMovieUiState(movies = movies, loadError = RemoteError.Network),
-                viewModel.uiState.value,
+                SearchMovieUiState(query = "bad", movies = movies, loadError = RemoteError.Network),
+                viewModel.state.value,
             )
         }
     }
@@ -235,11 +245,11 @@ class SearchMovieViewModelTest {
                 results = mapOf("bad" to Outcome.Failure(RemoteError.Network)),
             )
         runSearchTest(repository) { viewModel ->
-            viewModel.onQueryChange("bad")
+            viewModel.onIntent(SearchMovieIntent.QueryChanged("bad"))
             advance(DEBOUNCE_MS)
-            viewModel.onQueryChange("good")
+            viewModel.onIntent(SearchMovieIntent.QueryChanged("good"))
             advance(DEBOUNCE_MS)
-            assertEquals(SearchMovieUiState(isLoading = true), viewModel.uiState.value)
+            assertEquals(SearchMovieUiState(query = "good", isLoading = true), viewModel.state.value)
         }
     }
 }

@@ -2,10 +2,10 @@ package com.codealphas.themovie.presentation.movie
 
 import android.content.Intent
 import android.os.Bundle
+import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
-import androidx.appcompat.app.AppCompatActivity
 import com.codealphas.themovie.core.android.theme.TheMovieTheme
 import com.codealphas.themovie.presentation.auth.LoginActivity
 import com.codealphas.themovie.presentation.home.HomeScreen
@@ -15,7 +15,7 @@ import com.codealphas.themovie.presentation.review.ReviewMainActivity
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
-class MainActivity : AppCompatActivity() {
+class MainActivity : ComponentActivity() {
     private val viewModel: HomeViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {

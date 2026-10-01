@@ -49,7 +49,6 @@ import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.fragment.compose.AndroidFragment
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -58,13 +57,15 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.codealphas.themovie.core.android.theme.TheMovieTheme
 import com.codealphas.themovie.core.android.ui.rememberThrottledClick
 import com.codealphas.themovie.presentation.R
-import com.codealphas.themovie.presentation.movie.FragmentSearchMovie
 import com.codealphas.themovie.presentation.movie.MovieCategory
 import com.codealphas.themovie.presentation.movie.MovieFabMenu
 import com.codealphas.themovie.presentation.movie.MovieListContent
 import com.codealphas.themovie.presentation.movie.MovieListScreen
 import com.codealphas.themovie.presentation.movie.MovieListUiState
 import com.codealphas.themovie.presentation.movie.MovieListViewModel
+import com.codealphas.themovie.presentation.movie.SearchMovieContent
+import com.codealphas.themovie.presentation.movie.SearchMovieScreen
+import com.codealphas.themovie.presentation.movie.SearchMovieUiState
 import com.codealphas.themovie.presentation.notification.NotificationPromptDialog
 import com.codealphas.themovie.presentation.notification.notificationPermissionState
 import com.codealphas.themovie.presentation.notification.openNotificationSettings
@@ -89,6 +90,15 @@ fun HomeScreen(
     val currentOnNavigateToLogin by rememberUpdatedState(onNavigateToLogin)
     // 탭마다 같은 감상문, 지도 메뉴라 한 메뉴로 보이도록, 펼침 여부를 탭이 공유하고 회전 뒤에도 남도록 rememberSaveable 적용
     var fabExpanded by rememberSaveable { mutableStateOf(false) }
+    val fabMenu: @Composable (visible: Boolean) -> Unit = { visible ->
+        MovieFabMenu(
+            visible = visible,
+            expanded = fabExpanded,
+            onExpandedChange = { fabExpanded = it },
+            onReviewClick = onNavigateToReview,
+            onMapClick = onNavigateToMap,
+        )
+    }
 
     val notificationPermissionLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
@@ -139,19 +149,15 @@ fun HomeScreen(
                     isCurrentPage = isCurrentPage,
                     snackbarHostState = snackbarHostState,
                     onMovieClick = onNavigateToDetail,
-                ) { visible ->
-                    MovieFabMenu(
-                        visible = visible,
-                        expanded = fabExpanded,
-                        onExpandedChange = { fabExpanded = it },
-                        onReviewClick = onNavigateToReview,
-                        onMapClick = onNavigateToMap,
-                    )
-                }
+                    floatingActionButton = fabMenu,
+                )
             }
-            // 크기를 주지 않은 AndroidFragment는 검색 화면 내용 높이만큼만 차지해 HorizontalPager 페이지 위쪽이 아니라 가운데에 놓이므로,
-            // ViewPager2 페이지처럼 탭 영역을 모두 채우도록 크기 적용
-            HomeTab.SEARCH -> AndroidFragment<FragmentSearchMovie>(modifier = Modifier.fillMaxSize())
+            HomeTab.SEARCH ->
+                SearchMovieScreen(
+                    snackbarHostState = snackbarHostState,
+                    onMovieClick = onNavigateToDetail,
+                    floatingActionButton = fabMenu,
+                )
         }
     }
 }
@@ -190,13 +196,7 @@ internal fun HomeContent(
     ) { innerPadding ->
         Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
             Box(modifier = Modifier.weight(1f)) {
-                // 검색 탭은 아직 Fragment라 페이지가 composition에서 빠지면 Fragment와 ViewModel이 사라져 검색어가 지워지므로,
-                // ViewPager2처럼 모든 탭을 유지하도록 나머지 페이지를 모두 미리 구성
-                HorizontalPager(
-                    state = pagerState,
-                    modifier = Modifier.fillMaxSize(),
-                    beyondViewportPageCount = tabs.size - 1,
-                ) { index ->
+                HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { index ->
                     // ViewPager2는 스크롤이 멈춘 뒤 현재 탭을 RESUMED로 올렸으므로, 넘기는 중이 아니라 멈춘 페이지를 현재 페이지로 적용
                     page(tabs[index], index == pagerState.settledPage)
                 }
@@ -294,13 +294,23 @@ private fun HomeContentPreview(state: HomeUiState) {
             onIntent = {},
             onNotificationSettingsClick = {},
             page = { tab, _ ->
-                MovieListContent(
-                    category = if (tab == HomeTab.TOP_RATED) MovieCategory.TOP_RATED else MovieCategory.POPULAR,
-                    state = MovieListUiState(isLoading = true),
-                    onIntent = {},
-                    onMovieClick = {},
-                    floatingActionButton = {},
-                )
+                when (tab) {
+                    HomeTab.POPULAR, HomeTab.TOP_RATED ->
+                        MovieListContent(
+                            category = if (tab == HomeTab.POPULAR) MovieCategory.POPULAR else MovieCategory.TOP_RATED,
+                            state = MovieListUiState(isLoading = true),
+                            onIntent = {},
+                            onMovieClick = {},
+                            floatingActionButton = {},
+                        )
+                    HomeTab.SEARCH ->
+                        SearchMovieContent(
+                            state = SearchMovieUiState(),
+                            onIntent = {},
+                            onMovieClick = {},
+                            floatingActionButton = {},
+                        )
+                }
             },
         )
     }
