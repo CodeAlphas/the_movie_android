@@ -23,7 +23,7 @@ class NotificationPromptDecisionTest {
     fun `안내에 답한 적이 없는 상태로 메인에 들어오면 안내를 띄워야 한다`() {
         val action = NotificationPromptDecision.onMainEntered(state(), wasPromptShown = false)
 
-        assertEquals(NotificationPromptAction.SHOW_RATIONALE, action)
+        assertEquals(NotificationPromptAction.SHOW_PROMPT, action)
     }
 
     @Test
@@ -51,7 +51,7 @@ class NotificationPromptDecisionTest {
     fun `시스템 창을 띄운 적이 없으면 알림 설정 메뉴에서 안내를 띄워야 한다`() {
         val action = NotificationPromptDecision.onSettingsMenuClicked(state(), wasPermissionRequested = false)
 
-        assertEquals(NotificationPromptAction.SHOW_RATIONALE, action)
+        assertEquals(NotificationPromptAction.SHOW_PROMPT, action)
     }
 
     @Test
@@ -62,7 +62,7 @@ class NotificationPromptDecisionTest {
                 wasPermissionRequested = true,
             )
 
-        assertEquals(NotificationPromptAction.SHOW_RATIONALE, action)
+        assertEquals(NotificationPromptAction.SHOW_PROMPT, action)
     }
 
     @Test

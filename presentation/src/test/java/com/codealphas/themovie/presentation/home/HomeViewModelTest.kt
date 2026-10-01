@@ -1,4 +1,4 @@
-package com.codealphas.themovie.presentation.movie
+package com.codealphas.themovie.presentation.home
 
 import android.os.Build
 import androidx.lifecycle.viewModelScope
@@ -11,7 +11,6 @@ import com.codealphas.themovie.domain.review.ReviewDraft
 import com.codealphas.themovie.domain.review.ReviewRepository
 import com.codealphas.themovie.domain.review.ReviewResult
 import com.codealphas.themovie.presentation.notification.NotificationPermissionState
-import com.codealphas.themovie.presentation.notification.NotificationPromptAction
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -31,17 +30,17 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class MainViewModelTest {
+class HomeViewModelTest {
     @Test
     fun `로그인한 상태면 isSignedIn이 true여야 한다`() {
-        runMainTest(authRepository = FakeMainAuthRepository(userId = "uid")) { viewModel ->
+        runHomeTest(authRepository = FakeHomeAuthRepository(userId = "uid")) { viewModel ->
             assertTrue(viewModel.isSignedIn())
         }
     }
 
     @Test
     fun `로그인하지 않은 상태면 isSignedIn이 false여야 한다`() {
-        runMainTest(authRepository = FakeMainAuthRepository(userId = null)) { viewModel ->
+        runHomeTest(authRepository = FakeHomeAuthRepository(userId = null)) { viewModel ->
             assertFalse(viewModel.isSignedIn())
         }
     }
@@ -49,15 +48,15 @@ class MainViewModelTest {
     @Test
     fun `로그아웃하면 Room 삭제가 끝난 뒤에 로그아웃 완료를 보내야 한다`() {
         val deleteAllDone = CompletableDeferred<Unit>()
-        val authRepository = FakeMainAuthRepository(userId = "uid")
-        val reviewRepository = FakeMainReviewRepository(deleteAllDone)
-        runMainTest(authRepository = authRepository, reviewRepository = reviewRepository) { viewModel ->
+        val authRepository = FakeHomeAuthRepository(userId = "uid")
+        val reviewRepository = FakeHomeReviewRepository(deleteAllDone)
+        runHomeTest(authRepository = authRepository, reviewRepository = reviewRepository) { viewModel ->
             var completedCount = 0
             backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
-                viewModel.logoutCompleted.collect { completedCount++ }
+                viewModel.effect.collect { if (it == HomeEffect.NavigateToLogin) completedCount++ }
             }
 
-            viewModel.logout()
+            viewModel.onIntent(HomeIntent.LogoutClicked)
             runCurrent()
             assertEquals(1, authRepository.signOutCalls)
             assertEquals(0, completedCount)
@@ -70,28 +69,27 @@ class MainViewModelTest {
     }
 
     @Test
-    fun `알림 권한 안내에 답한 적이 없는 상태로 메인에 들어오면 알림 권한 안내 이벤트를 보내야 한다`() {
+    fun `알림 권한 안내에 답한 적이 없는 상태로 메인에 들어오면 알림 권한 안내 창을 띄워야 한다`() {
         val promptRepository = FakeNotificationPromptRepository(promptShown = false)
-        runMainTest(promptRepository = promptRepository) { viewModel ->
-            val actions = collectPromptActions(viewModel)
-
-            viewModel.onMainEntered(permissionState())
+        runHomeTest(promptRepository = promptRepository) { viewModel ->
+            viewModel.onIntent(HomeIntent.Entered(permissionState()))
             runCurrent()
 
-            assertEquals(listOf(NotificationPromptAction.SHOW_RATIONALE), actions)
+            assertTrue(viewModel.state.value.showNotificationPrompt)
         }
     }
 
     @Test
-    fun `알림 권한 안내에 답한 적이 있는 상태로 메인에 들어오면 이벤트를 보내지 않아야 한다`() {
+    fun `알림 권한 안내에 답한 적이 있는 상태로 메인에 들어오면 알림 권한 안내 창을 띄우지 않아야 한다`() {
         val promptRepository = FakeNotificationPromptRepository(promptShown = true)
-        runMainTest(promptRepository = promptRepository) { viewModel ->
-            val actions = collectPromptActions(viewModel)
+        runHomeTest(promptRepository = promptRepository) { viewModel ->
+            val effects = collectEffects(viewModel)
 
-            viewModel.onMainEntered(permissionState())
+            viewModel.onIntent(HomeIntent.Entered(permissionState()))
             runCurrent()
 
-            assertEquals(emptyList<NotificationPromptAction>(), actions)
+            assertFalse(viewModel.state.value.showNotificationPrompt)
+            assertEquals(emptyList<HomeEffect>(), effects)
         }
     }
 
@@ -100,21 +98,21 @@ class MainViewModelTest {
         // 두 번 거부하면 rationale이 한 번도 묻지 않았을 때처럼 false로 돌아가므로,
         // 시스템 창을 띄운 적이 있다는 저장 값과 rationale false 조합으로 두 번 거부한 상태 적용
         val promptRepository = FakeNotificationPromptRepository(permissionRequested = true)
-        runMainTest(promptRepository = promptRepository) { viewModel ->
-            val actions = collectPromptActions(viewModel)
+        runHomeTest(promptRepository = promptRepository) { viewModel ->
+            val effects = collectEffects(viewModel)
 
-            viewModel.onNotificationSettingsClicked(permissionState())
+            viewModel.onIntent(HomeIntent.NotificationSettingsClicked(permissionState()))
             runCurrent()
 
-            assertEquals(listOf(NotificationPromptAction.OPEN_SETTINGS), actions)
+            assertEquals(listOf<HomeEffect>(HomeEffect.OpenNotificationSettings), effects)
         }
     }
 
     @Test
     fun `알림 권한 안내를 수락하면 안내 표시와 시스템 창 표시를 모두 저장해야 한다`() {
         val promptRepository = FakeNotificationPromptRepository()
-        runMainTest(promptRepository = promptRepository) { viewModel ->
-            viewModel.onNotificationPromptAccepted()
+        runHomeTest(promptRepository = promptRepository) { viewModel ->
+            viewModel.onIntent(HomeIntent.NotificationPromptAccepted)
             runCurrent()
 
             assertEquals(listOf("markPromptShown", "markPermissionRequested"), promptRepository.marks)
@@ -122,13 +120,45 @@ class MainViewModelTest {
     }
 
     @Test
+    fun `알림 권한 안내를 수락하면 안내 창을 닫고 알림 권한을 요청해야 한다`() {
+        val promptRepository = FakeNotificationPromptRepository(promptShown = false)
+        runHomeTest(promptRepository = promptRepository) { viewModel ->
+            val effects = collectEffects(viewModel)
+            viewModel.onIntent(HomeIntent.Entered(permissionState()))
+            runCurrent()
+
+            viewModel.onIntent(HomeIntent.NotificationPromptAccepted)
+            runCurrent()
+
+            assertFalse(viewModel.state.value.showNotificationPrompt)
+            assertEquals(listOf<HomeEffect>(HomeEffect.RequestNotificationPermission), effects)
+        }
+    }
+
+    @Test
     fun `알림 권한 안내를 거절하면 안내 표시만 저장해야 한다`() {
         val promptRepository = FakeNotificationPromptRepository()
-        runMainTest(promptRepository = promptRepository) { viewModel ->
-            viewModel.onNotificationPromptDeclined()
+        runHomeTest(promptRepository = promptRepository) { viewModel ->
+            viewModel.onIntent(HomeIntent.NotificationPromptDeclined)
             runCurrent()
 
             assertEquals(listOf("markPromptShown"), promptRepository.marks)
+        }
+    }
+
+    @Test
+    fun `알림 권한 안내를 거절하면 안내 창을 닫고 알림 권한을 요청하지 않아야 한다`() {
+        val promptRepository = FakeNotificationPromptRepository(promptShown = false)
+        runHomeTest(promptRepository = promptRepository) { viewModel ->
+            val effects = collectEffects(viewModel)
+            viewModel.onIntent(HomeIntent.Entered(permissionState()))
+            runCurrent()
+
+            viewModel.onIntent(HomeIntent.NotificationPromptDeclined)
+            runCurrent()
+
+            assertFalse(viewModel.state.value.showNotificationPrompt)
+            assertEquals(emptyList<HomeEffect>(), effects)
         }
     }
 }
@@ -142,15 +172,15 @@ private fun permissionState(): NotificationPermissionState =
         shouldShowRationale = false,
     )
 
-private fun runMainTest(
-    authRepository: FakeMainAuthRepository = FakeMainAuthRepository(userId = "uid"),
-    reviewRepository: FakeMainReviewRepository = FakeMainReviewRepository(),
+private fun runHomeTest(
+    authRepository: FakeHomeAuthRepository = FakeHomeAuthRepository(userId = "uid"),
+    reviewRepository: FakeHomeReviewRepository = FakeHomeReviewRepository(),
     promptRepository: FakeNotificationPromptRepository = FakeNotificationPromptRepository(),
-    body: suspend TestScope.(MainViewModel) -> Unit,
+    body: suspend TestScope.(HomeViewModel) -> Unit,
 ) = runTest {
     Dispatchers.setMain(StandardTestDispatcher(testScheduler))
     val viewModel =
-        MainViewModel(
+        HomeViewModel(
             authRepository = authRepository,
             logoutUseCase = LogoutUseCase(authRepository, reviewRepository),
             notificationPromptRepository = promptRepository,
@@ -164,15 +194,15 @@ private fun runMainTest(
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
-private fun TestScope.collectPromptActions(viewModel: MainViewModel): List<NotificationPromptAction> {
-    val actions = mutableListOf<NotificationPromptAction>()
+private fun TestScope.collectEffects(viewModel: HomeViewModel): List<HomeEffect> {
+    val effects = mutableListOf<HomeEffect>()
     backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
-        viewModel.notificationPrompt.collect { actions += it }
+        viewModel.effect.collect { effects += it }
     }
-    return actions
+    return effects
 }
 
-private class FakeMainAuthRepository(
+private class FakeHomeAuthRepository(
     private val userId: String?,
 ) : AuthRepository {
     var signOutCalls: Int = 0
@@ -194,7 +224,7 @@ private class FakeMainAuthRepository(
     }
 }
 
-private class FakeMainReviewRepository(
+private class FakeHomeReviewRepository(
     private val deleteAllDone: CompletableDeferred<Unit> = CompletableDeferred(Unit),
 ) : ReviewRepository {
     var deleteAllCalls: Int = 0
