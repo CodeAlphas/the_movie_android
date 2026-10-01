@@ -27,7 +27,7 @@ class MapMarkerRenderer(
     private val theaterStyles: LabelStyles
     private val currentLayer: LabelLayer
     private val theaterLayer: LabelLayer
-    private var renderedState: MapUiState? = null
+    private var renderedState: TheaterMapUiState? = null
 
     init {
         val labelManager = checkNotNull(map.labelManager)
@@ -47,7 +47,7 @@ class MapMarkerRenderer(
     }
 
     // 한쪽 응답에 다른 쪽 Label이 지워졌다 다시 생기지 않도록, 이전에 그린 상태와 달라진 레이어만 다시 그리도록 적용
-    fun render(state: MapUiState) {
+    fun render(state: TheaterMapUiState) {
         val previous = renderedState
         val currentChanged = previous?.currentLocation != state.currentLocation || previous?.address != state.address
         if (previous == null || currentChanged) {
@@ -59,7 +59,7 @@ class MapMarkerRenderer(
         renderedState = state
     }
 
-    private fun renderCurrent(state: MapUiState) {
+    private fun renderCurrent(state: TheaterMapUiState) {
         currentLayer.removeAll()
         state.currentLocation?.let { location ->
             currentLayer.addLabel(
@@ -71,7 +71,7 @@ class MapMarkerRenderer(
         }
     }
 
-    private fun renderTheaters(state: MapUiState) {
+    private fun renderTheaters(state: TheaterMapUiState) {
         theaterLayer.removeAll()
         state.theaters.forEach { theater ->
             theaterLayer.addLabel(
@@ -85,7 +85,7 @@ class MapMarkerRenderer(
     }
 
     // 텍스트 줄 수와 스타일 수가 다르면 네이티브에서 앱이 종료되므로, 주소가 없어도 빈 둘째 줄을 두어 줄 수 유지
-    private fun currentLabelText(state: MapUiState): LabelTextBuilder {
+    private fun currentLabelText(state: TheaterMapUiState): LabelTextBuilder {
         val title = context.getString(R.string.map_current_location)
         return LabelTextBuilder().setTexts(title, state.address?.fullAddress.orEmpty())
     }
