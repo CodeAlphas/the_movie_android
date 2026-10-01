@@ -4,7 +4,8 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.graphics.Color
 
-// 남은 XML 화면이 같은 색을 써야 하므로, 값은 :presentation의 values/colors.xml과 values-night/colors.xml에 맞춰 적용
+// Compose가 그려지기 전의 창 배경은 이 상수를 참조하지 못해 colors.xml에 같은 값을 따로 두므로,
+// Surface를 바꿀 때 :presentation의 window_background도 같은 값으로 유지
 private val LightPrimary = Color(0xFF1A1916)
 private val LightOnPrimary = Color(0xFFF3F0EA)
 private val LightSecondary = Color(0xFFA34B2E)
