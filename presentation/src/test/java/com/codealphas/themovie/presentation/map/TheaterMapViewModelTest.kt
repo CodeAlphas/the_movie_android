@@ -24,17 +24,17 @@ import org.junit.Assert.assertNull
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class MapViewModelTest {
+class TheaterMapViewModelTest {
     @Test
     fun `위치를 받으면 주소와 영화관을 한 번씩 요청하고 상태에 담아야 한다`() {
         val repository = FakeTheaterRepository()
         runMapTest(repository, FakeLocationProvider(listOf(SEOUL))) { viewModel ->
-            viewModel.loadCurrentLocationAndTheaters()
+            viewModel.onIntent(TheaterMapIntent.LocationReady)
             runCurrent()
 
             assertEquals(listOf(SEOUL), repository.addressRequests)
             assertEquals(listOf(SEOUL), repository.theaterRequests)
-            assertEquals(MapUiState(SEOUL, Address("서울"), listOf(THEATER)), viewModel.uiState.value)
+            assertEquals(TheaterMapUiState(SEOUL, Address("서울"), listOf(THEATER)), viewModel.state.value)
         }
     }
 
@@ -42,18 +42,15 @@ class MapViewModelTest {
     fun `위치를 받지 못하면 요청 없이 위치 실패를 알려야 한다`() {
         val repository = FakeTheaterRepository()
         runMapTest(repository, FakeLocationProvider(listOf(null))) { viewModel ->
-            var failedCount = 0
-            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
-                viewModel.locationFailed.collect { failedCount++ }
-            }
+            val effects = collectEffects(viewModel)
 
-            viewModel.loadCurrentLocationAndTheaters()
+            viewModel.onIntent(TheaterMapIntent.LocationReady)
             runCurrent()
 
-            assertEquals(1, failedCount)
+            assertEquals(listOf<TheaterMapEffect>(TheaterMapEffect.ShowLocationFailed), effects)
             assertEquals(emptyList<LocationLatLng>(), repository.addressRequests)
             assertEquals(emptyList<LocationLatLng>(), repository.theaterRequests)
-            assertNull(viewModel.uiState.value.currentLocation)
+            assertNull(viewModel.state.value.currentLocation)
         }
     }
 
@@ -61,31 +58,28 @@ class MapViewModelTest {
     fun `주소 요청이 실패하면 오류를 알리고 영화관은 상태에 남아야 한다`() {
         val repository = FakeTheaterRepository(addressResult = Outcome.Failure(RemoteError.Network))
         runMapTest(repository, FakeLocationProvider(listOf(SEOUL))) { viewModel ->
-            val errors = mutableListOf<RemoteError>()
-            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
-                viewModel.remoteError.collect { errors += it }
-            }
+            val effects = collectEffects(viewModel)
 
-            viewModel.loadCurrentLocationAndTheaters()
+            viewModel.onIntent(TheaterMapIntent.LocationReady)
             runCurrent()
 
-            assertEquals(listOf<RemoteError>(RemoteError.Network), errors)
-            assertNull(viewModel.uiState.value.address)
-            assertEquals(listOf(THEATER), viewModel.uiState.value.theaters)
+            assertEquals(
+                listOf(TheaterMapEffect.ShowError(RemoteError.Network)),
+                effects.filterIsInstance<TheaterMapEffect.ShowError>(),
+            )
+            assertNull(viewModel.state.value.address)
+            assertEquals(listOf(THEATER), viewModel.state.value.theaters)
         }
     }
 
     @Test
     fun `화면이 멈춘 동안 위치를 받지 못하면 다시 구독할 때 위치 실패를 받아야 한다`() {
         runMapTest(FakeTheaterRepository(), FakeLocationProvider(listOf(null))) { viewModel ->
-            viewModel.loadCurrentLocationAndTheaters()
+            viewModel.onIntent(TheaterMapIntent.LocationReady)
             runCurrent()
-            var failedCount = 0
-            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
-                viewModel.locationFailed.collect { failedCount++ }
-            }
+            val effects = collectEffects(viewModel)
 
-            assertEquals(1, failedCount)
+            assertEquals(listOf<TheaterMapEffect>(TheaterMapEffect.ShowLocationFailed), effects)
         }
     }
 
@@ -93,19 +87,14 @@ class MapViewModelTest {
     fun `화면이 멈춘 동안 위치를 받고 주소 요청이 실패하면 다시 구독할 때 위치와 오류를 받아야 한다`() {
         val repository = FakeTheaterRepository(addressResult = Outcome.Failure(RemoteError.Network))
         runMapTest(repository, FakeLocationProvider(listOf(SEOUL))) { viewModel ->
-            viewModel.loadCurrentLocationAndTheaters()
+            viewModel.onIntent(TheaterMapIntent.LocationReady)
             runCurrent()
-            val locations = mutableListOf<LocationLatLng>()
-            val errors = mutableListOf<RemoteError>()
-            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
-                viewModel.locationReceived.collect { locations += it }
-            }
-            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
-                viewModel.remoteError.collect { errors += it }
-            }
+            val effects = collectEffects(viewModel)
 
-            assertEquals(listOf(SEOUL), locations)
-            assertEquals(listOf<RemoteError>(RemoteError.Network), errors)
+            assertEquals(
+                listOf(TheaterMapEffect.MoveCamera(SEOUL), TheaterMapEffect.ShowError(RemoteError.Network)),
+                effects,
+            )
         }
     }
 
@@ -114,15 +103,68 @@ class MapViewModelTest {
         val slowTheaters = CompletableDeferred<DataResult<List<Theater>>>()
         val repository = FakeTheaterRepository(slowTheatersAt = SEOUL, slowTheaters = slowTheaters)
         runMapTest(repository, FakeLocationProvider(listOf(SEOUL, BUSAN))) { viewModel ->
-            viewModel.loadCurrentLocationAndTheaters()
+            viewModel.onIntent(TheaterMapIntent.LocationReady)
             runCurrent()
-            viewModel.loadCurrentLocationAndTheaters()
+            viewModel.onIntent(TheaterMapIntent.LocationReady)
             runCurrent()
             slowTheaters.complete(Outcome.Success(listOf(OLD_THEATER)))
             runCurrent()
 
-            assertEquals(BUSAN, viewModel.uiState.value.currentLocation)
-            assertEquals(listOf(THEATER), viewModel.uiState.value.theaters)
+            assertEquals(BUSAN, viewModel.state.value.currentLocation)
+            assertEquals(listOf(THEATER), viewModel.state.value.theaters)
+        }
+    }
+
+    @Test
+    fun `위치 설정을 켜지 못하면 위치 실패를 알려야 한다`() {
+        runMapTest(FakeTheaterRepository(), FakeLocationProvider(emptyList())) { viewModel ->
+            val effects = collectEffects(viewModel)
+
+            viewModel.onIntent(TheaterMapIntent.LocationUnavailable)
+            runCurrent()
+
+            assertEquals(listOf<TheaterMapEffect>(TheaterMapEffect.ShowLocationFailed), effects)
+        }
+    }
+
+    @Test
+    fun `영화관 마커를 누르면 그 영화관을 시트에 보여야 한다`() {
+        runMapTest(FakeTheaterRepository(), FakeLocationProvider(listOf(SEOUL))) { viewModel ->
+            viewModel.onIntent(TheaterMapIntent.LocationReady)
+            runCurrent()
+
+            viewModel.onIntent(TheaterMapIntent.TheaterClicked(THEATER.id))
+
+            assertEquals(THEATER, viewModel.state.value.selectedTheater)
+        }
+    }
+
+    @Test
+    fun `영화관 시트를 닫으면 시트에 영화관을 보이지 않아야 한다`() {
+        runMapTest(FakeTheaterRepository(), FakeLocationProvider(listOf(SEOUL))) { viewModel ->
+            viewModel.onIntent(TheaterMapIntent.LocationReady)
+            runCurrent()
+            viewModel.onIntent(TheaterMapIntent.TheaterClicked(THEATER.id))
+
+            viewModel.onIntent(TheaterMapIntent.TheaterSheetDismissed)
+
+            assertNull(viewModel.state.value.selectedTheater)
+        }
+    }
+
+    @Test
+    fun `영화관 시트를 연 뒤 새 위치를 받으면 새 목록에 같은 영화관이 있어도 시트를 닫아야 한다`() {
+        runMapTest(FakeTheaterRepository(), FakeLocationProvider(listOf(SEOUL, BUSAN))) { viewModel ->
+            viewModel.onIntent(TheaterMapIntent.LocationReady)
+            runCurrent()
+            viewModel.onIntent(TheaterMapIntent.TheaterClicked(THEATER.id))
+
+            viewModel.onIntent(TheaterMapIntent.LocationReady)
+            runCurrent()
+
+            // 새 목록에 같은 영화관이 없으면 고른 영화관을 비우지 않아도 시트가 닫히므로, 새 목록에 같은 영화관이 있는지 먼저 확인
+            assertEquals(listOf(THEATER), viewModel.state.value.theaters)
+            assertNull(viewModel.state.value.selectedTheater)
         }
     }
 }
@@ -133,13 +175,21 @@ private val THEATER =
     Theater(id = "1", name = "영화관", latitude = 37.5, longitude = 127.0, address = "주소", distanceMeters = 100)
 private val OLD_THEATER = THEATER.copy(name = "이전 영화관")
 
+private fun TestScope.collectEffects(viewModel: TheaterMapViewModel): List<TheaterMapEffect> {
+    val effects = mutableListOf<TheaterMapEffect>()
+    backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+        viewModel.effect.collect { effects += it }
+    }
+    return effects
+}
+
 private fun runMapTest(
     repository: FakeTheaterRepository,
     locationProvider: FakeLocationProvider,
-    body: suspend TestScope.(MapViewModel) -> Unit,
+    body: suspend TestScope.(TheaterMapViewModel) -> Unit,
 ) = runTest {
     Dispatchers.setMain(StandardTestDispatcher(testScheduler))
-    val viewModel = MapViewModel(repository, locationProvider)
+    val viewModel = TheaterMapViewModel(repository, locationProvider)
     try {
         body(viewModel)
     } finally {

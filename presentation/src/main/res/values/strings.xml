@@ -79,6 +79,7 @@
     <string name="review_edit_load_failed">감상문을 불러오지 못했습니다.</string>
     <string name="review_edit_photo_description">감상문 사진 첨부</string>
     <string name="map_appbar_title">내 근처 영화관</string>
+    <string name="map_find_nearby_theaters">현재 위치에서 영화관 찾기</string>
     <string name="map_permission_denied">권한을 부여받지 못했습니다.</string>
     <string name="map_permission_settings_title">위치 권한이 필요합니다.</string>
     <string name="map_permission_settings_message">내 주변 영화관을 찾으려면 위치 권한이 필요해요. 설정에서 위치 권한을 허용해 주세요.</string>
