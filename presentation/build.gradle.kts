@@ -5,6 +5,7 @@ plugins {
     // 화면, ViewModel, LocationModule이 앱 의존성 그래프에 들어가도록 presentation에서도 Hilt 컴파일러를 실행하는 movie.android.hilt 적용
     id("movie.android.hilt")
     id("movie.quality")
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
@@ -29,6 +30,7 @@ dependencies {
     implementation(libs.androidx.hilt.lifecycle.viewmodel.compose)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
+    implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.recyclerview)
     implementation(libs.material)
     implementation(libs.kotlinx.coroutines.android)

@@ -19,7 +19,7 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-// 한 Activity 안의 두 탭이 같은 ViewModel 저장소를 쓰므로, 분류를 SavedStateHandle이 아니라 생성 인자로 받도록 assisted injection 적용
+// 탭 라우트에 인자가 없어 SavedStateHandle로 분류를 받을 수 없으므로, 화면에서 분류를 직접 넘기도록 assisted injection 적용
 @HiltViewModel(assistedFactory = MovieListViewModel.Factory::class)
 class MovieListViewModel
     @AssistedInject

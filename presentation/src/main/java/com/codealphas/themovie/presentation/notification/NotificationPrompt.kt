@@ -8,14 +8,22 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.codealphas.themovie.presentation.R
+import kotlinx.coroutines.launch
 
 internal fun Activity.notificationPermissionState(): NotificationPermissionState {
     val permission = Manifest.permission.POST_NOTIFICATIONS
@@ -35,6 +43,32 @@ internal fun Context.openNotificationSettings() {
             Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", packageName, null))
         }
     startActivity(intent)
+}
+
+@Composable
+internal fun rememberNotificationPermissionRequester(snackbarHostState: SnackbarHostState): () -> Unit {
+    val resources = LocalResources.current
+    val scope = rememberCoroutineScope()
+    val contract = remember { ActivityResultContracts.RequestPermission() }
+    val launcher =
+        rememberLauncherForActivityResult(contract) { isGranted ->
+            if (!isGranted) {
+                scope.launch {
+                    snackbarHostState.showSnackbar(
+                        message = resources.getString(R.string.notification_permission_denied),
+                        duration = SnackbarDuration.Long,
+                    )
+                }
+            }
+        }
+    return remember(launcher) {
+        {
+            // POST_NOTIFICATIONS는 Android 13(API 33)부터 런타임 권한이므로, 그 전 기기에서는 요청 제외
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+    }
 }
 
 @Composable

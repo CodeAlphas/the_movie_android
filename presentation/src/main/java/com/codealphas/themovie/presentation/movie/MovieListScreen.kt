@@ -40,7 +40,6 @@ private const val PREVIEW_MOVIE_COUNT = 4
 @Composable
 fun MovieListScreen(
     viewModel: MovieListViewModel,
-    isCurrentPage: Boolean,
     snackbarHostState: SnackbarHostState,
     onMovieClick: (Int) -> Unit,
     floatingActionButton: @Composable (visible: Boolean) -> Unit,
@@ -64,12 +63,10 @@ fun MovieListScreen(
         }
     }
 
-    // 실패로 비어 있는 목록을 다시 받도록, 탭이 현재 페이지가 되거나 화면이 다시 RESUMED될 때 요청 적용
-    if (isCurrentPage) {
-        LifecycleResumeEffect(viewModel) {
-            viewModel.onIntent(MovieListIntent.PageShown)
-            onPauseOrDispose { }
-        }
+    // 요청이 실패해 목록이 비어 있으면 탭을 다시 고르거나 앱으로 돌아올 때 다시 받도록, 화면이 보일 때마다 요청 적용
+    LifecycleResumeEffect(viewModel) {
+        viewModel.onIntent(MovieListIntent.PageShown)
+        onPauseOrDispose { }
     }
 
     MovieListContent(

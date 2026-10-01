@@ -83,7 +83,7 @@ class HomeViewModel
 
         private suspend fun applyNotificationPrompt(action: NotificationPromptAction) {
             when (action) {
-                NotificationPromptAction.SHOW_RATIONALE -> _state.update { it.copy(showNotificationPrompt = true) }
+                NotificationPromptAction.SHOW_PROMPT -> _state.update { it.copy(showNotificationPrompt = true) }
                 NotificationPromptAction.OPEN_SETTINGS -> _effect.send(HomeEffect.OpenNotificationSettings)
                 NotificationPromptAction.NONE -> Unit
             }
