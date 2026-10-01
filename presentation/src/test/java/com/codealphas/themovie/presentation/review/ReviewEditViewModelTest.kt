@@ -24,6 +24,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -33,19 +34,19 @@ class ReviewEditViewModelTest {
     fun `제목이나 내용이 비어 있거나 공백뿐이면 입력 안내를 보내야 한다`() {
         val repository = FakeReviewEditRepository()
         runReviewEditTest(repository, SavedStateHandle()) { viewModel ->
-            val events = collectReviewEditEvents(viewModel)
+            val effects = collectReviewEditEffects(viewModel)
 
-            viewModel.onTitleChange(" ")
-            viewModel.onContentChange("잘 봤다")
-            viewModel.save()
-            viewModel.onTitleChange("기생충")
-            viewModel.onContentChange("")
-            viewModel.save()
+            viewModel.onIntent(ReviewEditIntent.TitleChanged(" "))
+            viewModel.onIntent(ReviewEditIntent.ContentChanged("잘 봤다"))
+            viewModel.onIntent(ReviewEditIntent.SaveClicked)
+            viewModel.onIntent(ReviewEditIntent.TitleChanged("기생충"))
+            viewModel.onIntent(ReviewEditIntent.ContentChanged(""))
+            viewModel.onIntent(ReviewEditIntent.SaveClicked)
             runCurrent()
 
             assertEquals(emptyList<ReviewDraft>(), repository.savedDrafts)
-            assertEquals(listOf(ReviewEditEvent.InputRequired, ReviewEditEvent.InputRequired), events)
-            assertFalse(viewModel.uiState.value.isSaving)
+            assertEquals(listOf(ReviewEditEffect.InputRequired, ReviewEditEffect.InputRequired), effects)
+            assertFalse(viewModel.state.value.isSaving)
         }
     }
 
@@ -56,13 +57,13 @@ class ReviewEditViewModelTest {
         runReviewEditTest(repository, SavedStateHandle()) { viewModel ->
             fillInput(viewModel)
 
-            viewModel.save()
+            viewModel.onIntent(ReviewEditIntent.SaveClicked)
             runCurrent()
-            viewModel.save()
+            viewModel.onIntent(ReviewEditIntent.SaveClicked)
             runCurrent()
 
             assertEquals(1, repository.savedDrafts.size)
-            assertTrue(viewModel.uiState.value.isSaving)
+            assertTrue(viewModel.state.value.isSaving)
             result.complete(Outcome.Success(Unit))
         }
     }
@@ -71,11 +72,11 @@ class ReviewEditViewModelTest {
     fun `새 감상문을 저장하면 Repository에 id 없이 입력과 고른 사진을 넘기고 새 감상문 저장 완료를 보내야 한다`() {
         val repository = FakeReviewEditRepository(saveResult = CompletableDeferred(Outcome.Success(Unit)))
         runReviewEditTest(repository, SavedStateHandle()) { viewModel ->
-            val events = collectReviewEditEvents(viewModel)
+            val effects = collectReviewEditEffects(viewModel)
             fillInput(viewModel)
-            viewModel.onPhotoSelected("content://photo/1")
+            viewModel.onIntent(ReviewEditIntent.PhotoSelected("content://photo/1"))
 
-            viewModel.save()
+            viewModel.onIntent(ReviewEditIntent.SaveClicked)
             runCurrent()
 
             val expected =
@@ -87,9 +88,9 @@ class ReviewEditViewModelTest {
                     photo = ReviewPhoto.New("content://photo/1"),
                 )
             assertEquals(listOf(expected), repository.savedDrafts)
-            assertEquals(listOf<ReviewEditEvent>(ReviewEditEvent.Saved(isNew = true)), events)
+            assertEquals(listOf<ReviewEditEffect>(ReviewEditEffect.Saved(isNew = true)), effects)
             // 성공 뒤 화면이 닫히기 전의 재클릭을 막으려고 isSaving을 유지하므로, 저장 중 상태가 그대로인지 확인
-            assertTrue(viewModel.uiState.value.isSaving)
+            assertTrue(viewModel.state.value.isSaving)
         }
     }
 
@@ -98,14 +99,14 @@ class ReviewEditViewModelTest {
         val failure = Outcome.Failure(ReviewError.PhotoUploadFailed)
         val repository = FakeReviewEditRepository(saveResult = CompletableDeferred(failure))
         runReviewEditTest(repository, SavedStateHandle()) { viewModel ->
-            val events = collectReviewEditEvents(viewModel)
+            val effects = collectReviewEditEffects(viewModel)
             fillInput(viewModel)
 
-            viewModel.save()
+            viewModel.onIntent(ReviewEditIntent.SaveClicked)
             runCurrent()
 
-            assertEquals(listOf<ReviewEditEvent>(ReviewEditEvent.SaveFailed(ReviewError.PhotoUploadFailed)), events)
-            assertFalse(viewModel.uiState.value.isSaving)
+            assertEquals(listOf<ReviewEditEffect>(ReviewEditEffect.SaveFailed(ReviewError.PhotoUploadFailed)), effects)
+            assertFalse(viewModel.state.value.isSaving)
         }
     }
 
@@ -124,7 +125,7 @@ class ReviewEditViewModelTest {
                     savedImageUrl = STORED_REVIEW.image,
                     isEditing = true,
                 )
-            assertEquals(expected, viewModel.uiState.value)
+            assertEquals(expected, viewModel.state.value)
             assertEquals(listOf(STORED_REVIEW.id), repository.requestedIds)
         }
     }
@@ -134,11 +135,11 @@ class ReviewEditViewModelTest {
         val repository =
             FakeReviewEditRepository(stored = STORED_REVIEW, saveResult = CompletableDeferred(Outcome.Success(Unit)))
         runReviewEditTest(repository, editHandle(STORED_REVIEW.id)) { viewModel ->
-            val events = collectReviewEditEvents(viewModel)
+            val effects = collectReviewEditEffects(viewModel)
             runCurrent()
 
-            viewModel.onTitleChange("기생충 다시 보기")
-            viewModel.save()
+            viewModel.onIntent(ReviewEditIntent.TitleChanged("기생충 다시 보기"))
+            viewModel.onIntent(ReviewEditIntent.SaveClicked)
             runCurrent()
 
             val expected =
@@ -150,7 +151,7 @@ class ReviewEditViewModelTest {
                     photo = ReviewPhoto.Unchanged,
                 )
             assertEquals(listOf(expected), repository.savedDrafts)
-            assertEquals(listOf<ReviewEditEvent>(ReviewEditEvent.Saved(isNew = false)), events)
+            assertEquals(listOf<ReviewEditEffect>(ReviewEditEffect.Saved(isNew = false)), effects)
         }
     }
 
@@ -158,12 +159,12 @@ class ReviewEditViewModelTest {
     fun `수정할 감상문이 Room에 없으면 불러오기 실패를 보내야 한다`() {
         val repository = FakeReviewEditRepository(stored = null)
         runReviewEditTest(repository, editHandle(STORED_REVIEW.id)) { viewModel ->
-            val events = collectReviewEditEvents(viewModel)
+            val effects = collectReviewEditEffects(viewModel)
 
             runCurrent()
 
-            assertEquals(listOf<ReviewEditEvent>(ReviewEditEvent.LoadFailed), events)
-            assertEquals("", viewModel.uiState.value.title)
+            assertEquals(listOf<ReviewEditEffect>(ReviewEditEffect.LoadFailed), effects)
+            assertEquals("", viewModel.state.value.title)
         }
     }
 
@@ -174,22 +175,53 @@ class ReviewEditViewModelTest {
         runReviewEditTest(repository, editHandle(STORED_REVIEW.id)) { viewModel ->
             runCurrent()
 
-            viewModel.onPhotoRemoved()
-            viewModel.save()
+            viewModel.onIntent(ReviewEditIntent.PhotoRemoved)
+            viewModel.onIntent(ReviewEditIntent.SaveClicked)
             runCurrent()
 
-            assertEquals(ReviewPhoto.Removed, viewModel.uiState.value.photo)
+            assertEquals(ReviewPhoto.Removed, viewModel.state.value.photo)
             assertEquals(listOf<ReviewPhoto>(ReviewPhoto.Removed), repository.savedDrafts.map(ReviewDraft::photo))
+        }
+    }
+
+    @Test
+    fun `수정 모드로 열면 저장된 사진을 보여야 한다`() {
+        runReviewEditTest(FakeReviewEditRepository(stored = STORED_REVIEW), editHandle(STORED_REVIEW.id)) { viewModel ->
+            runCurrent()
+
+            assertEquals(STORED_REVIEW.image, viewModel.state.value.shownImage)
+        }
+    }
+
+    @Test
+    fun `수정 모드에서 사진을 지우면 저장된 사진 대신 기본 이미지를 보여야 한다`() {
+        runReviewEditTest(FakeReviewEditRepository(stored = STORED_REVIEW), editHandle(STORED_REVIEW.id)) { viewModel ->
+            runCurrent()
+
+            viewModel.onIntent(ReviewEditIntent.PhotoRemoved)
+
+            assertNull(viewModel.state.value.shownImage)
+        }
+    }
+
+    @Test
+    fun `수정 모드에서 새 사진을 고르면 저장된 사진 대신 고른 사진을 보여야 한다`() {
+        runReviewEditTest(FakeReviewEditRepository(stored = STORED_REVIEW), editHandle(STORED_REVIEW.id)) { viewModel ->
+            runCurrent()
+
+            viewModel.onIntent(ReviewEditIntent.PhotoSelected("content://photo/1"))
+
+            assertEquals("content://photo/1", viewModel.state.value.shownImage)
         }
     }
 
     @Test
     fun `별점을 별 개수로 바꾸면 10점 만점 점수로 저장하고 같은 별 개수를 보여야 한다`() {
         runReviewEditTest(FakeReviewEditRepository(), SavedStateHandle()) { viewModel ->
-            viewModel.onStarRatingChange(3.5f)
+            viewModel.onIntent(ReviewEditIntent.StarRatingChanged(3.5f))
 
-            assertEquals(7.0, viewModel.uiState.value.rating, 0.0)
-            assertEquals(3.5f, viewModel.uiState.value.starRating)
+            assertEquals(7.0, viewModel.state.value.rating, 0.0)
+            assertEquals(3.5f, viewModel.state.value.starRating)
         }
     }
 
@@ -198,8 +230,8 @@ class ReviewEditViewModelTest {
         val savedStateHandle = SavedStateHandle()
         runReviewEditTest(FakeReviewEditRepository(), savedStateHandle) { viewModel ->
             fillInput(viewModel)
-            viewModel.onCameraStarted(CAMERA_URI)
-            viewModel.onCameraResult(isSaved = true)
+            viewModel.onIntent(ReviewEditIntent.CameraStarted(CAMERA_URI))
+            viewModel.onIntent(ReviewEditIntent.CameraFinished(isSaved = true))
 
             val restored = ReviewEditViewModel(FakeReviewEditRepository(), savedStateHandle)
 
@@ -210,7 +242,7 @@ class ReviewEditViewModelTest {
                     rating = 8.0,
                     photo = ReviewPhoto.New(CAMERA_URI),
                 )
-            assertEquals(expected, restored.uiState.value)
+            assertEquals(expected, restored.state.value)
         }
     }
 
@@ -218,13 +250,13 @@ class ReviewEditViewModelTest {
     fun `Photo Picker로 고른 사진은 프로세스가 종료된 뒤 다시 열면 고르기 전 사진으로 돌아가야 한다`() {
         val savedStateHandle = SavedStateHandle()
         runReviewEditTest(FakeReviewEditRepository(), savedStateHandle) { viewModel ->
-            viewModel.onCameraStarted(CAMERA_URI)
-            viewModel.onCameraResult(isSaved = true)
-            viewModel.onPhotoSelected("content://photo/1")
+            viewModel.onIntent(ReviewEditIntent.CameraStarted(CAMERA_URI))
+            viewModel.onIntent(ReviewEditIntent.CameraFinished(isSaved = true))
+            viewModel.onIntent(ReviewEditIntent.PhotoSelected("content://photo/1"))
 
             val restored = ReviewEditViewModel(FakeReviewEditRepository(), savedStateHandle)
 
-            assertEquals(ReviewPhoto.Unchanged, restored.uiState.value.photo)
+            assertEquals(ReviewPhoto.Unchanged, restored.state.value.photo)
         }
     }
 
@@ -232,24 +264,24 @@ class ReviewEditViewModelTest {
     fun `카메라를 쓰는 동안 프로세스가 종료돼도 촬영에 성공하면 카메라에 넘긴 파일을 새 사진으로 골라야 한다`() {
         val savedStateHandle = SavedStateHandle()
         runReviewEditTest(FakeReviewEditRepository(), savedStateHandle) { viewModel ->
-            viewModel.onCameraStarted(CAMERA_URI)
+            viewModel.onIntent(ReviewEditIntent.CameraStarted(CAMERA_URI))
 
             val restored = ReviewEditViewModel(FakeReviewEditRepository(), savedStateHandle)
-            restored.onCameraResult(isSaved = true)
+            restored.onIntent(ReviewEditIntent.CameraFinished(isSaved = true))
 
-            assertEquals(ReviewPhoto.New(CAMERA_URI), restored.uiState.value.photo)
+            assertEquals(ReviewPhoto.New(CAMERA_URI), restored.state.value.photo)
         }
     }
 
     @Test
     fun `촬영에 실패하면 이전에 고른 사진을 그대로 둬야 한다`() {
         runReviewEditTest(FakeReviewEditRepository(), SavedStateHandle()) { viewModel ->
-            viewModel.onPhotoSelected("content://photo/1")
-            viewModel.onCameraStarted(CAMERA_URI)
+            viewModel.onIntent(ReviewEditIntent.PhotoSelected("content://photo/1"))
+            viewModel.onIntent(ReviewEditIntent.CameraStarted(CAMERA_URI))
 
-            viewModel.onCameraResult(isSaved = false)
+            viewModel.onIntent(ReviewEditIntent.CameraFinished(isSaved = false))
 
-            assertEquals(ReviewPhoto.New("content://photo/1"), viewModel.uiState.value.photo)
+            assertEquals(ReviewPhoto.New("content://photo/1"), viewModel.state.value.photo)
         }
     }
 
@@ -259,7 +291,7 @@ class ReviewEditViewModelTest {
         val repository = FakeReviewEditRepository(stored = STORED_REVIEW)
         runReviewEditTest(repository, savedStateHandle) { viewModel ->
             runCurrent()
-            viewModel.onTitleChange("기생충 다시 보기")
+            viewModel.onIntent(ReviewEditIntent.TitleChanged("기생충 다시 보기"))
 
             val restored = ReviewEditViewModel(repository, savedStateHandle)
             runCurrent()
@@ -272,7 +304,7 @@ class ReviewEditViewModelTest {
                     savedImageUrl = STORED_REVIEW.image,
                     isEditing = true,
                 )
-            assertEquals(expected, restored.uiState.value)
+            assertEquals(expected, restored.state.value)
         }
     }
 }
@@ -294,9 +326,9 @@ private fun editHandle(reviewId: Int): SavedStateHandle =
     SavedStateHandle(mapOf(ReviewEditViewModel.ARG_REVIEW_ID to reviewId))
 
 private fun fillInput(viewModel: ReviewEditViewModel) {
-    viewModel.onTitleChange("기생충")
-    viewModel.onContentChange("잘 봤다")
-    viewModel.onStarRatingChange(4f)
+    viewModel.onIntent(ReviewEditIntent.TitleChanged("기생충"))
+    viewModel.onIntent(ReviewEditIntent.ContentChanged("잘 봤다"))
+    viewModel.onIntent(ReviewEditIntent.StarRatingChanged(4f))
 }
 
 private fun runReviewEditTest(
@@ -315,12 +347,12 @@ private fun runReviewEditTest(
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
-private fun TestScope.collectReviewEditEvents(viewModel: ReviewEditViewModel): List<ReviewEditEvent> {
-    val events = mutableListOf<ReviewEditEvent>()
+private fun TestScope.collectReviewEditEffects(viewModel: ReviewEditViewModel): List<ReviewEditEffect> {
+    val effects = mutableListOf<ReviewEditEffect>()
     backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
-        viewModel.events.collect { events += it }
+        viewModel.effect.collect { effects += it }
     }
-    return events
+    return effects
 }
 
 private class FakeReviewEditRepository(
