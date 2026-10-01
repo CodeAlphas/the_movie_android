@@ -32,13 +32,13 @@ class MovieDetailViewModelTest {
             val repository = FakeMovieDetailRepository(MovieDetailResult(detail = detail, errors = emptyList()))
             val viewModel = MovieDetailViewModel(repository, movieIdHandle(detail.id))
             try {
-                assertEquals(true, viewModel.uiState.value.isLoading)
+                assertEquals(true, viewModel.state.value.isLoading)
                 assertEquals(emptyList<Int>(), repository.requestedIds)
                 advanceUntilIdle()
 
                 assertEquals(listOf(detail.id), repository.requestedIds)
-                assertEquals(detail, viewModel.uiState.value.detail)
-                assertEquals(false, viewModel.uiState.value.isLoading)
+                assertEquals(detail, viewModel.state.value.detail)
+                assertEquals(false, viewModel.state.value.isLoading)
             } finally {
                 viewModel.viewModelScope.cancel()
                 Dispatchers.resetMain()
@@ -56,13 +56,13 @@ class MovieDetailViewModelTest {
             val viewModel = MovieDetailViewModel(repository, movieIdHandle(42))
             try {
                 advanceUntilIdle()
-                val errors = mutableListOf<RemoteError>()
-                backgroundScope.launch { viewModel.remoteError.collect { errors += it } }
+                val effects = mutableListOf<MovieDetailEffect>()
+                backgroundScope.launch { viewModel.effect.collect { effects += it } }
                 runCurrent()
 
-                assertNull(viewModel.uiState.value.detail)
-                assertEquals(false, viewModel.uiState.value.isLoading)
-                assertEquals(listOf(RemoteError.Network), errors)
+                assertNull(viewModel.state.value.detail)
+                assertEquals(false, viewModel.state.value.isLoading)
+                assertEquals(listOf(MovieDetailEffect.ShowError(RemoteError.Network)), effects)
             } finally {
                 viewModel.viewModelScope.cancel()
                 Dispatchers.resetMain()
@@ -81,12 +81,12 @@ class MovieDetailViewModelTest {
             val viewModel = MovieDetailViewModel(repository, movieIdHandle(detail.id))
             try {
                 advanceUntilIdle()
-                val errors = mutableListOf<RemoteError>()
-                backgroundScope.launch { viewModel.remoteError.collect { errors += it } }
+                val effects = mutableListOf<MovieDetailEffect>()
+                backgroundScope.launch { viewModel.effect.collect { effects += it } }
                 runCurrent()
 
-                assertEquals(detail, viewModel.uiState.value.detail)
-                assertEquals(listOf(RemoteError.Timeout), errors)
+                assertEquals(detail, viewModel.state.value.detail)
+                assertEquals(listOf(MovieDetailEffect.ShowError(RemoteError.Timeout)), effects)
             } finally {
                 viewModel.viewModelScope.cancel()
                 Dispatchers.resetMain()

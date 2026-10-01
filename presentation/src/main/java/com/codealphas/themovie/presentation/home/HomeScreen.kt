@@ -140,7 +140,8 @@ internal fun HomeContent(
     onNotificationSettingsClick: () -> Unit,
     content: @Composable () -> Unit,
 ) {
-    // 앱바 색이 라이트에서 어둡고 다크에서 밝아 시스템 아이콘 색과 겹치므로, XML처럼 상태 표시줄 뒤에는 창 배경이 보이도록 앱바를 그 아래에 배치하고,
+    // 앱바 색이 라이트에서 어둡고 다크에서 밝아 상태 표시줄 뒤까지 칠하면 같은 계열 색의 시계와 배터리 아이콘이 묻히므로,
+    // XML처럼 상태 표시줄 뒤에는 창 배경이 보이도록 앱바를 상태 표시줄 높이만큼 내려 배치하고,
     // Edge-to-Edge라 시스템이 창을 줄여 주지 않으므로 검색 키보드가 탭을 가리지 않도록 나머지는 safeDrawing만큼 안쪽 여백 적용
     Scaffold(
         modifier = Modifier.windowInsetsPadding(WindowInsets.statusBars),

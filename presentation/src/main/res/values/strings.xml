@@ -12,6 +12,7 @@
     <string name="common_logout">로그아웃</string>
     <string name="common_retry">다시 시도</string>
     <string name="common_more_menu">메뉴 더 보기</string>
+    <string name="common_navigate_up">뒤로 가기</string>
     <string name="common_error_invalid_email">이메일 형식을 다시 확인해 주세요.</string>
     <string name="login_title">로그인</string>
     <string name="login_failed">로그인에 실패했습니다. 이메일 또는 비밀번호를 다시 확인해주세요.</string>
@@ -44,7 +45,7 @@
     <string name="movie_detail_video_title">영상</string>
     <string name="movie_detail_overview_title">줄거리</string>
     <string name="movie_detail_release">%1$s 개봉</string>
-    <string name="movie_detail_rating">평점 : %1$s</string>
+    <string name="movie_detail_rating">평점 : %1$.1f</string>
     <string name="review_list_title">My Reviews</string>
     <string name="review_list_subtitle">내 영화 감상문</string>
     <string name="review_list_empty">감상문이 존재하지 않습니다.</string>
