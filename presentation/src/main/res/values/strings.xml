@@ -53,6 +53,8 @@
     <string name="review_list_appbar_title">영화 감상문</string>
     <string name="review_list_sync_failed">서버의 감상문을 불러오지 못했습니다.</string>
     <string name="review_list_deleted">감상문을 삭제했습니다.</string>
+    <string name="review_list_add">감상문 작성</string>
+    <string name="review_list_delete">감상문 삭제</string>
     <string name="review_edit_title_hint">감상문 제목을 입력하세요</string>
     <string name="review_edit_content_hint">감상문 내용을 입력하세요</string>
     <string name="review_edit_appbar_title">영화 감상문 작성</string>
