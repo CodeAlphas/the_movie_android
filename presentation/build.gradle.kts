@@ -26,6 +26,9 @@ dependencies {
     implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.fragment.ktx)
+    // 검색 탭은 아직 Fragment라서, Compose로 바꾼 메인 탭 화면 안에 띄우도록 AndroidFragment 적용
+    implementation(libs.androidx.fragment.compose)
+    implementation(libs.androidx.hilt.lifecycle.viewmodel.compose)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.androidx.recyclerview)
@@ -34,6 +37,7 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.kotlinx.coroutines.play.services)
     implementation(libs.coil)
+    implementation(libs.coil.compose)
     implementation(libs.coil.network.okhttp)
     implementation(libs.kakao.map)
     implementation(libs.play.services.location)

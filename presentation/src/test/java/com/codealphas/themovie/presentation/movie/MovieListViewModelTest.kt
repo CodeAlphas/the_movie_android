@@ -1,6 +1,5 @@
 package com.codealphas.themovie.presentation.movie
 
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.codealphas.themovie.domain.movie.Movie
 import com.codealphas.themovie.domain.movie.MovieDetailResult
@@ -29,10 +28,10 @@ class MovieListViewModelTest {
         runTest {
             Dispatchers.setMain(StandardTestDispatcher(testScheduler))
             val repository = FakeMovieRepository(hangPopular = true)
-            val viewModel = MovieListViewModel(repository, popularHandle())
+            val viewModel = MovieListViewModel(repository, MovieCategory.POPULAR)
             try {
-                viewModel.loadMovies()
-                viewModel.loadMovies()
+                viewModel.onIntent(MovieListIntent.PageShown)
+                viewModel.onIntent(MovieListIntent.PageShown)
                 advanceUntilIdle()
 
                 assertEquals(1, repository.popularCalls)
@@ -47,12 +46,12 @@ class MovieListViewModelTest {
         runTest {
             Dispatchers.setMain(StandardTestDispatcher(testScheduler))
             val repository = FakeMovieRepository(hangPopular = false)
-            val viewModel = MovieListViewModel(repository, popularHandle())
-            val collect = launch { viewModel.remoteError.collect {} }
+            val viewModel = MovieListViewModel(repository, MovieCategory.POPULAR)
+            val collect = launch { viewModel.effect.collect {} }
             try {
-                viewModel.loadMovies()
+                viewModel.onIntent(MovieListIntent.PageShown)
                 advanceUntilIdle()
-                viewModel.loadMovies()
+                viewModel.onIntent(MovieListIntent.PageShown)
                 advanceUntilIdle()
 
                 assertEquals(2, repository.popularCalls)
@@ -68,15 +67,15 @@ class MovieListViewModelTest {
         runTest {
             Dispatchers.setMain(StandardTestDispatcher(testScheduler))
             val repository = FakeMovieRepository(hangPopular = false)
-            val viewModel = MovieListViewModel(repository, popularHandle())
+            val viewModel = MovieListViewModel(repository, MovieCategory.POPULAR)
             try {
-                viewModel.loadMovies()
+                viewModel.onIntent(MovieListIntent.PageShown)
                 advanceUntilIdle()
-                val errors = mutableListOf<RemoteError>()
-                backgroundScope.launch { viewModel.remoteError.collect { errors += it } }
+                val effects = mutableListOf<MovieListEffect>()
+                backgroundScope.launch { viewModel.effect.collect { effects += it } }
                 runCurrent()
 
-                assertEquals(listOf<RemoteError>(RemoteError.Network), errors)
+                assertEquals(listOf<MovieListEffect>(MovieListEffect.ShowError(RemoteError.Network)), effects)
             } finally {
                 viewModel.viewModelScope.cancel()
                 Dispatchers.resetMain()
@@ -88,10 +87,10 @@ class MovieListViewModelTest {
         runTest {
             Dispatchers.setMain(StandardTestDispatcher(testScheduler))
             val repository = FakeMovieRepository(hangPopular = false)
-            val viewModel = MovieListViewModel(repository, topRatedHandle())
-            val collect = launch { viewModel.remoteError.collect {} }
+            val viewModel = MovieListViewModel(repository, MovieCategory.TOP_RATED)
+            val collect = launch { viewModel.effect.collect {} }
             try {
-                viewModel.loadMovies()
+                viewModel.onIntent(MovieListIntent.PageShown)
                 advanceUntilIdle()
 
                 assertEquals(0, repository.popularCalls)
@@ -108,12 +107,12 @@ class MovieListViewModelTest {
         runTest {
             Dispatchers.setMain(StandardTestDispatcher(testScheduler))
             val repository = FakeMovieRepository(hangPopular = true)
-            val viewModel = MovieListViewModel(repository, popularHandle())
+            val viewModel = MovieListViewModel(repository, MovieCategory.POPULAR)
             try {
-                viewModel.loadMovies()
+                viewModel.onIntent(MovieListIntent.PageShown)
                 runCurrent()
 
-                assertEquals(MovieListUiState(isLoading = true), viewModel.uiState.value)
+                assertEquals(MovieListUiState(isLoading = true), viewModel.state.value)
             } finally {
                 viewModel.viewModelScope.cancel()
                 Dispatchers.resetMain()
@@ -126,12 +125,12 @@ class MovieListViewModelTest {
             Dispatchers.setMain(StandardTestDispatcher(testScheduler))
             val movies = listOf(listMovie("popular"))
             val repository = FakeMovieRepository(popularResult = Outcome.Success(movies))
-            val viewModel = MovieListViewModel(repository, popularHandle())
+            val viewModel = MovieListViewModel(repository, MovieCategory.POPULAR)
             try {
-                viewModel.loadMovies()
+                viewModel.onIntent(MovieListIntent.PageShown)
                 advanceUntilIdle()
 
-                assertEquals(MovieListUiState(movies = movies), viewModel.uiState.value)
+                assertEquals(MovieListUiState(movies = movies), viewModel.state.value)
             } finally {
                 viewModel.viewModelScope.cancel()
                 Dispatchers.resetMain()
@@ -143,13 +142,13 @@ class MovieListViewModelTest {
         runTest {
             Dispatchers.setMain(StandardTestDispatcher(testScheduler))
             val repository = FakeMovieRepository()
-            val viewModel = MovieListViewModel(repository, popularHandle())
+            val viewModel = MovieListViewModel(repository, MovieCategory.POPULAR)
             try {
-                viewModel.loadMovies()
+                viewModel.onIntent(MovieListIntent.PageShown)
                 advanceUntilIdle()
 
                 // 실패를 빈 목록으로 채우면 탭이 다시 보일 때 재요청하지 않으므로, movies가 null로 남는지 확인
-                assertEquals(MovieListUiState(loadError = RemoteError.Network), viewModel.uiState.value)
+                assertEquals(MovieListUiState(loadError = RemoteError.Network), viewModel.state.value)
             } finally {
                 viewModel.viewModelScope.cancel()
                 Dispatchers.resetMain()
@@ -161,15 +160,55 @@ class MovieListViewModelTest {
         runTest {
             Dispatchers.setMain(StandardTestDispatcher(testScheduler))
             val repository = FakeMovieRepository()
-            val viewModel = MovieListViewModel(repository, popularHandle())
+            val viewModel = MovieListViewModel(repository, MovieCategory.POPULAR)
             try {
-                viewModel.loadMovies()
+                viewModel.onIntent(MovieListIntent.PageShown)
                 advanceUntilIdle()
                 repository.hangPopular = true
-                viewModel.loadMovies()
+                viewModel.onIntent(MovieListIntent.PageShown)
                 runCurrent()
 
-                assertEquals(MovieListUiState(isLoading = true), viewModel.uiState.value)
+                assertEquals(MovieListUiState(isLoading = true), viewModel.state.value)
+            } finally {
+                viewModel.viewModelScope.cancel()
+                Dispatchers.resetMain()
+            }
+        }
+
+    @Test
+    fun `인기 영화 요청이 실패한 뒤 다시 시도를 누르면 Repository를 한 번 더 호출해야 한다`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository = FakeMovieRepository()
+            val viewModel = MovieListViewModel(repository, MovieCategory.POPULAR)
+            val collect = launch { viewModel.effect.collect {} }
+            try {
+                viewModel.onIntent(MovieListIntent.PageShown)
+                advanceUntilIdle()
+                viewModel.onIntent(MovieListIntent.RetryClicked)
+                advanceUntilIdle()
+
+                assertEquals(2, repository.popularCalls)
+            } finally {
+                collect.cancel()
+                viewModel.viewModelScope.cancel()
+                Dispatchers.resetMain()
+            }
+        }
+
+    @Test
+    fun `인기 영화를 받은 뒤 탭이 다시 보이면 Repository를 다시 호출하지 않아야 한다`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository = FakeMovieRepository(popularResult = Outcome.Success(listOf(listMovie("popular"))))
+            val viewModel = MovieListViewModel(repository, MovieCategory.POPULAR)
+            try {
+                viewModel.onIntent(MovieListIntent.PageShown)
+                advanceUntilIdle()
+                viewModel.onIntent(MovieListIntent.PageShown)
+                advanceUntilIdle()
+
+                assertEquals(1, repository.popularCalls)
             } finally {
                 viewModel.viewModelScope.cancel()
                 Dispatchers.resetMain()
@@ -186,12 +225,6 @@ private fun listMovie(title: String): Movie =
         overview = "",
         voteAverage = 0.0,
     )
-
-private fun popularHandle(): SavedStateHandle =
-    SavedStateHandle(mapOf(MovieListViewModel.ARG_CATEGORY to MovieCategory.POPULAR))
-
-private fun topRatedHandle(): SavedStateHandle =
-    SavedStateHandle(mapOf(MovieListViewModel.ARG_CATEGORY to MovieCategory.TOP_RATED))
 
 private class FakeMovieRepository(
     var hangPopular: Boolean = false,

@@ -10,6 +10,8 @@
     <string name="common_login">로그인하기</string>
     <string name="common_join">가입하기</string>
     <string name="common_logout">로그아웃</string>
+    <string name="common_retry">다시 시도</string>
+    <string name="common_more_menu">메뉴 더 보기</string>
     <string name="common_error_invalid_email">이메일 형식을 다시 확인해 주세요.</string>
     <string name="login_title">로그인</string>
     <string name="login_failed">로그인에 실패했습니다. 이메일 또는 비밀번호를 다시 확인해주세요.</string>

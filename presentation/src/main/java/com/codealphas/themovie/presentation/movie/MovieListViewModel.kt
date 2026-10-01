@@ -1,13 +1,13 @@
 package com.codealphas.themovie.presentation.movie
 
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.codealphas.themovie.domain.movie.Movie
 import com.codealphas.themovie.domain.movie.MovieRepository
-import com.codealphas.themovie.domain.result.RemoteError
 import com.codealphas.themovie.domain.result.onFailure
 import com.codealphas.themovie.domain.result.onSuccess
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -18,54 +18,55 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
-data class MovieListUiState(
-    val movies: List<Movie>? = null,
-    val isLoading: Boolean = false,
-    val loadError: RemoteError? = null,
-)
-
-@HiltViewModel
+// 한 Activity 안의 두 탭이 같은 ViewModel 저장소를 쓰므로, 분류를 SavedStateHandle이 아니라 생성 인자로 받도록 assisted injection 적용
+@HiltViewModel(assistedFactory = MovieListViewModel.Factory::class)
 class MovieListViewModel
-    @Inject
+    @AssistedInject
     constructor(
         private val repository: MovieRepository,
-        savedStateHandle: SavedStateHandle,
+        @Assisted val category: MovieCategory,
     ) : ViewModel() {
-        private val category: MovieCategory = checkNotNull(savedStateHandle.get<MovieCategory>(ARG_CATEGORY))
+        private val _state = MutableStateFlow(MovieListUiState())
+        val state: StateFlow<MovieListUiState> = _state.asStateFlow()
 
-        private val _uiState = MutableStateFlow(MovieListUiState())
-        val uiState: StateFlow<MovieListUiState> = _uiState.asStateFlow()
-
-        private val _remoteError = Channel<RemoteError>(Channel.BUFFERED)
-        val remoteError: Flow<RemoteError> = _remoteError.receiveAsFlow()
+        private val _effect = Channel<MovieListEffect>(Channel.BUFFERED)
+        val effect: Flow<MovieListEffect> = _effect.receiveAsFlow()
 
         private var loadJob: Job? = null
 
-        fun loadMovies() {
+        fun onIntent(intent: MovieListIntent) {
+            when (intent) {
+                MovieListIntent.PageShown,
+                MovieListIntent.RetryClicked,
+                -> loadMovies()
+            }
+        }
+
+        private fun loadMovies() {
             // 응답 전에 다시 호출되면 목록이 아직 null이라 같은 요청이 한 번 더 나가므로, 진행 중인 요청이 있으면 그 응답을 대기
-            if (_uiState.value.movies != null || loadJob?.isActive == true) return
+            if (_state.value.movies != null || loadJob?.isActive == true) return
             loadJob =
                 viewModelScope.launch {
-                    _uiState.update { it.copy(isLoading = true, loadError = null) }
+                    _state.update { it.copy(isLoading = true, loadError = null) }
                     val result =
                         when (category) {
                             MovieCategory.POPULAR -> repository.getPopularMovies()
                             MovieCategory.TOP_RATED -> repository.getTopRatedMovies()
                         }
                     result
-                        .onSuccess { movies -> _uiState.value = MovieListUiState(movies = movies) }
+                        .onSuccess { movies -> _state.value = MovieListUiState(movies = movies) }
                         .onFailure { error ->
                             // 실패를 빈 목록으로 넣으면 movies가 null이 아니어서,
                             // 탭이 다시 보일 때 재요청이 멈추므로 목록은 null로 두고 오류만 반영
-                            _uiState.update { it.copy(isLoading = false, loadError = error) }
-                            _remoteError.send(error)
+                            _state.update { it.copy(isLoading = false, loadError = error) }
+                            _effect.send(MovieListEffect.ShowError(error))
                         }
                 }
         }
 
-        companion object {
-            const val ARG_CATEGORY = "movieCategory"
+        @AssistedFactory
+        interface Factory {
+            fun create(category: MovieCategory): MovieListViewModel
         }
     }
