@@ -58,7 +58,7 @@ class LoginViewModelTest {
     }
 
     @Test
-    fun `로그인에 성공하면 로딩을 끝내고 메인 이동 이벤트를 보내야 한다`() {
+    fun `로그인에 성공하면 로딩을 끝내고 홈 이동 이벤트를 보내야 한다`() {
         val repository = FakeLoginAuthRepository(signInResult = CompletableDeferred(Outcome.Success(Unit)))
         runLoginTest(repository) { viewModel ->
             val effects = collectLoginEffects(viewModel)
@@ -66,7 +66,7 @@ class LoginViewModelTest {
             viewModel.signIn("user@example.com", "password")
             runCurrent()
 
-            assertEquals(listOf<LoginEffect>(LoginEffect.NavigateToMain), effects)
+            assertEquals(listOf<LoginEffect>(LoginEffect.NavigateToHome), effects)
             assertFalse(viewModel.state.value.isLoading)
         }
     }

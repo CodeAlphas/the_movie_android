@@ -45,6 +45,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -62,15 +63,15 @@ private val LogoVerticalPadding = 56.dp
 private val FieldShape = RoundedCornerShape(5.dp)
 
 @Composable
-fun LoginRoute(
-    viewModel: LoginViewModel,
-    onNavigateToMain: () -> Unit,
+fun LoginScreen(
+    onNavigateToHome: () -> Unit,
     onNavigateToJoin: () -> Unit,
+    viewModel: LoginViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
-    val currentOnNavigateToMain by rememberUpdatedState(onNavigateToMain)
+    val currentOnNavigateToHome by rememberUpdatedState(onNavigateToHome)
     val currentOnNavigateToJoin by rememberUpdatedState(onNavigateToJoin)
 
     // 화면이 멈춘 동안 보낸 안내를 돌아와서 받도록, 수집은 STARTED 동안만 하고 채널에 남은 effect는 다시 시작할 때 처리
@@ -78,7 +79,7 @@ fun LoginRoute(
         lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
             viewModel.effect.collect { effect ->
                 when (effect) {
-                    LoginEffect.NavigateToMain -> currentOnNavigateToMain()
+                    LoginEffect.NavigateToHome -> currentOnNavigateToHome()
                     LoginEffect.NavigateToJoin -> currentOnNavigateToJoin()
                     LoginEffect.ShowInvalidInput -> context.showToast(R.string.login_failed)
                     is LoginEffect.ShowError -> context.showToast(loginFailureMessage(effect.error))
@@ -87,11 +88,11 @@ fun LoginRoute(
         }
     }
 
-    LoginScreen(state = state, onIntent = viewModel::onIntent)
+    LoginContent(state = state, onIntent = viewModel::onIntent)
 }
 
 @Composable
-fun LoginScreen(
+internal fun LoginContent(
     state: LoginUiState,
     onIntent: (LoginIntent) -> Unit,
 ) {
@@ -215,8 +216,8 @@ private fun LoginTextField(
 @Preview(name = "라이트")
 @Preview(name = "다크", uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
-private fun LoginScreenPreview() {
+private fun LoginContentPreview() {
     TheMovieTheme {
-        LoginScreen(state = LoginUiState(email = "user@example.com"), onIntent = {})
+        LoginContent(state = LoginUiState(email = "user@example.com"), onIntent = {})
     }
 }

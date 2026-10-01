@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.codealphas.themovie.domain.movie.MovieRepository
+import com.codealphas.themovie.presentation.navigation.MovieDetail
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -21,7 +22,9 @@ class MovieDetailViewModel
         private val repository: MovieRepository,
         savedStateHandle: SavedStateHandle,
     ) : ViewModel() {
-        private val movieId: Int = checkNotNull(savedStateHandle.get<Int>(ARG_MOVIE_ID))
+        // 라우트 인자를 꺼내는 기본 방법인 toRoute()는 Bundle이 필요해 JVM 단위 테스트에서 실패하므로,
+        // 테스트에서도 읽히도록 Navigation이 속성 이름을 키로 넣어 둔 값 직접 조회
+        private val movieId: Int = checkNotNull(savedStateHandle.get<Int>(MovieDetail::movieId.name))
 
         private val _state = MutableStateFlow(MovieDetailUiState())
         val state: StateFlow<MovieDetailUiState> = _state.asStateFlow()
@@ -40,9 +43,5 @@ class MovieDetailViewModel
                 _state.value = MovieDetailUiState(detail = result.detail, isLoading = false)
                 result.errors.forEach { error -> _effect.send(MovieDetailEffect.ShowError(error)) }
             }
-        }
-
-        companion object {
-            const val ARG_MOVIE_ID = "movieId"
         }
     }

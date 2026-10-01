@@ -2,7 +2,6 @@ package com.codealphas.themovie.presentation.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.codealphas.themovie.domain.auth.AuthRepository
 import com.codealphas.themovie.domain.auth.LogoutUseCase
 import com.codealphas.themovie.domain.notification.NotificationPromptRepository
 import com.codealphas.themovie.presentation.notification.NotificationPermissionState
@@ -23,7 +22,6 @@ import javax.inject.Inject
 class HomeViewModel
     @Inject
     constructor(
-        private val authRepository: AuthRepository,
         private val logoutUseCase: LogoutUseCase,
         private val notificationPromptRepository: NotificationPromptRepository,
     ) : ViewModel() {
@@ -32,8 +30,6 @@ class HomeViewModel
 
         private val _effect = Channel<HomeEffect>(Channel.BUFFERED)
         val effect: Flow<HomeEffect> = _effect.receiveAsFlow()
-
-        fun isSignedIn(): Boolean = authRepository.currentUserId() != null
 
         fun onIntent(intent: HomeIntent) {
             when (intent) {

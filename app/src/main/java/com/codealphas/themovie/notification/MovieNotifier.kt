@@ -8,8 +8,8 @@ import android.content.pm.PackageManager
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import com.codealphas.themovie.MainActivity
 import com.codealphas.themovie.R
-import com.codealphas.themovie.presentation.movie.MainActivity
 import com.codealphas.themovie.presentation.R as PresentationR
 
 class MovieNotifier(

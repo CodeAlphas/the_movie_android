@@ -7,6 +7,7 @@ import com.codealphas.themovie.domain.result.Outcome
 import com.codealphas.themovie.domain.review.ReviewDraft
 import com.codealphas.themovie.domain.review.ReviewPhoto
 import com.codealphas.themovie.domain.review.ReviewRepository
+import com.codealphas.themovie.presentation.navigation.ReviewEdit
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -25,8 +26,8 @@ class ReviewEditViewModel
         private val repository: ReviewRepository,
         private val savedStateHandle: SavedStateHandle,
     ) : ViewModel() {
-        // 작성 화면은 reviewId extra 없이 열리므로 null이면 새 감상문
-        private val reviewId: Int? = savedStateHandle.get<Int>(ARG_REVIEW_ID)
+        // 작성 화면은 reviewId 없이 열리므로 null이면 새 감상문이고, MovieDetailViewModel과 같은 이유로 목적지 속성 이름으로 읽도록 적용
+        private val reviewId: Int? = savedStateHandle.get<Int>(ReviewEdit::reviewId.name)
 
         // 카메라 앱을 쓰는 동안 프로세스가 종료되면 입력이 사라지므로, SavedStateHandle에 남긴 입력으로 초기 상태 복원
         private val _state =
@@ -170,7 +171,6 @@ class ReviewEditViewModel
         }
 
         companion object {
-            const val ARG_REVIEW_ID = "reviewId"
             private const val KEY_TITLE = "title"
             private const val KEY_CONTENT = "content"
             private const val KEY_RATING = "rating"

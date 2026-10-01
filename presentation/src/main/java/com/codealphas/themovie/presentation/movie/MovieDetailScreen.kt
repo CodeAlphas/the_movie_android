@@ -254,16 +254,28 @@ private fun CastItem(cast: Cast) {
         modifier = Modifier.width(CastItemWidth),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        val placeholder = painterResource(R.drawable.ic_baseline_face_24)
-        AsyncImage(
-            model = cast.profileUrl,
-            contentDescription = null,
-            modifier = Modifier.padding(Spacing.extraSmall).size(CastImageSize),
-            placeholder = placeholder,
-            error = placeholder,
-            fallback = placeholder,
-            contentScale = ContentScale.Crop,
-        )
+        // AsyncImage 대체 이미지로 넘긴 drawable은 Compose 테마 색을 읽지 못하고 colorFilter는 불러온 사진까지 칠하므로,
+        // 사진 아래에 테마 색 틀을 깔아 로딩 중이거나 사진이 없을 때 노출
+        Box(
+            modifier =
+                Modifier
+                    .padding(Spacing.extraSmall)
+                    .size(CastImageSize)
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.cast_profile_silhouette),
+                contentDescription = null,
+                modifier = Modifier.matchParentSize(),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            AsyncImage(
+                model = cast.profileUrl,
+                contentDescription = null,
+                modifier = Modifier.matchParentSize(),
+                contentScale = ContentScale.Crop,
+            )
+        }
         Text(
             text = cast.character,
             style = MaterialTheme.typography.bodySmall,

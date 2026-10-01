@@ -94,8 +94,7 @@ class MovieDetailViewModelTest {
         }
 }
 
-private fun movieIdHandle(movieId: Int): SavedStateHandle =
-    SavedStateHandle(mapOf(MovieDetailViewModel.ARG_MOVIE_ID to movieId))
+private fun movieIdHandle(movieId: Int): SavedStateHandle = SavedStateHandle(mapOf("movieId" to movieId))
 
 private fun movieDetail(): MovieDetail =
     MovieDetail(

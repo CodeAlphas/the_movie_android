@@ -32,20 +32,6 @@ import org.junit.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class HomeViewModelTest {
     @Test
-    fun `로그인한 상태면 isSignedIn이 true여야 한다`() {
-        runHomeTest(authRepository = FakeHomeAuthRepository(userId = "uid")) { viewModel ->
-            assertTrue(viewModel.isSignedIn())
-        }
-    }
-
-    @Test
-    fun `로그인하지 않은 상태면 isSignedIn이 false여야 한다`() {
-        runHomeTest(authRepository = FakeHomeAuthRepository(userId = null)) { viewModel ->
-            assertFalse(viewModel.isSignedIn())
-        }
-    }
-
-    @Test
     fun `로그아웃하면 Room 삭제가 끝난 뒤에 로그아웃 완료를 보내야 한다`() {
         val deleteAllDone = CompletableDeferred<Unit>()
         val authRepository = FakeHomeAuthRepository(userId = "uid")
@@ -181,7 +167,6 @@ private fun runHomeTest(
     Dispatchers.setMain(StandardTestDispatcher(testScheduler))
     val viewModel =
         HomeViewModel(
-            authRepository = authRepository,
             logoutUseCase = LogoutUseCase(authRepository, reviewRepository),
             notificationPromptRepository = promptRepository,
         )
