@@ -10,6 +10,7 @@ import com.codealphas.themovie.domain.review.ReviewDraft
 import com.codealphas.themovie.domain.review.ReviewError
 import com.codealphas.themovie.domain.review.ReviewRepository
 import com.codealphas.themovie.domain.review.ReviewResult
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -186,13 +187,27 @@ class ReviewListViewModelTest {
 
             viewModel.onIntent(ReviewListIntent.LogoutClicked)
             runCurrent()
-            assertEquals(1, authRepository.signOutCalls)
+            assertEquals(0, authRepository.signOutCalls)
             assertEquals(0, completedCount)
 
             deleteAllDone.complete(Unit)
             runCurrent()
             assertEquals(1, repository.deleteAllCalls)
+            assertEquals(1, authRepository.signOutCalls)
             assertEquals(1, completedCount)
+        }
+    }
+
+    @Test
+    fun `서버 동기화 중에 로그아웃하면 동기화를 멈춘 뒤 감상문을 지워야 한다`() {
+        val repository = FakeReviewListRepository(syncDone = CompletableDeferred())
+        runReviewListTest(repository) { viewModel ->
+            runCurrent()
+
+            viewModel.onIntent(ReviewListIntent.LogoutClicked)
+            runCurrent()
+
+            assertEquals(listOf("syncCancelled", "deleteAll"), repository.calls)
         }
     }
 }
@@ -232,6 +247,7 @@ private class FakeReviewListRepository(
 ) : ReviewRepository {
     val reviews = MutableStateFlow(emptyList<Review>())
     val deleted = mutableListOf<Review>()
+    val calls = mutableListOf<String>()
     var syncCalls: Int = 0
     var deleteAllCalls: Int = 0
 
@@ -239,7 +255,12 @@ private class FakeReviewListRepository(
 
     override suspend fun syncFromRemote(): ReviewResult {
         syncCalls += 1
-        syncDone.await()
+        try {
+            syncDone.await()
+        } catch (e: CancellationException) {
+            calls += "syncCancelled"
+            throw e
+        }
         return syncResult
     }
 
@@ -256,6 +277,7 @@ private class FakeReviewListRepository(
     override suspend fun deleteAll() {
         deleteAllDone.await()
         deleteAllCalls += 1
+        calls += "deleteAll"
     }
 }
 
