@@ -14,6 +14,8 @@ import com.codealphas.themovie.domain.review.ReviewRepository
 import com.codealphas.themovie.domain.review.ReviewResult
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
@@ -42,9 +44,11 @@ internal class ReviewRepositoryImpl
             return try {
                 realtimeDataSource.getAll(userId).forEach { reviewDao.insert(it.toEntity()) }
                 Outcome.Success(Unit)
-            } catch (e: CancellationException) {
-                // 취소를 Failure로 바꾸면 ViewModel이 사라진 뒤에도 실패 안내가 뜨므로, 호출한 코루틴이 멈추도록 취소 예외를 다시 던짐
-                throw e
+            } catch (_: CancellationException) {
+                // Firebase Realtime Database SDK가 서버 감상문 읽기를 취소해도 취소 예외로 끝나는데 그대로 올리면 동기화 중 표시가 풀리지 않으므로,
+                // 동기화를 요청한 코루틴이 취소되지 않았으면 동기화 실패로 처리
+                currentCoroutineContext().ensureActive()
+                Outcome.Failure(ReviewError.Unknown)
             } catch (_: Exception) {
                 Outcome.Failure(ReviewError.Unknown)
             }
@@ -103,8 +107,11 @@ internal class ReviewRepositoryImpl
             val fileName = userId.take(USER_ID_PREFIX_LENGTH) + "${clock.nowMillis()}.png"
             return try {
                 PhotoFields(image = storageDataSource.upload(fileName, uri), fileName = fileName)
-            } catch (e: CancellationException) {
-                throw e
+            } catch (_: CancellationException) {
+                // Firebase Storage SDK가 사진 업로드를 취소해도 취소 예외로 끝나는데 그대로 올리면 저장 중 표시가 풀리지 않으므로,
+                // 저장을 요청한 코루틴이 취소되지 않았으면 업로드 실패로 처리
+                currentCoroutineContext().ensureActive()
+                null
             } catch (_: Exception) {
                 null
             }
@@ -153,13 +160,31 @@ internal class ReviewRepositoryImpl
             }
         }
 
-        override suspend fun delete(review: Review) {
-            reviewDao.delete(review.toEntity())
-            val userId = authRepository.currentUserId() ?: return
-            realtimeDataSource.delete(userId, review.id)
-            if (review.storageFileName.isNotEmpty()) {
-                deleteStorageFile(review.storageFileName)
+        override suspend fun delete(review: Review): ReviewResult {
+            try {
+                reviewDao.delete(review.toEntity())
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                // Room에서 지우지 못한 감상문은 목록에 남아 서버 백업과 사진을 지우면 사진이 깨지므로, 서버와 Storage는 그대로 두고 실패 반환
+                return Outcome.Failure(ReviewError.Unknown)
             }
+            val userId = authRepository.currentUserId()
+            if (userId != null) {
+                val remoteDeleted =
+                    try {
+                        realtimeDataSource.delete(userId, review.id)
+                        true
+                    } catch (_: Exception) {
+                        // 서버 삭제 요청이 바로 실패하면 서버에 남은 감상문이 다음 동기화 때 되살아나므로,
+                        // 되살아난 감상문의 사진이 깨지지 않도록 사진 파일은 지우지 않고 Room 삭제 결과대로 성공 처리
+                        false
+                    }
+                if (remoteDeleted && review.storageFileName.isNotEmpty()) {
+                    deleteStorageFile(review.storageFileName)
+                }
+            }
+            return Outcome.Success(Unit)
         }
 
         override suspend fun deleteAll() {
@@ -169,10 +194,12 @@ internal class ReviewRepositoryImpl
         private suspend fun deleteStorageFile(fileName: String) {
             try {
                 storageDataSource.delete(fileName)
-            } catch (e: CancellationException) {
-                throw e
+            } catch (_: CancellationException) {
+                // Firebase Storage SDK가 사진 삭제를 취소해도 취소 예외로 끝나는데 그대로 올리면 Room에 반영된 저장이나 삭제가 완료로 처리되지 않으므로,
+                // 요청한 코루틴이 취소되지 않았으면 Storage에 사진 파일이 남는 것을 허용
+                currentCoroutineContext().ensureActive()
             } catch (_: Exception) {
-                // Room과 서버 삭제는 끝났고 남은 사진 파일만 정리하지 못한 것이므로, 감상문 삭제는 유지
+                // 사진 파일을 지우지 못해도 감상문 저장이나 삭제 결과는 바뀌지 않으므로, Storage에 사진 파일이 남는 것을 허용
             }
         }
     }

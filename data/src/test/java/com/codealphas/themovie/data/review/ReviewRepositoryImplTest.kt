@@ -11,9 +11,16 @@ import com.codealphas.themovie.domain.review.Review
 import com.codealphas.themovie.domain.review.ReviewDraft
 import com.codealphas.themovie.domain.review.ReviewError
 import com.codealphas.themovie.domain.review.ReviewPhoto
+import com.codealphas.themovie.domain.review.ReviewResult
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.IOException
 
@@ -68,6 +75,53 @@ class ReviewRepositoryImplTest {
             val result = repository().save(editDraft(ReviewPhoto.New("content://photo/2")))
 
             assertEquals(Outcome.Failure(ReviewError.PhotoUploadFailed), result)
+            assertEquals(listOf("storage.upload:$NEW_FILE_NAME"), calls)
+            assertEquals(STORED.toReview(), dao.saved(STORED.id))
+        }
+
+    @Test
+    fun `사진 업로드가 SDK에서 취소되면 Room과 서버에 쓰지 않고 업로드 실패를 반환해야 한다`() =
+        runTest {
+            dao.put(STORED)
+            storage.cancelUpload = true
+
+            val result = repository().save(editDraft(ReviewPhoto.New("content://photo/2")))
+
+            assertEquals(Outcome.Failure(ReviewError.PhotoUploadFailed), result)
+            assertEquals(listOf("storage.upload:$NEW_FILE_NAME"), calls)
+            assertEquals(STORED.toReview(), dao.saved(STORED.id))
+        }
+
+    @Test
+    fun `새 사진으로 수정할 때 이전 파일 삭제가 SDK에서 취소되면 저장 성공을 반환해야 한다`() =
+        runTest {
+            dao.put(STORED)
+            storage.cancelDelete = true
+
+            val result = repository().save(editDraft(ReviewPhoto.New("content://photo/2")))
+
+            assertEquals(Outcome.Success(Unit), result)
+            assertEquals(
+                listOf("storage.upload:$NEW_FILE_NAME", "room.update", "server.save", "storage.delete:old.png"),
+                calls,
+            )
+            assertEquals(NEW_FILE_NAME, dao.saved(STORED.id)?.storageFileName)
+        }
+
+    @Test
+    fun `사진 업로드 중에 저장을 요청한 코루틴이 취소되면 실패를 반환하지 않고 취소되어야 한다`() =
+        runTest {
+            dao.put(STORED)
+            storage.suspendUpload = true
+            var result: ReviewResult? = null
+
+            val job = launch { result = repository().save(editDraft(ReviewPhoto.New("content://photo/2"))) }
+            runCurrent()
+            job.cancel()
+            job.join()
+
+            assertTrue(job.isCancelled)
+            assertNull(result)
             assertEquals(listOf("storage.upload:$NEW_FILE_NAME"), calls)
             assertEquals(STORED.toReview(), dao.saved(STORED.id))
         }
@@ -130,6 +184,84 @@ class ReviewRepositoryImplTest {
             assertEquals(emptyList<String>(), calls)
         }
 
+    @Test
+    fun `서버 감상문을 받아 오는 작업이 SDK에서 취소되면 Room에 쓰지 않고 Unknown 실패를 반환해야 한다`() =
+        runTest {
+            realtime.cancelGetAll = true
+
+            val result = repository().syncFromRemote()
+
+            assertEquals(Outcome.Failure(ReviewError.Unknown), result)
+            assertEquals(listOf("server.getAll"), calls)
+        }
+
+    @Test
+    fun `서버 감상문을 받아 오는 중에 동기화를 요청한 코루틴이 취소되면 실패를 반환하지 않고 취소되어야 한다`() =
+        runTest {
+            realtime.suspendGetAll = true
+            var result: ReviewResult? = null
+
+            val job = launch { result = repository().syncFromRemote() }
+            runCurrent()
+            job.cancel()
+            job.join()
+
+            assertTrue(job.isCancelled)
+            assertNull(result)
+            assertEquals(listOf("server.getAll"), calls)
+        }
+
+    @Test
+    fun `감상문을 지우면 Room, 서버, 사진 파일 순서로 지우고 성공을 반환해야 한다`() =
+        runTest {
+            dao.put(STORED)
+
+            val result = repository().delete(STORED.toReview())
+
+            assertEquals(Outcome.Success(Unit), result)
+            assertEquals(listOf("room.delete", "server.delete:${STORED.id}", "storage.delete:old.png"), calls)
+            assertNull(dao.saved(STORED.id))
+        }
+
+    @Test
+    fun `Room에서 감상문을 지우지 못하면 서버와 사진 파일을 지우지 않고 Unknown 실패를 반환해야 한다`() =
+        runTest {
+            dao.put(STORED)
+            dao.failDelete = true
+
+            val result = repository().delete(STORED.toReview())
+
+            assertEquals(Outcome.Failure(ReviewError.Unknown), result)
+            assertEquals(listOf("room.delete"), calls)
+            assertEquals(STORED.toReview(), dao.saved(STORED.id))
+        }
+
+    @Test
+    fun `감상문 사진 파일을 지우지 못해도 Room에서 지웠으면 성공을 반환해야 한다`() =
+        runTest {
+            dao.put(STORED)
+            storage.failDelete = true
+
+            val result = repository().delete(STORED.toReview())
+
+            assertEquals(Outcome.Success(Unit), result)
+            assertEquals(listOf("room.delete", "server.delete:${STORED.id}", "storage.delete:old.png"), calls)
+            assertNull(dao.saved(STORED.id))
+        }
+
+    @Test
+    fun `서버 삭제 요청이 바로 실패하면 사진 파일은 지우지 않고 성공을 반환해야 한다`() =
+        runTest {
+            dao.put(STORED)
+            realtime.failDelete = true
+
+            val result = repository().delete(STORED.toReview())
+
+            assertEquals(Outcome.Success(Unit), result)
+            assertEquals(listOf("room.delete", "server.delete:${STORED.id}"), calls)
+            assertNull(dao.saved(STORED.id))
+        }
+
     private fun repository(userId: String? = USER_ID): ReviewRepositoryImpl =
         ReviewRepositoryImpl(
             reviewDao = dao,
@@ -169,6 +301,8 @@ private class FakeReviewDao(
 ) : ReviewDao {
     private val entities = mutableMapOf<Int, ReviewEntity>()
 
+    var failDelete: Boolean = false
+
     fun put(entity: ReviewEntity) {
         entities[entity.id] = entity
     }
@@ -183,7 +317,11 @@ private class FakeReviewDao(
         return id.toLong()
     }
 
-    override suspend fun delete(review: ReviewEntity) = error("사용하지 않음")
+    override suspend fun delete(review: ReviewEntity) {
+        calls += "room.delete"
+        if (failDelete) throw IllegalStateException("Room 삭제 실패")
+        entities -= review.id
+    }
 
     override suspend fun update(review: ReviewEntity) {
         calls += "room.update"
@@ -208,7 +346,22 @@ private class FakeReviewRealtimeDataSource(
     val saved = mutableListOf<Review>()
     val savedUserIds = mutableListOf<String>()
 
-    override suspend fun getAll(userId: String): List<Review> = error("사용하지 않음")
+    // Firebase Realtime Database SDK가 서버 감상문 읽기를 취소하면 동기화를 요청한 코루틴이 취소되지 않아도 취소 예외가 올라오므로,
+    // 코루틴 취소 없이 읽기에서 CancellationException 발생 적용
+    var cancelGetAll: Boolean = false
+
+    // awaitCancellation()은 코루틴이 취소될 때까지 멈추므로,
+    // 동기화를 요청한 코루틴이 서버 감상문을 받아 오는 도중에 취소되는 상황을 만들도록 읽기 대기 적용
+    var suspendGetAll: Boolean = false
+
+    var failDelete: Boolean = false
+
+    override suspend fun getAll(userId: String): List<Review> {
+        calls += "server.getAll"
+        if (cancelGetAll) throw CancellationException("SDK에서 취소된 읽기")
+        if (suspendGetAll) awaitCancellation()
+        return emptyList()
+    }
 
     override fun save(
         userId: String,
@@ -222,13 +375,26 @@ private class FakeReviewRealtimeDataSource(
     override fun delete(
         userId: String,
         reviewId: Int,
-    ) = error("사용하지 않음")
+    ) {
+        calls += "server.delete:$reviewId"
+        if (failDelete) throw IllegalStateException("서버 삭제 요청 실패")
+    }
 }
 
 private class FakeReviewStorageDataSource(
     private val calls: MutableList<String>,
 ) : ReviewStorageDataSource {
     var failUpload: Boolean = false
+    var failDelete: Boolean = false
+
+    // Firebase Storage SDK가 업로드나 삭제를 취소하면 저장을 요청한 코루틴이 취소되지 않아도 취소 예외가 올라오므로,
+    // 코루틴 취소 없이 업로드나 삭제에서 CancellationException 발생 적용
+    var cancelUpload: Boolean = false
+    var cancelDelete: Boolean = false
+
+    // awaitCancellation()은 코루틴이 취소될 때까지 멈추므로,
+    // 저장을 요청한 코루틴이 업로드 도중에 취소되는 상황을 만들도록 업로드 대기 적용
+    var suspendUpload: Boolean = false
 
     override suspend fun upload(
         fileName: String,
@@ -236,11 +402,15 @@ private class FakeReviewStorageDataSource(
     ): String {
         calls += "storage.upload:$fileName"
         if (failUpload) throw IOException("업로드 실패")
+        if (cancelUpload) throw CancellationException("SDK에서 취소된 업로드")
+        if (suspendUpload) awaitCancellation()
         return downloadUrl(fileName)
     }
 
     override suspend fun delete(fileName: String) {
         calls += "storage.delete:$fileName"
+        if (failDelete) throw IOException("삭제 실패")
+        if (cancelDelete) throw CancellationException("SDK에서 취소된 삭제")
     }
 }
 

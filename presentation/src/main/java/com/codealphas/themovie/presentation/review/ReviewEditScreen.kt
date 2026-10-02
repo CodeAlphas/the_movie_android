@@ -32,7 +32,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -76,6 +75,7 @@ import coil3.compose.AsyncImagePainter
 import coil3.compose.rememberAsyncImagePainter
 import com.codealphas.themovie.core.android.theme.Spacing
 import com.codealphas.themovie.core.android.theme.TheMovieTheme
+import com.codealphas.themovie.core.android.ui.BlockingProgressBox
 import com.codealphas.themovie.core.android.ui.rememberThrottledClick
 import com.codealphas.themovie.core.android.ui.showToast
 import com.codealphas.themovie.domain.review.ReviewError
@@ -217,18 +217,21 @@ internal fun ReviewEditContent(
     val focusManager = LocalFocusManager.current
     var showPhotoDialog by rememberSaveable { mutableStateOf(false) }
 
-    // 앱바 색이 라이트에서 어둡고 다크에서 밝아 상태 표시줄 뒤까지 칠하면 같은 계열 색의 시계와 배터리 아이콘이 묻히므로,
-    // 상태 표시줄 뒤에는 창 배경이 보이도록 앱바를 상태 표시줄 높이만큼 내려 배치
-    Scaffold(
-        modifier = Modifier.windowInsetsPadding(WindowInsets.statusBars),
-        topBar = { ReviewEditTopAppBar(onNavigateUp = onNavigateUp) },
-        contentWindowInsets = WindowInsets.safeDrawing,
-    ) { innerPadding ->
-        Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+    // 저장 중에 화면을 닫으면 viewModelScope가 취소되어 사진 업로드 중인 감상문이 안내 없이 저장되지 않으므로,
+    // 앱바까지 덮도록 Scaffold 전체를 감싸 저장이 끝날 때까지 터치와 뒤로 가기 차단
+    BlockingProgressBox(isBlocking = state.isSaving, modifier = Modifier.fillMaxSize()) {
+        // 앱바 색이 라이트에서 어둡고 다크에서 밝아 상태 표시줄 뒤까지 칠하면 같은 계열 색의 시계와 배터리 아이콘이 묻히므로,
+        // 상태 표시줄 뒤에는 창 배경이 보이도록 앱바를 상태 표시줄 높이만큼 내려 배치
+        Scaffold(
+            modifier = Modifier.windowInsetsPadding(WindowInsets.statusBars),
+            topBar = { ReviewEditTopAppBar(onNavigateUp = onNavigateUp) },
+            contentWindowInsets = WindowInsets.safeDrawing,
+        ) { innerPadding ->
             Column(
                 modifier =
                     Modifier
                         .fillMaxSize()
+                        .padding(innerPadding)
                         // XML 화면처럼 입력란 밖을 누르면 키보드가 내려가도록 포커스 해제
                         .pointerInput(Unit) { detectTapGestures { focusManager.clearFocus() } }
                         .padding(Spacing.small),
@@ -254,9 +257,6 @@ internal fun ReviewEditContent(
                     modifier = Modifier.fillMaxWidth().weight(CONTENT_WEIGHT),
                 )
                 ReviewEditBottomBar(state = state, onIntent = onIntent)
-            }
-            if (state.isSaving) {
-                SavingOverlay()
             }
         }
     }
@@ -404,24 +404,6 @@ private fun ReviewEditBottomBar(
                     ),
             )
         }
-    }
-}
-
-@Composable
-private fun SavingOverlay() {
-    // XML 화면처럼 저장 중에 입력을 고치거나 사진을 바꾸지 못하도록, 화면 전체를 덮어 모든 터치를 소비
-    Box(
-        modifier =
-            Modifier.fillMaxSize().pointerInput(Unit) {
-                awaitPointerEventScope {
-                    while (true) {
-                        awaitPointerEvent().changes.forEach { it.consume() }
-                    }
-                }
-            },
-        contentAlignment = Alignment.Center,
-    ) {
-        CircularProgressIndicator()
     }
 }
 

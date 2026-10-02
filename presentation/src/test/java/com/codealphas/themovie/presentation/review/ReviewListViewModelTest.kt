@@ -138,7 +138,7 @@ class ReviewListViewModelTest {
     }
 
     @Test
-    fun `감상문을 지우면 삭제가 끝난 뒤에 삭제 안내를 보내야 한다`() {
+    fun `감상문을 지우면 삭제가 끝난 뒤에 삭제했다는 안내를 보내야 한다`() {
         val deleteDone = CompletableDeferred<Unit>()
         val repository = FakeReviewListRepository(deleteDone = deleteDone)
         runReviewListTest(repository) { viewModel ->
@@ -154,6 +154,22 @@ class ReviewListViewModelTest {
             deleteDone.complete(Unit)
             runCurrent()
             assertEquals(listOf(ReviewListEffect.ShowDeleted), effects)
+        }
+    }
+
+    @Test
+    fun `감상문을 지우지 못하면 삭제했다는 안내 대신 삭제하지 못했다는 안내를 보내야 한다`() {
+        val repository = FakeReviewListRepository(deleteResult = Outcome.Failure(ReviewError.Unknown))
+        runReviewListTest(repository) { viewModel ->
+            val effects = mutableListOf<ReviewListEffect>()
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                viewModel.effect.collect { effects += it }
+            }
+
+            viewModel.onIntent(ReviewListIntent.DeleteClicked(REVIEW))
+            runCurrent()
+
+            assertEquals(listOf(ReviewListEffect.ShowDeleteFailed), effects)
         }
     }
 
@@ -212,6 +228,7 @@ private class FakeReviewListRepository(
     private val deleteAllDone: CompletableDeferred<Unit> = CompletableDeferred(Unit),
     private val syncDone: CompletableDeferred<Unit> = CompletableDeferred(Unit),
     private val deleteDone: CompletableDeferred<Unit> = CompletableDeferred(Unit),
+    private val deleteResult: ReviewResult = Outcome.Success(Unit),
 ) : ReviewRepository {
     val reviews = MutableStateFlow(emptyList<Review>())
     val deleted = mutableListOf<Review>()
@@ -230,9 +247,10 @@ private class FakeReviewListRepository(
 
     override suspend fun save(draft: ReviewDraft): ReviewResult = error("사용하지 않음")
 
-    override suspend fun delete(review: Review) {
+    override suspend fun delete(review: Review): ReviewResult {
         deleteDone.await()
         deleted += review
+        return deleteResult
     }
 
     override suspend fun deleteAll() {

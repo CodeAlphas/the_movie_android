@@ -25,7 +25,15 @@ interface ReviewRepository {
      */
     suspend fun save(draft: ReviewDraft): ReviewResult
 
-    suspend fun delete(review: Review)
+    /**
+     * 감상문을 Room, 서버, Storage 사진 순서로 지운다.
+     * 서버 삭제는 요청만 하고 완료를 기다리지 않으므로, 서버에서 나중에 실패해도 결과에 반영되지 않는다.
+     *
+     * @return Room에서 지우지 못하면 [ReviewError.Unknown]으로 실패하며, 이때 서버와 사진은 지우지 않는다.
+     * Room에서 지웠으면 서버 삭제 요청이나 사진 삭제가 실패해도 성공이다. 서버 삭제 요청이 실패하면 사진은 지우지 않는다.
+     * 로그인 정보가 없으면 Room에서만 지우고 성공이다.
+     */
+    suspend fun delete(review: Review): ReviewResult
 
     suspend fun deleteAll()
 }

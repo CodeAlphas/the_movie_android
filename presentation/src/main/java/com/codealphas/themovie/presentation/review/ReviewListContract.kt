@@ -21,5 +21,7 @@ sealed interface ReviewListEffect {
 
     data object ShowDeleted : ReviewListEffect
 
+    data object ShowDeleteFailed : ReviewListEffect
+
     data object NavigateToLogin : ReviewListEffect
 }
