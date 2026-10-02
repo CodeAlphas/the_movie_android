@@ -18,6 +18,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -63,11 +64,18 @@ fun SearchMovieScreen(
         lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
             viewModel.effect.collect { effect ->
                 when (effect) {
-                    is SearchMovieEffect.ShowError ->
-                        snackbarHostState.showSnackbar(
-                            message = remoteErrorMessage(resources, effect.error),
-                            duration = SnackbarDuration.Long,
-                        )
+                    is SearchMovieEffect.ShowError -> {
+                        // 검색이 실패해도 앞 검색어의 목록을 남기므로, 목록을 가리는 실패 화면 대신 스낵바에 다시 시도 적용
+                        val result =
+                            snackbarHostState.showSnackbar(
+                                message = remoteErrorMessage(resources, effect.error),
+                                actionLabel = resources.getString(R.string.common_retry),
+                                duration = SnackbarDuration.Long,
+                            )
+                        if (result == SnackbarResult.ActionPerformed) {
+                            viewModel.onIntent(SearchMovieIntent.RetryClicked)
+                        }
+                    }
                 }
             }
         }

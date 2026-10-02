@@ -42,7 +42,7 @@ private val PosterMinWidth = 150.dp
 private const val POSTER_ASPECT_RATIO = 2f / 3f
 private val CardShape = RoundedCornerShape(10.dp)
 private val CardElevation = 4.dp
-private val HeaderBackgroundHeight = 190.dp
+private val HeaderBackgroundHeight = 210.dp
 private val HeaderOvalOverflowX = 90.dp
 private val HeaderOvalOverflowTop = 100.dp
 

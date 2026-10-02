@@ -14,6 +14,8 @@ sealed interface SearchMovieIntent {
     data class QueryChanged(
         val query: String,
     ) : SearchMovieIntent
+
+    data object RetryClicked : SearchMovieIntent
 }
 
 sealed interface SearchMovieEffect {

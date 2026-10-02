@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
@@ -35,6 +36,8 @@ class SearchMovieViewModel
         private val _effect = Channel<SearchMovieEffect>(Channel.BUFFERED)
         val effect: Flow<SearchMovieEffect> = _effect.receiveAsFlow()
 
+        private val retryCount = MutableStateFlow(0)
+
         init {
             observeQuery()
         }
@@ -42,7 +45,15 @@ class SearchMovieViewModel
         fun onIntent(intent: SearchMovieIntent) {
             when (intent) {
                 is SearchMovieIntent.QueryChanged -> _state.update { it.copy(query = intent.query) }
+                SearchMovieIntent.RetryClicked -> retry()
             }
+        }
+
+        private fun retry() {
+            val current = _state.value
+            // 검색어를 모두 지운 뒤 다시 시도하면 검색어 흐름에 남은 앞 검색어로 검색해 빈 입력창에 그 결과가 뜨므로, 빈 검색어면 다시 시도 제외
+            if (current.loadError == null || current.query.isBlank()) return
+            retryCount.update { it + 1 }
         }
 
         // kotlinx-coroutines 1.10.2의 debounce는 FlowPreview이고 mapLatest는 ExperimentalCoroutinesApi라 경고가 나므로,
@@ -59,6 +70,9 @@ class SearchMovieViewModel
                     .map(String::trim)
                     .distinctUntilChanged()
                     .filter(String::isNotBlank)
+                    // 앞 검색어와 같은 검색어는 위 distinctUntilChanged에서 걸러져 실패한 검색어를 다시 검색할 수 없으므로,
+                    // 다시 시도 횟수가 오를 때마다 마지막 검색어를 mapLatest에 한 번 더 전달
+                    .combine(retryCount) { query, _ -> query }
                     .mapLatest { query ->
                         _state.update { it.copy(isLoading = true, loadError = null) }
                         repository.searchMovies(query)
