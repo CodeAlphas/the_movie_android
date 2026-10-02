@@ -1,5 +1,7 @@
 package com.codealphas.themovie.presentation.navigation
 
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavController
@@ -21,7 +23,16 @@ internal fun AppNavHost(
     startDestination: Any,
     navController: NavHostController = rememberNavController(),
 ) {
-    NavHost(navController = navController, startDestination = startDestination) {
+    // 카카오 지도는 SurfaceView에 그려 alpha를 따르지 않아 기본 페이드 중 현재 위치 버튼이 번져 보이므로,
+    // 지도 화면만 예외로 두지 않고 모든 화면이 같은 전환을 쓰도록 위치만 바꾸는 가로 슬라이드 적용
+    NavHost(
+        navController = navController,
+        startDestination = startDestination,
+        enterTransition = { slideInHorizontally { fullWidth -> fullWidth } },
+        exitTransition = { slideOutHorizontally { fullWidth -> -fullWidth } },
+        popEnterTransition = { slideInHorizontally { fullWidth -> -fullWidth } },
+        popExitTransition = { slideOutHorizontally { fullWidth -> fullWidth } },
+    ) {
         navigation<AuthGraph>(startDestination = Login) {
             composable<Login> {
                 LoginScreen(
