@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.codealphas.themovie.domain.auth.LogoutUseCase
 import com.codealphas.themovie.domain.result.onFailure
+import com.codealphas.themovie.domain.result.onSuccess
 import com.codealphas.themovie.domain.review.Review
 import com.codealphas.themovie.domain.review.ReviewRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -52,8 +53,10 @@ class ReviewListViewModel
 
         private fun deleteReview(review: Review) {
             viewModelScope.launch {
-                repository.delete(review)
-                _effect.send(ReviewListEffect.ShowDeleted)
+                repository
+                    .delete(review)
+                    .onSuccess { _effect.send(ReviewListEffect.ShowDeleted) }
+                    .onFailure { _effect.send(ReviewListEffect.ShowDeleteFailed) }
             }
         }
 

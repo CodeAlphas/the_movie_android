@@ -160,13 +160,31 @@ internal class ReviewRepositoryImpl
             }
         }
 
-        override suspend fun delete(review: Review) {
-            reviewDao.delete(review.toEntity())
-            val userId = authRepository.currentUserId() ?: return
-            realtimeDataSource.delete(userId, review.id)
-            if (review.storageFileName.isNotEmpty()) {
-                deleteStorageFile(review.storageFileName)
+        override suspend fun delete(review: Review): ReviewResult {
+            try {
+                reviewDao.delete(review.toEntity())
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                // Room에서 지우지 못한 감상문은 목록에 남아 서버 백업과 사진을 지우면 사진이 깨지므로, 서버와 Storage는 그대로 두고 실패 반환
+                return Outcome.Failure(ReviewError.Unknown)
             }
+            val userId = authRepository.currentUserId()
+            if (userId != null) {
+                val remoteDeleted =
+                    try {
+                        realtimeDataSource.delete(userId, review.id)
+                        true
+                    } catch (_: Exception) {
+                        // 서버 삭제 요청이 바로 실패하면 서버에 남은 감상문이 다음 동기화 때 되살아나므로,
+                        // 되살아난 감상문의 사진이 깨지지 않도록 사진 파일은 지우지 않고 Room 삭제 결과대로 성공 처리
+                        false
+                    }
+                if (remoteDeleted && review.storageFileName.isNotEmpty()) {
+                    deleteStorageFile(review.storageFileName)
+                }
+            }
+            return Outcome.Success(Unit)
         }
 
         override suspend fun deleteAll() {

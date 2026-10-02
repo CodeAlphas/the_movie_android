@@ -90,6 +90,8 @@ fun ReviewListScreen(
                     ReviewListEffect.ShowSyncFailed ->
                         context.showToast(R.string.review_list_sync_failed, Toast.LENGTH_LONG)
                     ReviewListEffect.ShowDeleted -> context.showToast(R.string.review_list_deleted, Toast.LENGTH_LONG)
+                    ReviewListEffect.ShowDeleteFailed ->
+                        context.showToast(R.string.review_list_delete_failed, Toast.LENGTH_LONG)
                     ReviewListEffect.NavigateToLogin -> currentOnNavigateToLogin()
                 }
             }
