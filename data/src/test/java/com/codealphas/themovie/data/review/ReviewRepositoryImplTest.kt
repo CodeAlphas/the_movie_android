@@ -11,9 +11,16 @@ import com.codealphas.themovie.domain.review.Review
 import com.codealphas.themovie.domain.review.ReviewDraft
 import com.codealphas.themovie.domain.review.ReviewError
 import com.codealphas.themovie.domain.review.ReviewPhoto
+import com.codealphas.themovie.domain.review.ReviewResult
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.IOException
 
@@ -68,6 +75,53 @@ class ReviewRepositoryImplTest {
             val result = repository().save(editDraft(ReviewPhoto.New("content://photo/2")))
 
             assertEquals(Outcome.Failure(ReviewError.PhotoUploadFailed), result)
+            assertEquals(listOf("storage.upload:$NEW_FILE_NAME"), calls)
+            assertEquals(STORED.toReview(), dao.saved(STORED.id))
+        }
+
+    @Test
+    fun `사진 업로드가 SDK에서 취소되면 Room과 서버에 쓰지 않고 업로드 실패를 반환해야 한다`() =
+        runTest {
+            dao.put(STORED)
+            storage.cancelUpload = true
+
+            val result = repository().save(editDraft(ReviewPhoto.New("content://photo/2")))
+
+            assertEquals(Outcome.Failure(ReviewError.PhotoUploadFailed), result)
+            assertEquals(listOf("storage.upload:$NEW_FILE_NAME"), calls)
+            assertEquals(STORED.toReview(), dao.saved(STORED.id))
+        }
+
+    @Test
+    fun `새 사진으로 수정할 때 이전 파일 삭제가 SDK에서 취소되면 저장 성공을 반환해야 한다`() =
+        runTest {
+            dao.put(STORED)
+            storage.cancelDelete = true
+
+            val result = repository().save(editDraft(ReviewPhoto.New("content://photo/2")))
+
+            assertEquals(Outcome.Success(Unit), result)
+            assertEquals(
+                listOf("storage.upload:$NEW_FILE_NAME", "room.update", "server.save", "storage.delete:old.png"),
+                calls,
+            )
+            assertEquals(NEW_FILE_NAME, dao.saved(STORED.id)?.storageFileName)
+        }
+
+    @Test
+    fun `사진 업로드 중에 저장을 요청한 코루틴이 취소되면 실패를 반환하지 않고 취소되어야 한다`() =
+        runTest {
+            dao.put(STORED)
+            storage.suspendUpload = true
+            var result: ReviewResult? = null
+
+            val job = launch { result = repository().save(editDraft(ReviewPhoto.New("content://photo/2"))) }
+            runCurrent()
+            job.cancel()
+            job.join()
+
+            assertTrue(job.isCancelled)
+            assertNull(result)
             assertEquals(listOf("storage.upload:$NEW_FILE_NAME"), calls)
             assertEquals(STORED.toReview(), dao.saved(STORED.id))
         }
@@ -230,17 +284,29 @@ private class FakeReviewStorageDataSource(
 ) : ReviewStorageDataSource {
     var failUpload: Boolean = false
 
+    // Firebase Storage SDK가 업로드나 삭제를 취소하면 저장을 요청한 코루틴이 취소되지 않아도 취소 예외가 올라오므로,
+    // 코루틴 취소 없이 업로드나 삭제에서 CancellationException 발생 적용
+    var cancelUpload: Boolean = false
+    var cancelDelete: Boolean = false
+
+    // awaitCancellation()은 코루틴이 취소될 때까지 멈추므로,
+    // 저장을 요청한 코루틴이 업로드 도중에 취소되는 상황을 만들도록 업로드 대기 적용
+    var suspendUpload: Boolean = false
+
     override suspend fun upload(
         fileName: String,
         uri: String,
     ): String {
         calls += "storage.upload:$fileName"
         if (failUpload) throw IOException("업로드 실패")
+        if (cancelUpload) throw CancellationException("SDK에서 취소된 업로드")
+        if (suspendUpload) awaitCancellation()
         return downloadUrl(fileName)
     }
 
     override suspend fun delete(fileName: String) {
         calls += "storage.delete:$fileName"
+        if (cancelDelete) throw CancellationException("SDK에서 취소된 삭제")
     }
 }
 
