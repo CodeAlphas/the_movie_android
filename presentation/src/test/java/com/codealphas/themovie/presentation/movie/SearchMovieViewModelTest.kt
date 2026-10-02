@@ -252,6 +252,73 @@ class SearchMovieViewModelTest {
             assertEquals(SearchMovieUiState(query = "good", isLoading = true), viewModel.state.value)
         }
     }
+
+    @Test
+    fun `검색이 실패한 뒤 다시 시도를 누르면 같은 검색어로 다시 요청해 영화 목록을 보여 줘야 한다`() {
+        val repository = FakeSearchMovieRepository(failOnceQueries = setOf("avatar"))
+        runSearchTest(repository) { viewModel ->
+            viewModel.onIntent(SearchMovieIntent.QueryChanged("avatar"))
+            advance(DEBOUNCE_MS)
+            assertEquals(RemoteError.Network, viewModel.state.value.loadError)
+            viewModel.onIntent(SearchMovieIntent.RetryClicked)
+            runCurrent()
+            assertEquals(listOf("avatar", "avatar"), repository.queries)
+            assertEquals(
+                SearchMovieUiState(query = "avatar", movies = listOf(movie("avatar"))),
+                viewModel.state.value,
+            )
+        }
+    }
+
+    @Test
+    fun `검색을 다시 하는 중에 다시 시도를 누르면 추가로 요청하지 않아야 한다`() {
+        val repository =
+            FakeSearchMovieRepository(
+                slowQueries = setOf("avatar"),
+                failOnceQueries = setOf("avatar"),
+            )
+        runSearchTest(repository) { viewModel ->
+            viewModel.onIntent(SearchMovieIntent.QueryChanged("avatar"))
+            advance(DEBOUNCE_MS + SLOW_SEARCH_MS)
+            // 다시 검색하는 코루틴이 시작되기 전에 두 번 누르는 경우와 응답을 기다리는 중에 누르는 경우를 함께 확인
+            viewModel.onIntent(SearchMovieIntent.RetryClicked)
+            viewModel.onIntent(SearchMovieIntent.RetryClicked)
+            runCurrent()
+            viewModel.onIntent(SearchMovieIntent.RetryClicked)
+            advance(SLOW_SEARCH_MS)
+            assertEquals(listOf("avatar", "avatar"), repository.queries)
+            assertEquals(
+                SearchMovieUiState(query = "avatar", movies = listOf(movie("avatar"))),
+                viewModel.state.value,
+            )
+        }
+    }
+
+    @Test
+    fun `검색이 성공한 상태에서 다시 시도를 누르면 추가로 요청하지 않아야 한다`() {
+        val repository = FakeSearchMovieRepository()
+        runSearchTest(repository) { viewModel ->
+            viewModel.onIntent(SearchMovieIntent.QueryChanged("avatar"))
+            advance(DEBOUNCE_MS)
+            viewModel.onIntent(SearchMovieIntent.RetryClicked)
+            runCurrent()
+            assertEquals(listOf("avatar"), repository.queries)
+        }
+    }
+
+    @Test
+    fun `검색이 실패한 뒤 검색어를 모두 지우고 다시 시도를 누르면 추가로 요청하지 않아야 한다`() {
+        val repository = FakeSearchMovieRepository(failOnceQueries = setOf("avatar"))
+        runSearchTest(repository) { viewModel ->
+            viewModel.onIntent(SearchMovieIntent.QueryChanged("avatar"))
+            advance(DEBOUNCE_MS)
+            viewModel.onIntent(SearchMovieIntent.QueryChanged(""))
+            advance(DEBOUNCE_MS)
+            viewModel.onIntent(SearchMovieIntent.RetryClicked)
+            runCurrent()
+            assertEquals(listOf("avatar"), repository.queries)
+        }
+    }
 }
 
 private const val DEBOUNCE_MS = 300L
@@ -296,12 +363,15 @@ private fun movie(title: String): Movie =
 private class FakeSearchMovieRepository(
     private val slowQueries: Set<String> = emptySet(),
     private val results: Map<String, DataResult<List<Movie>>> = emptyMap(),
+    private val failOnceQueries: Set<String> = emptySet(),
 ) : MovieRepository {
     val queries = mutableListOf<String>()
 
     override suspend fun searchMovies(query: String): DataResult<List<Movie>> {
+        val isFirstRequest = query !in queries
         queries += query
         if (query in slowQueries) delay(SLOW_SEARCH_MS)
+        if (query in failOnceQueries && isFirstRequest) return Outcome.Failure(RemoteError.Network)
         return results[query] ?: Outcome.Success(listOf(movie(query)))
     }
 
