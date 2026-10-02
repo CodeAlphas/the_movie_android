@@ -10,6 +10,8 @@ import com.google.firebase.auth.FirebaseAuthInvalidUserException
 import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.auth.FirebaseAuthWeakPasswordException
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 
 private const val ERROR_INVALID_EMAIL = "ERROR_INVALID_EMAIL"
 
@@ -17,9 +19,11 @@ internal suspend fun <T> toAuthResult(block: suspend () -> T): AuthResult =
     try {
         block()
         Outcome.Success(Unit)
-    } catch (cancellation: CancellationException) {
-        // 취소를 실패로 바꾸면 화면이 사라진 뒤에도 로그인이나 가입 안내가 나가므로, 호출한 코루틴이 멈추도록 취소 예외를 다시 던짐
-        throw cancellation
+    } catch (_: CancellationException) {
+        // Firebase Auth SDK가 요청을 취소해도 취소 예외로 끝나는데 그대로 올리면 로그인이나 가입 중 표시가 풀리지 않으므로,
+        // 요청한 코루틴이 취소되지 않았으면 Unknown 실패로 처리
+        currentCoroutineContext().ensureActive()
+        Outcome.Failure(AuthError.Unknown)
     } catch (error: FirebaseAuthException) {
         Outcome.Failure(error.toAuthError())
     } catch (error: FirebaseNetworkException) {

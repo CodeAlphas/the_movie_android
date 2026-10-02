@@ -48,6 +48,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import com.codealphas.themovie.core.android.theme.Spacing
 import com.codealphas.themovie.core.android.theme.TheMovieTheme
+import com.codealphas.themovie.core.android.ui.BlockingProgressBox
 import com.codealphas.themovie.core.android.ui.rememberThrottledClick
 import com.codealphas.themovie.core.android.ui.showToast
 import com.codealphas.themovie.presentation.R
@@ -88,26 +89,30 @@ internal fun JoinContent(
     state: JoinUiState,
     onIntent: (JoinIntent) -> Unit,
 ) {
-    // Edge-to-Edge라 시스템이 창을 줄여 주지 않으므로, 시스템 바와 키보드에 입력란이 가리지 않도록 safeDrawing만큼 안쪽 여백 적용
-    Scaffold(contentWindowInsets = WindowInsets.safeDrawing) { innerPadding ->
-        BoxWithConstraints(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
-            Column(
-                // verticalScroll 안은 높이 제한이 없어 Arrangement.Center만으로는 폼이 맨 위에 붙으므로,
-                // 최소 높이를 보이는 영역 높이로 잡아 폼을 세로 가운데 배치
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .verticalScroll(rememberScrollState())
-                        .heightIn(min = maxHeight)
-                        .padding(horizontal = Spacing.large, vertical = Spacing.large),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-            ) {
-                JoinForm(
-                    state = state,
-                    onIntent = onIntent,
-                    modifier = Modifier.widthIn(max = FormMaxWidth).fillMaxWidth(),
-                )
+    // 가입 응답 전에 화면을 닫으면 viewModelScope가 취소되어 가입 뒤 로그아웃이 빠지므로,
+    // 가입한 계정으로 로그인된 채 남지 않도록 가입이 끝날 때까지 터치와 뒤로 가기 차단
+    BlockingProgressBox(isBlocking = state.isLoading, modifier = Modifier.fillMaxSize()) {
+        // Edge-to-Edge라 시스템이 창을 줄여 주지 않으므로, 시스템 바와 키보드에 입력란이 가리지 않도록 safeDrawing만큼 안쪽 여백 적용
+        Scaffold(contentWindowInsets = WindowInsets.safeDrawing) { innerPadding ->
+            BoxWithConstraints(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+                Column(
+                    // verticalScroll 안은 높이 제한이 없어 Arrangement.Center만으로는 폼이 맨 위에 붙으므로,
+                    // 최소 높이를 보이는 영역 높이로 잡아 폼을 세로 가운데 배치
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .verticalScroll(rememberScrollState())
+                            .heightIn(min = maxHeight)
+                            .padding(horizontal = Spacing.large, vertical = Spacing.large),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                ) {
+                    JoinForm(
+                        state = state,
+                        onIntent = onIntent,
+                        modifier = Modifier.widthIn(max = FormMaxWidth).fillMaxWidth(),
+                    )
+                }
             }
         }
     }

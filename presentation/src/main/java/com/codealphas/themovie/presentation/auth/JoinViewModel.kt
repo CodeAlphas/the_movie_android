@@ -81,12 +81,13 @@ class JoinViewModel
                     authRepository.signOut()
                 }
                 _state.update { it.copy(isLoading = false) }
-                val effect =
-                    when (result) {
-                        is Outcome.Success -> JoinEffect.ShowLoginPrompt
-                        is Outcome.Failure -> JoinEffect.ShowError(result.error)
+                when (result) {
+                    is Outcome.Success -> {
+                        _effect.send(JoinEffect.ShowLoginPrompt)
+                        _effect.send(JoinEffect.NavigateToLogin)
                     }
-                _effect.send(effect)
+                    is Outcome.Failure -> _effect.send(JoinEffect.ShowError(result.error))
+                }
             }
         }
 

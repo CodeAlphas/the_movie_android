@@ -44,12 +44,13 @@ class HomeViewModelTest {
 
             viewModel.onIntent(HomeIntent.LogoutClicked)
             runCurrent()
-            assertEquals(1, authRepository.signOutCalls)
+            assertEquals(0, authRepository.signOutCalls)
             assertEquals(0, completedCount)
 
             deleteAllDone.complete(Unit)
             runCurrent()
             assertEquals(1, reviewRepository.deleteAllCalls)
+            assertEquals(1, authRepository.signOutCalls)
             assertEquals(1, completedCount)
         }
     }

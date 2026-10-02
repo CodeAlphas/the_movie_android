@@ -100,7 +100,7 @@ class JoinViewModelTest {
     }
 
     @Test
-    fun `가입에 성공하면 로그아웃한 뒤 로딩을 끝내고 로그인 안내를 보내야 한다`() {
+    fun `가입에 성공하면 로그아웃한 뒤 로딩을 끝내고 로그인 안내와 로그인 화면 이동 이벤트를 보내야 한다`() {
         val repository = FakeJoinAuthRepository(signUpResult = CompletableDeferred(Outcome.Success(Unit)))
         runJoinTest(repository) { viewModel ->
             val effects = collectJoinEffects(viewModel)
@@ -109,7 +109,7 @@ class JoinViewModelTest {
             runCurrent()
 
             assertEquals(listOf("signUp", "signOut"), repository.calls)
-            assertEquals(listOf<JoinEffect>(JoinEffect.ShowLoginPrompt), effects)
+            assertEquals(listOf(JoinEffect.ShowLoginPrompt, JoinEffect.NavigateToLogin), effects)
             assertFalse(viewModel.state.value.isLoading)
         }
     }
