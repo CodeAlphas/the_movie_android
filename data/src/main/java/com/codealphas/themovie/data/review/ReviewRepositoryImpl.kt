@@ -44,9 +44,11 @@ internal class ReviewRepositoryImpl
             return try {
                 realtimeDataSource.getAll(userId).forEach { reviewDao.insert(it.toEntity()) }
                 Outcome.Success(Unit)
-            } catch (e: CancellationException) {
-                // 취소를 Failure로 바꾸면 ViewModel이 사라진 뒤에도 실패 안내가 뜨므로, 호출한 코루틴이 멈추도록 취소 예외를 다시 던짐
-                throw e
+            } catch (_: CancellationException) {
+                // Firebase Realtime Database SDK가 서버 감상문 읽기를 취소해도 취소 예외로 끝나는데 그대로 올리면 동기화 중 표시가 풀리지 않으므로,
+                // 동기화를 요청한 코루틴이 취소되지 않았으면 동기화 실패로 처리
+                currentCoroutineContext().ensureActive()
+                Outcome.Failure(ReviewError.Unknown)
             } catch (_: Exception) {
                 Outcome.Failure(ReviewError.Unknown)
             }

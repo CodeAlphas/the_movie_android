@@ -184,6 +184,33 @@ class ReviewRepositoryImplTest {
             assertEquals(emptyList<String>(), calls)
         }
 
+    @Test
+    fun `서버 감상문을 받아 오는 작업이 SDK에서 취소되면 Room에 쓰지 않고 Unknown 실패를 반환해야 한다`() =
+        runTest {
+            realtime.cancelGetAll = true
+
+            val result = repository().syncFromRemote()
+
+            assertEquals(Outcome.Failure(ReviewError.Unknown), result)
+            assertEquals(listOf("server.getAll"), calls)
+        }
+
+    @Test
+    fun `서버 감상문을 받아 오는 중에 동기화를 요청한 코루틴이 취소되면 실패를 반환하지 않고 취소되어야 한다`() =
+        runTest {
+            realtime.suspendGetAll = true
+            var result: ReviewResult? = null
+
+            val job = launch { result = repository().syncFromRemote() }
+            runCurrent()
+            job.cancel()
+            job.join()
+
+            assertTrue(job.isCancelled)
+            assertNull(result)
+            assertEquals(listOf("server.getAll"), calls)
+        }
+
     private fun repository(userId: String? = USER_ID): ReviewRepositoryImpl =
         ReviewRepositoryImpl(
             reviewDao = dao,
@@ -262,7 +289,20 @@ private class FakeReviewRealtimeDataSource(
     val saved = mutableListOf<Review>()
     val savedUserIds = mutableListOf<String>()
 
-    override suspend fun getAll(userId: String): List<Review> = error("사용하지 않음")
+    // Firebase Realtime Database SDK가 서버 감상문 읽기를 취소하면 동기화를 요청한 코루틴이 취소되지 않아도 취소 예외가 올라오므로,
+    // 코루틴 취소 없이 읽기에서 CancellationException 발생 적용
+    var cancelGetAll: Boolean = false
+
+    // awaitCancellation()은 코루틴이 취소될 때까지 멈추므로,
+    // 동기화를 요청한 코루틴이 서버 감상문을 받아 오는 도중에 취소되는 상황을 만들도록 읽기 대기 적용
+    var suspendGetAll: Boolean = false
+
+    override suspend fun getAll(userId: String): List<Review> {
+        calls += "server.getAll"
+        if (cancelGetAll) throw CancellationException("SDK에서 취소된 읽기")
+        if (suspendGetAll) awaitCancellation()
+        return emptyList()
+    }
 
     override fun save(
         userId: String,
