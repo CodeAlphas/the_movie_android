@@ -67,6 +67,7 @@ import com.codealphas.themovie.core.android.ui.RatingStars
 import com.codealphas.themovie.domain.movie.Cast
 import com.codealphas.themovie.domain.movie.MovieDetail
 import com.codealphas.themovie.domain.movie.Video
+import com.codealphas.themovie.domain.result.RemoteError
 import com.codealphas.themovie.presentation.R
 import com.codealphas.themovie.presentation.ui.remoteErrorMessage
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.YouTubePlayer
@@ -109,6 +110,7 @@ fun MovieDetailScreen(
     MovieDetailContent(
         state = state,
         snackbarHostState = snackbarHostState,
+        onIntent = viewModel::onIntent,
         onNavigateUp = onNavigateUp,
     )
 }
@@ -117,6 +119,7 @@ fun MovieDetailScreen(
 internal fun MovieDetailContent(
     state: MovieDetailUiState,
     snackbarHostState: SnackbarHostState,
+    onIntent: (MovieDetailIntent) -> Unit,
     onNavigateUp: () -> Unit,
 ) {
     // 앱바 색이 라이트에서 어둡고 다크에서 밝아 상태 표시줄 뒤까지 칠하면 같은 계열 색의 시계와 배터리 아이콘이 묻히므로,
@@ -131,6 +134,14 @@ internal fun MovieDetailContent(
             state.detail?.let { detail -> MovieDetailBody(detail = detail) }
             if (state.isLoading) {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+            }
+            val loadError = state.loadError
+            if (loadError != null && state.detail == null && !state.isLoading) {
+                LoadErrorContent(
+                    error = loadError,
+                    onRetry = { onIntent(MovieDetailIntent.RetryClicked) },
+                    modifier = Modifier.align(Alignment.Center),
+                )
             }
         }
     }
@@ -364,6 +375,7 @@ private fun MovieDetailContentPreview() {
         MovieDetailContent(
             state = MovieDetailUiState(detail = previewMovieDetail(), isLoading = false),
             snackbarHostState = remember { SnackbarHostState() },
+            onIntent = {},
             onNavigateUp = {},
         )
     }
@@ -376,6 +388,20 @@ private fun MovieDetailContentLoadingPreview() {
         MovieDetailContent(
             state = MovieDetailUiState(),
             snackbarHostState = remember { SnackbarHostState() },
+            onIntent = {},
+            onNavigateUp = {},
+        )
+    }
+}
+
+@Preview(name = "실패")
+@Composable
+private fun MovieDetailContentErrorPreview() {
+    TheMovieTheme {
+        MovieDetailContent(
+            state = MovieDetailUiState(isLoading = false, loadError = RemoteError.Network),
+            snackbarHostState = remember { SnackbarHostState() },
+            onIntent = {},
             onNavigateUp = {},
         )
     }

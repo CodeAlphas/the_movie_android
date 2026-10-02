@@ -8,6 +8,7 @@ import com.codealphas.themovie.domain.movie.MovieDetailResult
 import com.codealphas.themovie.domain.movie.MovieRepository
 import com.codealphas.themovie.domain.result.DataResult
 import com.codealphas.themovie.domain.result.RemoteError
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel
@@ -60,8 +61,10 @@ class MovieDetailViewModelTest {
                 backgroundScope.launch { viewModel.effect.collect { effects += it } }
                 runCurrent()
 
-                assertNull(viewModel.state.value.detail)
-                assertEquals(false, viewModel.state.value.isLoading)
+                assertEquals(
+                    MovieDetailUiState(detail = null, isLoading = false, loadError = RemoteError.Network),
+                    viewModel.state.value,
+                )
                 assertEquals(listOf(MovieDetailEffect.ShowError(RemoteError.Network)), effects)
             } finally {
                 viewModel.viewModelScope.cancel()
@@ -70,7 +73,7 @@ class MovieDetailViewModelTest {
         }
 
     @Test
-    fun `화면이 멈춘 동안 출연진 요청만 실패하면 상세를 보여주고 다시 구독할 때 오류를 받아야 한다`() =
+    fun `화면이 멈춘 동안 출연진만 불러오지 못하면 상세를 보여 주고 화면으로 돌아왔을 때 오류 안내를 띄워야 한다`() =
         runTest {
             Dispatchers.setMain(StandardTestDispatcher(testScheduler))
             val detail = movieDetail()
@@ -86,7 +89,94 @@ class MovieDetailViewModelTest {
                 runCurrent()
 
                 assertEquals(detail, viewModel.state.value.detail)
+                assertNull(viewModel.state.value.loadError)
                 assertEquals(listOf(MovieDetailEffect.ShowError(RemoteError.Timeout)), effects)
+            } finally {
+                viewModel.viewModelScope.cancel()
+                Dispatchers.resetMain()
+            }
+        }
+
+    @Test
+    fun `출연진과 영상을 모두 불러오지 못하면 상세를 보여 주고 오류 안내를 한 번만 띄워야 한다`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val detail = movieDetail()
+            val repository =
+                FakeMovieDetailRepository(
+                    MovieDetailResult(detail = detail, errors = listOf(RemoteError.Timeout, RemoteError.Network)),
+                )
+            val viewModel = MovieDetailViewModel(repository, movieIdHandle(detail.id))
+            try {
+                advanceUntilIdle()
+                val effects = mutableListOf<MovieDetailEffect>()
+                backgroundScope.launch { viewModel.effect.collect { effects += it } }
+                runCurrent()
+
+                assertEquals(detail, viewModel.state.value.detail)
+                assertEquals(listOf(MovieDetailEffect.ShowError(RemoteError.Timeout)), effects)
+            } finally {
+                viewModel.viewModelScope.cancel()
+                Dispatchers.resetMain()
+            }
+        }
+
+    @Test
+    fun `상세를 불러오지 못한 뒤 다시 시도를 누르면 상세를 한 번 더 불러와 영화 정보를 보여 줘야 한다`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val detail = movieDetail()
+            val repository =
+                FakeMovieDetailRepository(
+                    MovieDetailResult(detail = null, errors = listOf(RemoteError.Network)),
+                    MovieDetailResult(detail = detail, errors = emptyList()),
+                )
+            val viewModel = MovieDetailViewModel(repository, movieIdHandle(detail.id))
+            try {
+                advanceUntilIdle()
+                viewModel.onIntent(MovieDetailIntent.RetryClicked)
+                advanceUntilIdle()
+
+                assertEquals(listOf(detail.id, detail.id), repository.requestedIds)
+                assertEquals(MovieDetailUiState(detail = detail, isLoading = false), viewModel.state.value)
+            } finally {
+                viewModel.viewModelScope.cancel()
+                Dispatchers.resetMain()
+            }
+        }
+
+    @Test
+    fun `상세를 다시 불러오는 중에 다시 시도를 누르면 추가로 요청하지 않아야 한다`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository =
+                FakeMovieDetailRepository(
+                    MovieDetailResult(detail = null, errors = listOf(RemoteError.Network)),
+                )
+            val viewModel = MovieDetailViewModel(repository, movieIdHandle(42))
+            try {
+                advanceUntilIdle()
+                val gate = CompletableDeferred<Unit>()
+                repository.gate = gate
+
+                // 다시 요청하는 코루틴이 시작되기 전에 누른 경우와 응답을 기다리는 중에 누른 경우를 모두 확인
+                viewModel.onIntent(MovieDetailIntent.RetryClicked)
+                viewModel.onIntent(MovieDetailIntent.RetryClicked)
+                runCurrent()
+                viewModel.onIntent(MovieDetailIntent.RetryClicked)
+                runCurrent()
+
+                assertEquals(listOf(42, 42), repository.requestedIds)
+                assertEquals(MovieDetailUiState(detail = null, isLoading = true), viewModel.state.value)
+
+                gate.complete(Unit)
+                advanceUntilIdle()
+
+                assertEquals(listOf(42, 42), repository.requestedIds)
+                assertEquals(
+                    MovieDetailUiState(detail = null, isLoading = false, loadError = RemoteError.Network),
+                    viewModel.state.value,
+                )
             } finally {
                 viewModel.viewModelScope.cancel()
                 Dispatchers.resetMain()
@@ -108,14 +198,17 @@ private fun movieDetail(): MovieDetail =
         videos = emptyList(),
     )
 
+// 요청마다 results를 차례로 돌려주고 마지막 결과는 그 뒤 요청에도 반복 적용
 private class FakeMovieDetailRepository(
-    private val result: MovieDetailResult,
+    private vararg val results: MovieDetailResult,
 ) : MovieRepository {
     val requestedIds = mutableListOf<Int>()
+    var gate: CompletableDeferred<Unit>? = null
 
     override suspend fun getMovieDetail(movieId: Int): MovieDetailResult {
         requestedIds += movieId
-        return result
+        gate?.await()
+        return results[minOf(requestedIds.size, results.size) - 1]
     }
 
     override suspend fun getPopularMovies(): DataResult<List<Movie>> = error("사용하지 않음")
