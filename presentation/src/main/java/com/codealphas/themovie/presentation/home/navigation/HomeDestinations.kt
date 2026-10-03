@@ -31,7 +31,7 @@ internal enum class HomeTab(
     TOP_RATED(
         route = TopRatedTab,
         label = R.string.movie_list_tab_top_rated,
-        appBarTitle = R.string.movie_list_top_rated_subtitle,
+        appBarTitle = R.string.movie_list_appbar_top_rated,
         icon = R.drawable.ic_baseline_top_movies_24,
     ),
     SEARCH(

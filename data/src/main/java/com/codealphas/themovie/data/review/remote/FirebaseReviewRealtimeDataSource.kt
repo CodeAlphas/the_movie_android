@@ -30,7 +30,7 @@ internal class FirebaseReviewRealtimeDataSource
             val fields =
                 mapOf(
                     "id" to review.id,
-                    "image" to review.image,
+                    "image" to review.imageUrl,
                     "title" to review.title,
                     "content" to review.content,
                     "time" to review.time,
@@ -65,7 +65,7 @@ private fun DataSnapshot.toReviewOrNull(): Review? {
     if (id == null || rating == null) return null
     return Review(
         title = child("title").value.toString(),
-        image = child("image").value.toString(),
+        imageUrl = child("image").value.toString(),
         content = child("content").value.toString(),
         time = child("time").value.toString(),
         rating = rating,

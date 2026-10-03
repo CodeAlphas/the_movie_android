@@ -51,8 +51,8 @@ class HomeViewModel
 
         private fun onHomeEntered(state: NotificationPermissionState) {
             viewModelScope.launch {
-                val wasPromptShown = notificationPromptRepository.wasPromptShown()
-                applyNotificationPrompt(NotificationPromptDecision.onMainEntered(state, wasPromptShown))
+                val wasPromptAnswered = notificationPromptRepository.wasPromptAnswered()
+                applyNotificationPrompt(NotificationPromptDecision.onHomeEntered(state, wasPromptAnswered))
             }
         }
 
@@ -67,14 +67,14 @@ class HomeViewModel
             _state.update { it.copy(showNotificationPrompt = false) }
             viewModelScope.launch {
                 _effect.send(HomeEffect.RequestNotificationPermission)
-                notificationPromptRepository.markPromptShown()
+                notificationPromptRepository.markPromptAnswered()
                 notificationPromptRepository.markPermissionRequested()
             }
         }
 
         private fun onNotificationPromptDeclined() {
             _state.update { it.copy(showNotificationPrompt = false) }
-            viewModelScope.launch { notificationPromptRepository.markPromptShown() }
+            viewModelScope.launch { notificationPromptRepository.markPromptAnswered() }
         }
 
         private suspend fun applyNotificationPrompt(action: NotificationPromptAction) {

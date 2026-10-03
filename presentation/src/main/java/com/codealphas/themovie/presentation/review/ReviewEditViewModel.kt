@@ -64,7 +64,7 @@ class ReviewEditViewModel
                         title = if (KEY_TITLE in savedStateHandle) it.title else review.title,
                         content = if (KEY_CONTENT in savedStateHandle) it.content else review.content,
                         rating = if (KEY_RATING in savedStateHandle) it.rating else review.rating,
-                        savedImageUrl = review.image,
+                        savedImageUrl = review.imageUrl,
                     )
                 }
             }

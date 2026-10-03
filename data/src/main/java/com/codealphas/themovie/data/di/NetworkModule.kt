@@ -1,7 +1,7 @@
 package com.codealphas.themovie.data.di
 
 import com.codealphas.themovie.data.map.remote.KakaoApiKeyInterceptor
-import com.codealphas.themovie.data.map.remote.KakaoLocalService
+import com.codealphas.themovie.data.map.remote.KakaoLocalApiService
 import com.codealphas.themovie.data.movie.remote.TmdbApiKeyInterceptor
 import com.codealphas.themovie.data.movie.remote.TmdbApiService
 import com.codealphas.themovie.data.remote.RetryInterceptor
@@ -97,7 +97,7 @@ internal object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideKakaoLocalService(
+    fun provideKakaoLocalApiService(
         @KakaoRetrofit retrofit: Retrofit,
-    ): KakaoLocalService = retrofit.create(KakaoLocalService::class.java)
+    ): KakaoLocalApiService = retrofit.create(KakaoLocalApiService::class.java)
 }

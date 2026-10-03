@@ -82,7 +82,7 @@ fun LoginScreen(
                     LoginEffect.NavigateToHome -> currentOnNavigateToHome()
                     LoginEffect.NavigateToJoin -> currentOnNavigateToJoin()
                     LoginEffect.ShowInvalidInput -> context.showToast(R.string.login_failed)
-                    is LoginEffect.ShowError -> context.showToast(loginFailureMessage(effect.error))
+                    is LoginEffect.ShowError -> context.showToast(loginErrorMessage(effect.error))
                 }
             }
         }
@@ -108,7 +108,7 @@ internal fun LoginContent(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Image(
-                painter = painterResource(R.drawable.the_movie),
+                painter = painterResource(R.drawable.logo_the_movie),
                 contentDescription = null,
                 modifier =
                     Modifier

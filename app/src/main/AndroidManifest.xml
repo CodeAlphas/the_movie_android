@@ -40,7 +40,7 @@
         </activity>
 
         <service
-            android:name=".notification.FirebaseMessagingService"
+            android:name=".notification.MovieMessagingService"
             android:exported="false">
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />

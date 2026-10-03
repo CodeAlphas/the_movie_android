@@ -6,29 +6,33 @@ import org.junit.Test
 
 class NotificationPromptDecisionTest {
     @Test
-    fun `Android 12 이하에서 메인에 들어오면 안내하지 않아야 한다`() {
-        val action = NotificationPromptDecision.onMainEntered(state(sdkInt = Build.VERSION_CODES.S_V2), false)
+    fun `Android 12 이하에서 홈에 들어오면 안내하지 않아야 한다`() {
+        val action = NotificationPromptDecision.onHomeEntered(state(sdkInt = Build.VERSION_CODES.S_V2), false)
 
         assertEquals(NotificationPromptAction.NONE, action)
     }
 
     @Test
-    fun `권한이 이미 허용된 상태로 메인에 들어오면 안내하지 않아야 한다`() {
-        val action = NotificationPromptDecision.onMainEntered(state(isGranted = true), false)
+    fun `권한이 이미 허용된 상태로 홈에 들어오면 안내하지 않아야 한다`() {
+        val action = NotificationPromptDecision.onHomeEntered(state(isGranted = true), false)
 
         assertEquals(NotificationPromptAction.NONE, action)
     }
 
     @Test
-    fun `안내에 답한 적이 없는 상태로 메인에 들어오면 안내를 띄워야 한다`() {
-        val action = NotificationPromptDecision.onMainEntered(state(), wasPromptShown = false)
+    fun `안내에 답한 적이 없는 상태로 홈에 들어오면 안내를 띄워야 한다`() {
+        val action = NotificationPromptDecision.onHomeEntered(state(), wasPromptAnswered = false)
 
         assertEquals(NotificationPromptAction.SHOW_PROMPT, action)
     }
 
     @Test
-    fun `안내에 답한 적이 있는 상태로 메인에 들어오면 다시 안내하지 않아야 한다`() {
-        val action = NotificationPromptDecision.onMainEntered(state(shouldShowRationale = true), wasPromptShown = true)
+    fun `안내에 답한 적이 있는 상태로 홈에 들어오면 다시 안내하지 않아야 한다`() {
+        val action =
+            NotificationPromptDecision.onHomeEntered(
+                state(shouldShowRationale = true),
+                wasPromptAnswered = true,
+            )
 
         assertEquals(NotificationPromptAction.NONE, action)
     }

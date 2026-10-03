@@ -5,7 +5,7 @@ import com.codealphas.themovie.presentation.R
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
-class AuthFailureMessageTest {
+class AuthErrorMessageTest {
     @Test
     fun `로그인 실패는 이유별 문구로 바뀌고 로그인에서 나올 수 없는 실패는 Unknown 문구로 바뀌어야 한다`() {
         val expected =
@@ -18,7 +18,7 @@ class AuthFailureMessageTest {
                 AuthError.Unknown to R.string.login_failed_unknown,
             )
 
-        assertEquals(expected, expected.keys.associateWith(::loginFailureMessage))
+        assertEquals(expected, expected.keys.associateWith(::loginErrorMessage))
     }
 
     @Test
@@ -33,6 +33,6 @@ class AuthFailureMessageTest {
                 AuthError.Unknown to R.string.join_failed_unknown,
             )
 
-        assertEquals(expected, expected.keys.associateWith(::joinFailureMessage))
+        assertEquals(expected, expected.keys.associateWith(::joinErrorMessage))
     }
 }

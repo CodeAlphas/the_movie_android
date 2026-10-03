@@ -133,7 +133,7 @@ fun TheaterMapScreen(
                             val result =
                                 snackbarHostState.showSnackbar(
                                     message = resources.getString(R.string.map_location_unavailable),
-                                    actionLabel = resources.getString(R.string.map_location_retry),
+                                    actionLabel = resources.getString(R.string.common_retry),
                                     duration = SnackbarDuration.Long,
                                 )
                             if (result == SnackbarResult.ActionPerformed) currentRequestCurrentLocation()

@@ -288,13 +288,13 @@ private fun TrailerPlayer(videoKey: String) {
         if (LocalInspectionMode.current) {
             PlayerLoading()
         } else {
-            YouTubePlayer(videoKey = videoKey)
+            YouTubeVideoPlayer(videoKey = videoKey)
         }
     }
 }
 
 @Composable
-private fun YouTubePlayer(videoKey: String) {
+private fun YouTubeVideoPlayer(videoKey: String) {
     val context = LocalContext.current
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     var isReady by remember(videoKey) { mutableStateOf(false) }

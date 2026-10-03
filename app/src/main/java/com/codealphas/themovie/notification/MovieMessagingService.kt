@@ -3,7 +3,7 @@ package com.codealphas.themovie.notification
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 
-class FirebaseMessagingService : FirebaseMessagingService() {
+class MovieMessagingService : FirebaseMessagingService() {
     override fun onMessageReceived(message: RemoteMessage) {
         super.onMessageReceived(message)
 

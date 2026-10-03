@@ -14,8 +14,6 @@ android {
         applicationId = "com.codealphas.themovie"
         versionCode = 1
         versionName = "1.0"
-
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
@@ -41,6 +39,4 @@ dependencies {
     implementation(libs.kakao.map)
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.messaging)
-    androidTestImplementation(libs.androidx.espresso.core)
-    androidTestImplementation(libs.androidx.junit)
 }

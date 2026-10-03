@@ -75,7 +75,7 @@ fun JoinScreen(
                     JoinEffect.ShowLoginPrompt -> context.showToast(R.string.join_succeeded)
                     JoinEffect.ShowInvalidInput -> context.showToast(R.string.join_failed_blank)
                     JoinEffect.ShowPasswordMismatch -> context.showToast(R.string.join_failed_password)
-                    is JoinEffect.ShowError -> context.showToast(joinFailureMessage(effect.error))
+                    is JoinEffect.ShowError -> context.showToast(joinErrorMessage(effect.error))
                 }
             }
         }

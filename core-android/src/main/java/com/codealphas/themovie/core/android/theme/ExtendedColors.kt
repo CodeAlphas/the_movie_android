@@ -10,7 +10,7 @@ data class ExtendedColors(
     val primaryGradientStart: Color,
     val primaryGradientEnd: Color,
     val tertiaryContainerEnd: Color,
-    val onPrimaryScrim: Color,
+    val accentTranslucent: Color,
 )
 
 internal val LightExtendedColors =
@@ -18,7 +18,7 @@ internal val LightExtendedColors =
         primaryGradientStart = Color(0xFFCDB8A2),
         primaryGradientEnd = Color(0xFFB08968),
         tertiaryContainerEnd = Color(0xFFC9926A),
-        onPrimaryScrim = Color(0x33A34B2E),
+        accentTranslucent = Color(0x33A34B2E),
     )
 
 internal val DarkExtendedColors =
@@ -26,7 +26,7 @@ internal val DarkExtendedColors =
         primaryGradientStart = Color(0xFF3A3128),
         primaryGradientEnd = Color(0xFF4A3C30),
         tertiaryContainerEnd = Color(0xFF342820),
-        onPrimaryScrim = Color(0x40E0A080),
+        accentTranslucent = Color(0x40E0A080),
     )
 
 internal val LocalExtendedColors = staticCompositionLocalOf { LightExtendedColors }

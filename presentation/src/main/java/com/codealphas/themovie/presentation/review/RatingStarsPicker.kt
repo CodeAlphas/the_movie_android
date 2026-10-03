@@ -19,7 +19,7 @@ private const val STAR_COUNT = 5
 private const val STEPS_PER_STAR = 10
 
 @Composable
-internal fun StarRating(
+internal fun RatingStarsPicker(
     starRating: Float,
     onStarRatingChange: (Float) -> Unit,
     starSize: Dp,

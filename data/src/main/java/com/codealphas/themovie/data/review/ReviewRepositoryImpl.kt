@@ -95,7 +95,7 @@ internal class ReviewRepositoryImpl
         ): PhotoFields? =
             when (photo) {
                 ReviewPhoto.Unchanged -> PhotoFields(previous?.image.orEmpty(), previous?.storageFileName.orEmpty())
-                ReviewPhoto.Removed -> PhotoFields(image = "", fileName = "")
+                ReviewPhoto.Removed -> PhotoFields(imageUrl = "", fileName = "")
                 is ReviewPhoto.New -> upload(photo.uri, userId)
             }
 
@@ -105,7 +105,7 @@ internal class ReviewRepositoryImpl
         ): PhotoFields? {
             val fileName = userId.take(USER_ID_PREFIX_LENGTH) + "${clock.nowMillis()}.png"
             return try {
-                PhotoFields(image = storageDataSource.upload(fileName, uri), fileName = fileName)
+                PhotoFields(imageUrl = storageDataSource.upload(fileName, uri), fileName = fileName)
             } catch (_: CancellationException) {
                 // Firebase Storage SDK가 사진 업로드를 취소해도 취소 예외로 끝나는데 그대로 올리면 저장 중 표시가 풀리지 않으므로,
                 // 저장을 요청한 코루틴이 취소되지 않았으면 업로드 실패로 처리
@@ -126,7 +126,7 @@ internal class ReviewRepositoryImpl
             val entity =
                 ReviewEntity(
                     title = draft.title,
-                    image = photo.image,
+                    image = photo.imageUrl,
                     content = draft.content,
                     time = SimpleDateFormat("yyyy/MM/dd HH:mm", Locale.KOREA).format(Date(clock.nowMillis())),
                     rating = draft.rating,
@@ -205,6 +205,6 @@ internal class ReviewRepositoryImpl
     }
 
 private data class PhotoFields(
-    val image: String,
+    val imageUrl: String,
     val fileName: String,
 )

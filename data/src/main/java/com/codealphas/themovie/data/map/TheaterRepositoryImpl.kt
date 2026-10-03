@@ -1,6 +1,6 @@
 package com.codealphas.themovie.data.map
 
-import com.codealphas.themovie.data.map.remote.KakaoLocalService
+import com.codealphas.themovie.data.map.remote.KakaoLocalApiService
 import com.codealphas.themovie.data.map.remote.PlaceDto
 import com.codealphas.themovie.data.remote.safeApiCall
 import com.codealphas.themovie.domain.map.Address
@@ -13,7 +13,7 @@ import javax.inject.Inject
 internal class TheaterRepositoryImpl
     @Inject
     constructor(
-        private val service: KakaoLocalService,
+        private val service: KakaoLocalApiService,
     ) : TheaterRepository {
         override suspend fun getAddress(
             latitude: Double,

@@ -3,7 +3,7 @@ package com.codealphas.themovie.presentation.auth
 import com.codealphas.themovie.domain.auth.AuthError
 import com.codealphas.themovie.presentation.R
 
-internal fun loginFailureMessage(error: AuthError): Int =
+internal fun loginErrorMessage(error: AuthError): Int =
     when (error) {
         AuthError.InvalidCredentials -> R.string.login_failed
         AuthError.InvalidEmail -> R.string.common_error_invalid_email
@@ -16,7 +16,7 @@ internal fun loginFailureMessage(error: AuthError): Int =
         -> R.string.login_failed_unknown
     }
 
-internal fun joinFailureMessage(error: AuthError): Int =
+internal fun joinErrorMessage(error: AuthError): Int =
     when (error) {
         AuthError.EmailAlreadyInUse -> R.string.join_failed_exists
         AuthError.InvalidEmail -> R.string.common_error_invalid_email

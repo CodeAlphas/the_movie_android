@@ -27,9 +27,9 @@ internal class NotificationPromptRepositoryImpl
     ) : NotificationPromptRepository {
         private val dataStore = context.notificationPromptDataStore
 
-        override suspend fun wasPromptShown(): Boolean = read(PROMPT_SHOWN)
+        override suspend fun wasPromptAnswered(): Boolean = read(PROMPT_ANSWERED)
 
-        override suspend fun markPromptShown() = markTrue(PROMPT_SHOWN)
+        override suspend fun markPromptAnswered() = markTrue(PROMPT_ANSWERED)
 
         override suspend fun wasPermissionRequested(): Boolean = read(PERMISSION_REQUESTED)
 
@@ -50,7 +50,7 @@ internal class NotificationPromptRepositoryImpl
         }
 
         private companion object {
-            val PROMPT_SHOWN = booleanPreferencesKey("prompt_shown")
+            val PROMPT_ANSWERED = booleanPreferencesKey("prompt_answered")
             val PERMISSION_REQUESTED = booleanPreferencesKey("permission_requested")
         }
     }

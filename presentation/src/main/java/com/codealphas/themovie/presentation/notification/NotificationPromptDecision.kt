@@ -19,14 +19,14 @@ enum class NotificationPromptAction {
 }
 
 object NotificationPromptDecision {
-    fun onMainEntered(
+    fun onHomeEntered(
         state: NotificationPermissionState,
-        wasPromptShown: Boolean,
+        wasPromptAnswered: Boolean,
     ): NotificationPromptAction =
         when {
             !state.requiresRuntimePermission || state.isGranted -> NotificationPromptAction.NONE
             // 안내에 답한 적이 있어도 다시 띄우면 나중에를 누른 사용자도 앱을 열 때마다 안내를 보게 되므로, 자동 안내는 한 번만 적용
-            wasPromptShown -> NotificationPromptAction.NONE
+            wasPromptAnswered -> NotificationPromptAction.NONE
             else -> NotificationPromptAction.SHOW_PROMPT
         }
 

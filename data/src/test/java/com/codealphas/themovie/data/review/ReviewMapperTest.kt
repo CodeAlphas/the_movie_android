@@ -10,7 +10,7 @@ class ReviewMapperTest {
         val review =
             Review(
                 title = "기생충",
-                image = "https://example.com/poster.jpg",
+                imageUrl = "https://example.com/poster.jpg",
                 content = "잘 봤다",
                 time = "2024/01/02 03:04",
                 rating = 9.0,

@@ -56,8 +56,8 @@ class HomeViewModelTest {
     }
 
     @Test
-    fun `알림 권한 안내에 답한 적이 없는 상태로 메인에 들어오면 알림 권한 안내 창을 띄워야 한다`() {
-        val promptRepository = FakeNotificationPromptRepository(promptShown = false)
+    fun `알림 권한 안내에 답한 적이 없는 상태로 홈에 들어오면 알림 권한 안내 창을 띄워야 한다`() {
+        val promptRepository = FakeNotificationPromptRepository(promptAnswered = false)
         runHomeTest(promptRepository = promptRepository) { viewModel ->
             viewModel.onIntent(HomeIntent.Entered(permissionState()))
             runCurrent()
@@ -67,8 +67,8 @@ class HomeViewModelTest {
     }
 
     @Test
-    fun `알림 권한 안내에 답한 적이 있는 상태로 메인에 들어오면 알림 권한 안내 창을 띄우지 않아야 한다`() {
-        val promptRepository = FakeNotificationPromptRepository(promptShown = true)
+    fun `알림 권한 안내에 답한 적이 있는 상태로 홈에 들어오면 알림 권한 안내 창을 띄우지 않아야 한다`() {
+        val promptRepository = FakeNotificationPromptRepository(promptAnswered = true)
         runHomeTest(promptRepository = promptRepository) { viewModel ->
             val effects = collectEffects(viewModel)
 
@@ -102,13 +102,13 @@ class HomeViewModelTest {
             viewModel.onIntent(HomeIntent.NotificationPromptAccepted)
             runCurrent()
 
-            assertEquals(listOf("markPromptShown", "markPermissionRequested"), promptRepository.marks)
+            assertEquals(listOf("markPromptAnswered", "markPermissionRequested"), promptRepository.marks)
         }
     }
 
     @Test
     fun `알림 권한 안내를 수락하면 안내 창을 닫고 알림 권한을 요청해야 한다`() {
-        val promptRepository = FakeNotificationPromptRepository(promptShown = false)
+        val promptRepository = FakeNotificationPromptRepository(promptAnswered = false)
         runHomeTest(promptRepository = promptRepository) { viewModel ->
             val effects = collectEffects(viewModel)
             viewModel.onIntent(HomeIntent.Entered(permissionState()))
@@ -129,13 +129,13 @@ class HomeViewModelTest {
             viewModel.onIntent(HomeIntent.NotificationPromptDeclined)
             runCurrent()
 
-            assertEquals(listOf("markPromptShown"), promptRepository.marks)
+            assertEquals(listOf("markPromptAnswered"), promptRepository.marks)
         }
     }
 
     @Test
     fun `알림 권한 안내를 거절하면 안내 창을 닫고 알림 권한을 요청하지 않아야 한다`() {
-        val promptRepository = FakeNotificationPromptRepository(promptShown = false)
+        val promptRepository = FakeNotificationPromptRepository(promptAnswered = false)
         runHomeTest(promptRepository = promptRepository) { viewModel ->
             val effects = collectEffects(viewModel)
             viewModel.onIntent(HomeIntent.Entered(permissionState()))
@@ -232,15 +232,15 @@ private class FakeHomeReviewRepository(
 }
 
 private class FakeNotificationPromptRepository(
-    private val promptShown: Boolean = false,
+    private val promptAnswered: Boolean = false,
     private val permissionRequested: Boolean = false,
 ) : NotificationPromptRepository {
     val marks = mutableListOf<String>()
 
-    override suspend fun wasPromptShown(): Boolean = promptShown
+    override suspend fun wasPromptAnswered(): Boolean = promptAnswered
 
-    override suspend fun markPromptShown() {
-        marks += "markPromptShown"
+    override suspend fun markPromptAnswered() {
+        marks += "markPromptAnswered"
     }
 
     override suspend fun wasPermissionRequested(): Boolean = permissionRequested

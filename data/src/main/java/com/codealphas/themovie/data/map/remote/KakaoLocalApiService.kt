@@ -3,7 +3,7 @@ package com.codealphas.themovie.data.map.remote
 import retrofit2.http.GET
 import retrofit2.http.Query
 
-internal interface KakaoLocalService {
+internal interface KakaoLocalApiService {
     @GET("v2/local/geo/coord2address.json")
     suspend fun getAddress(
         @Query("x") longitude: Double,

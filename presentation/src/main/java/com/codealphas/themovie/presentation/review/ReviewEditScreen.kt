@@ -118,7 +118,7 @@ fun ReviewEditScreen(
                         )
                     is ReviewEditEffect.SaveFailed ->
                         context.showToast(
-                            saveFailureMessage(effect.error),
+                            saveErrorMessage(effect.error),
                             Toast.LENGTH_LONG,
                         )
                     ReviewEditEffect.LoadFailed -> {
@@ -196,7 +196,7 @@ fun ReviewEditScreen(
 }
 
 @StringRes
-private fun saveFailureMessage(error: ReviewError): Int =
+private fun saveErrorMessage(error: ReviewError): Int =
     when (error) {
         ReviewError.PhotoUploadFailed -> R.string.review_edit_upload_failed
         ReviewError.Unknown -> R.string.review_edit_save_failed
@@ -359,7 +359,7 @@ private fun ReviewEditBottomBar(
         horizontalArrangement = Arrangement.spacedBy(Spacing.small),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        StarRating(
+        RatingStarsPicker(
             starRating = state.starRating,
             onStarRatingChange = { onIntent(ReviewEditIntent.StarRatingChanged(it)) },
             starSize = StarSize,

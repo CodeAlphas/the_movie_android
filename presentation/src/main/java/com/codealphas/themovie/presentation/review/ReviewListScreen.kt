@@ -317,7 +317,7 @@ private fun ReviewListContentPreview(state: ReviewListUiState) {
 private fun previewReview(index: Int): Review =
     Review(
         title = "Review $index",
-        image = "",
+        imageUrl = "",
         content = "",
         time = "2026/10/02 12:00",
         rating = 7.0,
