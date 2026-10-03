@@ -5,11 +5,6 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <uses-permission android:name="android.permission.CAMERA" />
-    <!-- 카메라 권한만 있으면 카메라 없는 기기에 설치되지 않으므로, required=false로 선언 -->
-    <uses-feature
-        android:name="android.hardware.camera"
-        android:required="false" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <queries>
@@ -29,7 +24,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.TheMovie">
         <activity
-            android:name=".movie.MainActivity"
+            android:name=".MainActivity"
             android:exported="true"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
@@ -38,29 +33,9 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity
-            android:name=".auth.LoginActivity"
-            android:exported="false"
-            android:windowSoftInputMode="adjustResize" />
-        <activity
-            android:name=".auth.JoinActivity"
-            android:exported="false"
-            android:windowSoftInputMode="adjustResize" />
-        <activity
-            android:name=".movie.MovieDetailActivity"
-            android:exported="false" />
-        <activity
-            android:name=".map.MapActivity"
-            android:exported="false" />
-        <activity
-            android:name=".review.ReviewMainActivity"
-            android:exported="false" />
-        <activity
-            android:name=".review.ReviewDetailActivity"
-            android:exported="false" />
 
         <service
-            android:name=".notification.FirebaseMessagingService"
+            android:name=".notification.MovieMessagingService"
             android:exported="false">
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />

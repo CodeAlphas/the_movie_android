@@ -8,8 +8,9 @@ import android.content.pm.PackageManager
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import com.codealphas.themovie.MainActivity
 import com.codealphas.themovie.R
-import com.codealphas.themovie.movie.MainActivity
+import com.codealphas.themovie.presentation.R as PresentationR
 
 class MovieNotifier(
     private val context: Context,
@@ -30,7 +31,7 @@ class MovieNotifier(
         val notification =
             NotificationCompat
                 .Builder(context, context.getString(R.string.notification_channel_id))
-                .setSmallIcon(R.drawable.ic_baseline_movie)
+                .setSmallIcon(PresentationR.drawable.ic_baseline_movie)
                 .setContentTitle(title)
                 .setContentText(body)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)

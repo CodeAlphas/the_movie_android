@@ -10,12 +10,12 @@ class ReviewMapperTest {
         val review =
             Review(
                 title = "기생충",
-                image = "https://example.com/poster.jpg",
+                imageUrl = "https://example.com/poster.jpg",
                 content = "잘 봤다",
                 time = "2024/01/02 03:04",
                 rating = 9.0,
                 storageFileName = "file.png",
-                id = 7,
+                id = "-review-key",
             )
 
         val entity = review.toEntity()
@@ -26,7 +26,7 @@ class ReviewMapperTest {
         assertEquals("2024/01/02 03:04", entity.time)
         assertEquals(9.0, entity.rating, 0.0)
         assertEquals("file.png", entity.storageFileName)
-        assertEquals(7, entity.id)
+        assertEquals("-review-key", entity.id)
         assertEquals(review, entity.toReview())
     }
 }

@@ -44,7 +44,7 @@
    - Asynchronous : Coroutines
    - JetPack : LiveData, ViewModel, ViewBinding
    - Local DB : Room
-   - Image : Glide
+   - Image : Coil
    - Firebase : Authentication, Realtime Database, Storage, Cloud Messaging
    - Other : Youtube Android Player API, TMDB(The Movie Database) API, Kakao Map SDK, Kakao Local API
 ```

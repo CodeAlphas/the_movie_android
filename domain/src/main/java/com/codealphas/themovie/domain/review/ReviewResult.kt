@@ -4,7 +4,8 @@ import com.codealphas.themovie.domain.result.Outcome
 
 typealias ReviewResult = Outcome<Unit, ReviewError>
 
-enum class ReviewError {
-    Unknown,
-    PhotoUploadFailed,
+sealed interface ReviewError {
+    data object Unknown : ReviewError
+
+    data object PhotoUploadFailed : ReviewError
 }

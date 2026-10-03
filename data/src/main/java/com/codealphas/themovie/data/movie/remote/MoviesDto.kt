@@ -7,7 +7,7 @@ import kotlinx.serialization.Serializable
 internal data class MoviesDto(
     val page: Int,
     val results: List<MovieDto>,
-) // TMDB 서버로부터 받은 영화 정보
+)
 
 @Serializable
 internal data class MovieDto(
@@ -34,4 +34,4 @@ internal data class MovieDto(
     val voteAverage: Double,
     @SerialName("vote_count")
     val voteCount: Int,
-) // TMDB 서버로부터 받은 영화 상세 정보
+)

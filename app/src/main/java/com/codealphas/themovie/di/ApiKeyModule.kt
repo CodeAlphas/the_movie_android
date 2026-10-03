@@ -11,7 +11,7 @@ import dagger.hilt.components.SingletonComponent
 @Module
 @InstallIn(SingletonComponent::class)
 object ApiKeyModule {
-    // 네트워크 코드가 BuildConfig를 참조하면 모듈 분리 때 키가 따라가므로, app에서 키만 꺼내 주입
+    // :data는 :app을 의존하지 않아 secrets 플러그인이 만든 :app의 BuildConfig 키를 읽지 못하므로, :app에서 꺼내 키마다 qualifier를 붙여 제공
     @Provides
     @TmdbApiKey
     fun provideTmdbApiKey(): String = BuildConfig.TMDB_API_KEY

@@ -7,3 +7,9 @@ complexity:
     allowedFunctionsPerInterface: 20
     allowedFunctionsPerObject: 20
     allowedFunctionsPerEnum: 20
+naming:
+  FunctionNaming:
+    ignoreAnnotated: ['Composable']
+style:
+  UnusedPrivateFunction:
+    ignoreAnnotated: ['Preview']

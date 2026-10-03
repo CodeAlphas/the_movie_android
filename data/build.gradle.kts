@@ -35,7 +35,7 @@ dependencies {
     implementation(libs.firebase.auth)
     implementation(libs.firebase.database)
     implementation(libs.firebase.storage)
-    // Firebase Auth Task는 콜백이라 화면이 결과를 코루틴으로 받지 못하므로, await로 중단 함수가 되도록 play-services 확장 추가
+    // Firebase Auth, Realtime Database, Storage는 결과를 Task 콜백으로 주므로, 코루틴에서 결과를 기다리도록 await 확장 추가
     implementation(libs.kotlinx.coroutines.play.services)
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
