@@ -81,7 +81,7 @@ fun LoginScreen(
                 when (effect) {
                     LoginEffect.NavigateToHome -> currentOnNavigateToHome()
                     LoginEffect.NavigateToJoin -> currentOnNavigateToJoin()
-                    LoginEffect.ShowInvalidInput -> context.showToast(R.string.login_failed)
+                    LoginEffect.ShowInvalidInput -> context.showToast(R.string.common_error_blank_input)
                     is LoginEffect.ShowError -> context.showToast(loginErrorMessage(effect.error))
                 }
             }

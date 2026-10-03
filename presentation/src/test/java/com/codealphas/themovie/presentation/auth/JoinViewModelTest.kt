@@ -84,6 +84,45 @@ class JoinViewModelTest {
     }
 
     @Test
+    fun `비밀번호 앞뒤에 공백을 넣고 가입하면 가입을 요청하지 않고 공백 안내를 보내야 한다`() {
+        val repository = FakeJoinAuthRepository()
+        runJoinTest(repository) { viewModel ->
+            val effects = collectJoinEffects(viewModel)
+
+            viewModel.signUp("user@example.com", "secret ", "secret ")
+            viewModel.signUp("user@example.com", " secret", " secret")
+            runCurrent()
+
+            val expected = listOf(JoinEffect.ShowPasswordEdgeWhitespace, JoinEffect.ShowPasswordEdgeWhitespace)
+            assertEquals(expected, effects)
+            assertEquals(emptyList<String>(), repository.calls)
+            assertFalse(viewModel.state.value.isLoading)
+        }
+    }
+
+    @Test
+    fun `이메일 앞뒤에 공백을 넣고 가입하면 공백을 뺀 이메일로 가입을 요청해야 한다`() {
+        val repository = FakeJoinAuthRepository(signUpResult = CompletableDeferred(Outcome.Success(Unit)))
+        runJoinTest(repository) { viewModel ->
+            viewModel.signUp(" user@example.com ", "secret", "secret")
+            runCurrent()
+
+            assertEquals(listOf("user@example.com" to "secret"), repository.signUpRequests)
+        }
+    }
+
+    @Test
+    fun `비밀번호 가운데에 공백을 넣고 가입하면 그 비밀번호 그대로 가입을 요청해야 한다`() {
+        val repository = FakeJoinAuthRepository(signUpResult = CompletableDeferred(Outcome.Success(Unit)))
+        runJoinTest(repository) { viewModel ->
+            viewModel.signUp("user@example.com", "sec ret", "sec ret")
+            runCurrent()
+
+            assertEquals(listOf("user@example.com" to "sec ret"), repository.signUpRequests)
+        }
+    }
+
+    @Test
     fun `가입 중에 가입 버튼을 다시 누르면 가입을 한 번만 요청해야 한다`() {
         val result = CompletableDeferred<AuthResult>()
         val repository = FakeJoinAuthRepository(signUpResult = result)
@@ -207,6 +246,7 @@ private class FakeJoinAuthRepository(
     private val signUpResult: CompletableDeferred<AuthResult> = CompletableDeferred(),
 ) : AuthRepository {
     val calls = mutableListOf<String>()
+    val signUpRequests = mutableListOf<Pair<String, String>>()
 
     override suspend fun signIn(
         email: String,
@@ -218,6 +258,7 @@ private class FakeJoinAuthRepository(
         password: String,
     ): AuthResult {
         calls += "signUp"
+        signUpRequests += email to password
         return signUpResult.await()
     }
 

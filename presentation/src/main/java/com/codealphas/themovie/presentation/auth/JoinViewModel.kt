@@ -67,6 +67,9 @@ class JoinViewModel
                 when {
                     current.password != current.confirmPassword -> JoinEffect.ShowPasswordMismatch
                     current.email.isBlank() || current.password.isBlank() -> JoinEffect.ShowInvalidInput
+                    // 로그인은 비밀번호 앞뒤 공백을 빼고 요청해 앞뒤 공백이 있는 비밀번호로는 로그인할 수 없으므로,
+                    // 그런 비밀번호는 가입 단계에서 거부
+                    current.password != current.password.trim() -> JoinEffect.ShowPasswordEdgeWhitespace
                     else -> null
                 }
             if (rejection != null) {
@@ -75,7 +78,8 @@ class JoinViewModel
             }
             _state.update { it.copy(isLoading = true) }
             viewModelScope.launch {
-                val result = authRepository.signUp(current.email, current.password)
+                // 키보드 자동완성이 이메일 끝에 붙인 공백 때문에 Firebase가 형식 오류로 거부하지 않도록 이메일 앞뒤 공백 제거
+                val result = authRepository.signUp(current.email.trim(), current.password)
                 if (result is Outcome.Success) {
                     // Firebase는 가입에 성공하면 그 계정으로 로그인되므로, 가입 화면에 남은 채 로그인되지 않도록 가입 직후 로그아웃
                     authRepository.signOut()

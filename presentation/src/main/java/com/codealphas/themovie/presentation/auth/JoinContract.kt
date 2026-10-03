@@ -37,6 +37,8 @@ sealed interface JoinEffect {
 
     data object ShowPasswordMismatch : JoinEffect
 
+    data object ShowPasswordEdgeWhitespace : JoinEffect
+
     data class ShowError(
         val error: AuthError,
     ) : JoinEffect
