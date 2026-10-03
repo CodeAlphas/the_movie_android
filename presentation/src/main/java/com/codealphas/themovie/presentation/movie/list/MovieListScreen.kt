@@ -1,4 +1,4 @@
-package com.codealphas.themovie.presentation.movie
+package com.codealphas.themovie.presentation.movie.list
 
 import android.content.res.Configuration
 import androidx.compose.foundation.layout.Box
@@ -26,6 +26,10 @@ import com.codealphas.themovie.core.android.theme.Spacing
 import com.codealphas.themovie.core.android.theme.TheMovieTheme
 import com.codealphas.themovie.domain.result.RemoteError
 import com.codealphas.themovie.presentation.R
+import com.codealphas.themovie.presentation.movie.LoadErrorContent
+import com.codealphas.themovie.presentation.movie.MovieFabMenu
+import com.codealphas.themovie.presentation.movie.MovieGrid
+import com.codealphas.themovie.presentation.movie.previewMovie
 import com.codealphas.themovie.presentation.ui.ScreenHeaderBackground
 import com.codealphas.themovie.presentation.ui.ScreenHeaderTexts
 import com.codealphas.themovie.presentation.ui.remoteErrorMessage

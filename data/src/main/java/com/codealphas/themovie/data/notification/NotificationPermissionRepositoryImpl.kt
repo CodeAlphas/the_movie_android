@@ -7,7 +7,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.preferencesDataStore
-import com.codealphas.themovie.domain.notification.NotificationPromptRepository
+import com.codealphas.themovie.domain.notification.NotificationPermissionRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
@@ -16,16 +16,16 @@ import javax.inject.Inject
 
 // 한 프로세스에 같은 파일의 DataStore가 둘 이상 있으면 읽고 쓸 때 IllegalStateException이 발생하므로,
 // 인스턴스가 하나만 생기도록 최상위 위임 속성으로 선언
-private val Context.notificationPromptDataStore: DataStore<Preferences> by preferencesDataStore(
-    name = "notification_prompt",
+private val Context.notificationPermissionDataStore: DataStore<Preferences> by preferencesDataStore(
+    name = "notification_permission",
 )
 
-internal class NotificationPromptRepositoryImpl
+internal class NotificationPermissionRepositoryImpl
     @Inject
     constructor(
         @ApplicationContext context: Context,
-    ) : NotificationPromptRepository {
-        private val dataStore = context.notificationPromptDataStore
+    ) : NotificationPermissionRepository {
+        private val dataStore = context.notificationPermissionDataStore
 
         override suspend fun wasPromptAnswered(): Boolean = read(PROMPT_ANSWERED)
 

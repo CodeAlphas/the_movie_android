@@ -1,4 +1,4 @@
-package com.codealphas.themovie.presentation.map
+package com.codealphas.themovie.presentation.map.location
 
 import android.annotation.SuppressLint
 import android.content.Context

@@ -49,10 +49,10 @@ import com.codealphas.themovie.presentation.home.navigation.HomeNavHost
 import com.codealphas.themovie.presentation.home.navigation.HomeTab
 import com.codealphas.themovie.presentation.home.navigation.navigateToTab
 import com.codealphas.themovie.presentation.home.navigation.toHomeTab
-import com.codealphas.themovie.presentation.movie.MovieCategory
 import com.codealphas.themovie.presentation.movie.MovieFabMenu
-import com.codealphas.themovie.presentation.movie.MovieListContent
-import com.codealphas.themovie.presentation.movie.MovieListUiState
+import com.codealphas.themovie.presentation.movie.list.MovieCategory
+import com.codealphas.themovie.presentation.movie.list.MovieListContent
+import com.codealphas.themovie.presentation.movie.list.MovieListUiState
 import com.codealphas.themovie.presentation.notification.NotificationPromptDialog
 import com.codealphas.themovie.presentation.notification.notificationPermissionState
 import com.codealphas.themovie.presentation.notification.openNotificationSettings

@@ -1,4 +1,4 @@
-package com.codealphas.themovie.presentation.movie
+package com.codealphas.themovie.presentation.movie.detail
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope

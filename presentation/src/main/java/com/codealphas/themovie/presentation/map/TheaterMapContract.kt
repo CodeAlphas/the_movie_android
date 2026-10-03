@@ -3,6 +3,7 @@ package com.codealphas.themovie.presentation.map
 import com.codealphas.themovie.domain.map.Address
 import com.codealphas.themovie.domain.map.Theater
 import com.codealphas.themovie.domain.result.RemoteError
+import com.codealphas.themovie.presentation.map.location.LocationLatLng
 
 data class TheaterMapUiState(
     val currentLocation: LocationLatLng? = null,

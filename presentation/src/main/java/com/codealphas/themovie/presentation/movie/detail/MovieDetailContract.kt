@@ -1,4 +1,4 @@
-package com.codealphas.themovie.presentation.movie
+package com.codealphas.themovie.presentation.movie.detail
 
 import com.codealphas.themovie.domain.movie.MovieDetail
 import com.codealphas.themovie.domain.result.RemoteError

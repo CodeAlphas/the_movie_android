@@ -1,4 +1,4 @@
-package com.codealphas.themovie.presentation.movie
+package com.codealphas.themovie.presentation.movie.detail
 
 import android.content.res.Configuration
 import androidx.annotation.StringRes
@@ -66,6 +66,7 @@ import com.codealphas.themovie.domain.movie.MovieDetail
 import com.codealphas.themovie.domain.movie.Video
 import com.codealphas.themovie.domain.result.RemoteError
 import com.codealphas.themovie.presentation.R
+import com.codealphas.themovie.presentation.movie.LoadErrorContent
 import com.codealphas.themovie.presentation.ui.remoteErrorMessage
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.YouTubePlayer
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.listeners.YouTubePlayerCallback

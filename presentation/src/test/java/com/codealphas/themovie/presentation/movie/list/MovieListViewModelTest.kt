@@ -1,4 +1,4 @@
-package com.codealphas.themovie.presentation.movie
+package com.codealphas.themovie.presentation.movie.list
 
 import androidx.lifecycle.viewModelScope
 import com.codealphas.themovie.domain.movie.Movie

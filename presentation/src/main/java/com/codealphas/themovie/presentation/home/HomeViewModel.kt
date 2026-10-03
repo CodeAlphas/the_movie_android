@@ -3,10 +3,10 @@ package com.codealphas.themovie.presentation.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.codealphas.themovie.domain.auth.LogoutUseCase
-import com.codealphas.themovie.domain.notification.NotificationPromptRepository
+import com.codealphas.themovie.domain.notification.NotificationPermissionRepository
+import com.codealphas.themovie.presentation.notification.NotificationPermissionAction
+import com.codealphas.themovie.presentation.notification.NotificationPermissionDecision
 import com.codealphas.themovie.presentation.notification.NotificationPermissionState
-import com.codealphas.themovie.presentation.notification.NotificationPromptAction
-import com.codealphas.themovie.presentation.notification.NotificationPromptDecision
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -23,7 +23,7 @@ class HomeViewModel
     @Inject
     constructor(
         private val logoutUseCase: LogoutUseCase,
-        private val notificationPromptRepository: NotificationPromptRepository,
+        private val notificationPermissionRepository: NotificationPermissionRepository,
     ) : ViewModel() {
         private val _state = MutableStateFlow(HomeUiState())
         val state: StateFlow<HomeUiState> = _state.asStateFlow()
@@ -51,15 +51,19 @@ class HomeViewModel
 
         private fun onHomeEntered(state: NotificationPermissionState) {
             viewModelScope.launch {
-                val wasPromptAnswered = notificationPromptRepository.wasPromptAnswered()
-                applyNotificationPrompt(NotificationPromptDecision.onHomeEntered(state, wasPromptAnswered))
+                val wasPromptAnswered = notificationPermissionRepository.wasPromptAnswered()
+                applyNotificationPermissionAction(
+                    NotificationPermissionDecision.onHomeEntered(state, wasPromptAnswered),
+                )
             }
         }
 
         private fun onNotificationSettingsClicked(state: NotificationPermissionState) {
             viewModelScope.launch {
-                val wasPermissionRequested = notificationPromptRepository.wasPermissionRequested()
-                applyNotificationPrompt(NotificationPromptDecision.onSettingsMenuClicked(state, wasPermissionRequested))
+                val wasPermissionRequested = notificationPermissionRepository.wasPermissionRequested()
+                applyNotificationPermissionAction(
+                    NotificationPermissionDecision.onSettingsMenuClicked(state, wasPermissionRequested),
+                )
             }
         }
 
@@ -67,21 +71,21 @@ class HomeViewModel
             _state.update { it.copy(showNotificationPrompt = false) }
             viewModelScope.launch {
                 _effect.send(HomeEffect.RequestNotificationPermission)
-                notificationPromptRepository.markPromptAnswered()
-                notificationPromptRepository.markPermissionRequested()
+                notificationPermissionRepository.markPromptAnswered()
+                notificationPermissionRepository.markPermissionRequested()
             }
         }
 
         private fun onNotificationPromptDeclined() {
             _state.update { it.copy(showNotificationPrompt = false) }
-            viewModelScope.launch { notificationPromptRepository.markPromptAnswered() }
+            viewModelScope.launch { notificationPermissionRepository.markPromptAnswered() }
         }
 
-        private suspend fun applyNotificationPrompt(action: NotificationPromptAction) {
+        private suspend fun applyNotificationPermissionAction(action: NotificationPermissionAction) {
             when (action) {
-                NotificationPromptAction.SHOW_PROMPT -> _state.update { it.copy(showNotificationPrompt = true) }
-                NotificationPromptAction.OPEN_SETTINGS -> _effect.send(HomeEffect.OpenNotificationSettings)
-                NotificationPromptAction.NONE -> Unit
+                NotificationPermissionAction.SHOW_PROMPT -> _state.update { it.copy(showNotificationPrompt = true) }
+                NotificationPermissionAction.OPEN_SETTINGS -> _effect.send(HomeEffect.OpenNotificationSettings)
+                NotificationPermissionAction.NONE -> Unit
             }
         }
     }

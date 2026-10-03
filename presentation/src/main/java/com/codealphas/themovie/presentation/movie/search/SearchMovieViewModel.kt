@@ -1,4 +1,4 @@
-package com.codealphas.themovie.presentation.movie
+package com.codealphas.themovie.presentation.movie.search
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
