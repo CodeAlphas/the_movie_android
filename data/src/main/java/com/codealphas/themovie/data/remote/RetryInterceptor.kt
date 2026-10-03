@@ -45,7 +45,7 @@ internal class RetryInterceptor(
     ): Long? {
         val header = response.header("Retry-After") ?: return backoffDelayMs(attempt)
         val seconds = header.trim().toLongOrNull()
-        // 5초를 넘는 Retry-After나 날짜 형식을 기다리면 화면이 그 시간만큼 멈추므로, 재시도 대기에서 제외
+        // Retry-After가 5초를 넘거나 날짜 형식이면 그만큼 기다리는 동안 화면이 멈추므로, 이때는 다시 요청하지 않고 응답 반환
         return if (seconds != null && seconds in 0L..MAX_RETRY_AFTER_SECONDS) {
             seconds * MILLIS_PER_SECOND
         } else {

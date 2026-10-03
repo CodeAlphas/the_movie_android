@@ -13,7 +13,7 @@ sealed interface ReviewPhoto {
 
     data object Removed : ReviewPhoto
 
-    // :domain은 Android Uri를 모르므로 문자열로 전달
+    // :domain은 Android 의존성이 없어 Uri 타입을 쓸 수 없으므로, 사진 주소를 문자열로 전달
     data class New(
         val uri: String,
     ) : ReviewPhoto

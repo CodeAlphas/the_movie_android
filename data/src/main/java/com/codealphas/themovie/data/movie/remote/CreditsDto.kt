@@ -7,7 +7,7 @@ import kotlinx.serialization.Serializable
 internal data class CreditsDto(
     val id: Int,
     val cast: List<CreditDto>,
-) // TMDB 서버로부터 받은 영화 관계자 정보
+)
 
 @Serializable
 internal data class CreditDto(
@@ -28,4 +28,4 @@ internal data class CreditDto(
     @SerialName("credit_id")
     val creditId: String,
     val order: Int,
-) // TMDB 서버로부터 받은 영화 배우 정보
+)

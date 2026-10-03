@@ -180,7 +180,7 @@ private fun ReviewListPanel(
                 }
             }
         }
-        // Room에 감상문이 이미 있으면 동기화가 그 위에 덮어쓰므로, 목록을 가리지 않도록 보여 줄 감상문이 없을 때만 로딩 표시
+        // 동기화는 Room에 없는 감상문만 더해 이미 있는 목록은 그대로 보이므로, 목록을 가리지 않도록 보여 줄 감상문이 없을 때만 로딩 표시
         if (reviews.isNullOrEmpty() && state.isSyncing) {
             CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
         }

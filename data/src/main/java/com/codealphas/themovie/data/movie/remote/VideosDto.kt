@@ -7,7 +7,7 @@ import kotlinx.serialization.Serializable
 internal data class VideosDto(
     val id: Int,
     val results: List<VideoDto>,
-) // TMDB 서버로부터 받은 영화 비디오 정보
+)
 
 @Serializable
 internal data class VideoDto(
@@ -24,4 +24,4 @@ internal data class VideoDto(
     @SerialName("published_at")
     val publishedAt: String,
     val id: String,
-) // TMDB 서버로부터 받은 영화 비디오 상세 정보
+)

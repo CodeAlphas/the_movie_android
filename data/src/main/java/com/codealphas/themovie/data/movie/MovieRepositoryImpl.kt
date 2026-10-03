@@ -28,7 +28,7 @@ internal class MovieRepositoryImpl
 
         override suspend fun getMovieDetail(movieId: Int): MovieDetailResult =
             coroutineScope {
-                // 세 요청을 순서대로 기다리면 로딩이 요청마다 이어지므로, 같이 보낸 뒤 한 결과로 합침
+                // 세 요청을 순서대로 기다리면 로딩 시간이 세 요청 시간의 합이 되므로, 동시에 보내 결과를 합치도록 async 적용
                 val detail = async { safeApiCall { service.getMovieDetail(movieId = movieId) } }
                 val cast = async { safeApiCall { service.getCreditsList(movieId = movieId) } }
                 val videos = async { safeApiCall { service.getVideosList(movieId = movieId) } }

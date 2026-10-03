@@ -30,7 +30,7 @@ object FirebaseModule {
     @Singleton
     fun provideFirebaseStorage(): FirebaseStorage =
         Firebase.storage.apply {
-            // Storage는 실패한 요청을 기본 10분 동안 다시 시도해 오프라인에서 삭제가 오래 남으므로, 재시도 시간을 30초로 제한
+            // Storage는 실패한 요청을 업로드는 10분, 삭제는 2분 동안 다시 시도해 오프라인에서 저장과 삭제가 그동안 끝나지 않으므로, 재시도 시간을 30초로 제한
             maxOperationRetryTimeMillis = STORAGE_RETRY_TIME_MILLIS
             maxUploadRetryTimeMillis = STORAGE_RETRY_TIME_MILLIS
         }

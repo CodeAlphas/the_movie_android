@@ -126,6 +126,9 @@ class MapMarkerRenderer(
         const val THEATER_LAYER_ID = "theater"
         const val CURRENT_STYLE_ID = "currentStyle"
         const val THEATER_STYLE_ID = "theaterStyle"
+
+        // 핀 아이콘은 뾰족한 끝이 그림 아래쪽 가운데에 있으므로,
+        // 핀 끝이 영화관 좌표 바로 위에 오도록 기준점을 그림의 가로 가운데, 세로 맨 아래로 지정
         const val MARKER_ANCHOR_X = 0.5f
         const val MARKER_ANCHOR_Y = 1.0f
     }

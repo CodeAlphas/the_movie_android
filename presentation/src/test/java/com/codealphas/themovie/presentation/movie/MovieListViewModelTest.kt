@@ -147,7 +147,7 @@ class MovieListViewModelTest {
                 viewModel.onIntent(MovieListIntent.PageShown)
                 advanceUntilIdle()
 
-                // 실패를 빈 목록으로 채우면 탭이 다시 보일 때 재요청하지 않으므로, movies가 null로 남는지 확인
+                // 실패를 빈 목록으로 채우면 화면이 다시 보일 때 오는 PageShown에서 다시 요청하지 않으므로, movies가 null로 남는지 확인
                 assertEquals(MovieListUiState(loadError = RemoteError.Network), viewModel.state.value)
             } finally {
                 viewModel.viewModelScope.cancel()

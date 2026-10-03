@@ -12,7 +12,7 @@ data class ReviewEditUiState(
     // 0.0~10.0 점수
     val rating: Double = 0.0,
     val photo: ReviewPhoto = ReviewPhoto.Unchanged,
-    // Unchanged일 때 화면에 보여줄, 이미 저장된 사진 URL. 사진이 없으면 빈 문자열
+    // Review.image는 사진이 없으면 빈 문자열이므로, Unchanged일 때 보여 줄 저장된 사진 URL도 null 대신 빈 문자열 사용
     val savedImageUrl: String = "",
     val isEditing: Boolean = false,
     val isSaving: Boolean = false,

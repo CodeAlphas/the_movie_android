@@ -44,7 +44,7 @@ class MovieListViewModel
         }
 
         private fun loadMovies() {
-            // 응답 전에 다시 호출되면 목록이 아직 null이라 같은 요청이 한 번 더 나가므로, 진행 중인 요청이 있으면 그 응답을 대기
+            // 응답 전에 다시 호출되면 목록이 아직 null이라 같은 요청이 한 번 더 나가므로, 진행 중인 요청이 있으면 새 요청 제외
             if (_state.value.movies != null || loadJob?.isActive == true) return
             loadJob =
                 viewModelScope.launch {
@@ -57,8 +57,8 @@ class MovieListViewModel
                     result
                         .onSuccess { movies -> _state.value = MovieListUiState(movies = movies) }
                         .onFailure { error ->
-                            // 실패를 빈 목록으로 넣으면 movies가 null이 아니어서,
-                            // 탭이 다시 보일 때 재요청이 멈추므로 목록은 null로 두고 오류만 반영
+                            // 실패를 빈 목록으로 넣으면 화면이 다시 보일 때 오는 PageShown에서 목록이 있다고 보고 다시 요청하지 않으므로,
+                            // 목록은 null로 두고 오류만 반영
                             _state.update { it.copy(isLoading = false, loadError = error) }
                             _effect.send(MovieListEffect.ShowError(error))
                         }

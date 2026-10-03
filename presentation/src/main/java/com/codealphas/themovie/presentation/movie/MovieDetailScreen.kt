@@ -148,8 +148,8 @@ internal fun MovieDetailContent(
 
 @Composable
 private fun MovieDetailBody(detail: MovieDetail) {
-    // XML은 포스터와 제목 영역이 스크롤 밖에 고정이라 아래 내용이 스크롤되는 영역이 그만큼 좁았으므로,
-    // 포스터까지 함께 올라가 배우 정보와 줄거리를 넓게 보도록 화면 전체에 스크롤 적용
+    // 포스터와 제목을 스크롤 밖에 고정하면 배우 정보와 줄거리가 보이는 영역이 그만큼 좁아지므로,
+    // 포스터까지 함께 올라가도록 화면 전체에 스크롤 적용
     Column(
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = Spacing.medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.small),
@@ -298,8 +298,8 @@ private fun YouTubePlayer(videoKey: String) {
     val context = LocalContext.current
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     var isReady by remember(videoKey) { mutableStateOf(false) }
-    // 코드로 만든 YouTubePlayerView는 생성자에서 바로 IFrame 초기화를 시작하므로,
-    // initialize를 다시 부르면 예외가 나지 않도록 준비 콜백에서 자동 재생 없이 썸네일과 재생 버튼만 보이게 영상 로드
+    // 코드로 만든 YouTubePlayerView는 생성자에서 IFrame 초기화를 시작해 initialize를 한 번 더 부르면 예외가 나므로,
+    // initialize 대신 준비 콜백에서 썸네일과 재생 버튼만 보이도록 자동 재생 없이 영상 로드
     val playerView =
         remember(videoKey) {
             YouTubePlayerView(context).apply {
@@ -314,16 +314,18 @@ private fun YouTubePlayer(videoKey: String) {
             }
         }
 
-    // 화면을 나가도 영상 소리가 계속 나지 않도록 화면 생명주기의 재개와 멈춤을 플레이어에 전달하고,
-    // release를 두 번 부르면 네트워크 콜백 해제에서 예외가 나므로 ON_DESTROY는 넘기지 않고 화면에서 빠질 때 한 번만 해제
+    // 플레이어가 화면 생명주기를 모르면 화면을 나가도 영상 소리가 계속 나므로, 재개와 멈춤을 플레이어에 전달
     DisposableEffect(lifecycle, playerView) {
         val observer =
             LifecycleEventObserver { owner, event ->
+                // ON_DESTROY를 넘기면 YouTubePlayerView가 release를 부르고 아래 DisposableEffect도 한 번 더 불러
+                // 네트워크 콜백 해제에서 예외가 나므로, ON_DESTROY 제외
                 if (event != Lifecycle.Event.ON_DESTROY) playerView.onStateChanged(owner, event)
             }
         lifecycle.addObserver(observer)
         onDispose { lifecycle.removeObserver(observer) }
     }
+    // 화면을 나가거나 videoKey가 바뀌어 새 플레이어를 만들 때 이전 플레이어가 남지 않도록, 컴포지션에서 빠질 때 한 번만 해제
     DisposableEffect(playerView) {
         onDispose { playerView.release() }
     }

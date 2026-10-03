@@ -56,7 +56,7 @@ fun MovieListScreen(
         }
     }
 
-    // 요청이 실패해 목록이 비어 있으면 탭을 다시 고르거나 앱으로 돌아올 때 다시 받도록, 화면이 보일 때마다 요청 적용
+    // 요청이 실패해 목록을 받지 못했으면 탭을 다시 고르거나 앱으로 돌아올 때 다시 받도록, 화면이 보일 때마다 요청 적용
     LifecycleResumeEffect(viewModel) {
         viewModel.onIntent(MovieListIntent.PageShown)
         onPauseOrDispose { }
@@ -103,9 +103,9 @@ internal fun MovieListContent(
                 }
             }
         }
-        // XML 화면처럼 목록을 처음 받은 뒤에만 보이고 스크롤하는 동안 숨도록, 목록 유무와 스크롤 상태로 표시 적용
+        // FAB가 영화 목록을 가리지 않도록, 스크롤하는 동안 숨김 적용
         Box(modifier = Modifier.align(Alignment.BottomEnd).padding(Spacing.medium)) {
-            floatingActionButton(state.movies != null && !gridState.isScrollInProgress)
+            floatingActionButton(!gridState.isScrollInProgress)
         }
     }
 }

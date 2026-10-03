@@ -36,7 +36,7 @@ class ClickThrottleTest {
         throttle.tryAcquire()
         currentTime = 500L
 
-        // 막힌 400ms 클릭이 아니라 받아들인 0ms 클릭부터 창을 세는지 확인
+        // 막힌 400ms 클릭이 아니라 받아들인 0ms 클릭부터 500ms 간격을 세는지 확인
         assertTrue(throttle.tryAcquire())
     }
 }

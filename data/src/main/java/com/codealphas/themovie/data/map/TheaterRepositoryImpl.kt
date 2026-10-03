@@ -36,7 +36,7 @@ internal class TheaterRepositoryImpl
             }
 
         private companion object {
-            // Kakao Local 키워드 검색은 size 15, page 45가 상한이지만 지도에 찍을 영화관은 45곳이면 충분하므로 3페이지로 제한
+            // Kakao Local 키워드 검색은 한 페이지에 최대 15곳이고 지도에 찍을 영화관은 45곳이면 충분하므로, 3페이지까지만 요청
             const val MAX_PAGES = 3
         }
     }

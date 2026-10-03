@@ -11,9 +11,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
-// public 함수가 internal 타입을 받으면 컴파일이 실패하므로, DatabaseModule 클래스를 internal로 제한
-// 함수에 internal을 붙이면 컴파일된 메서드 이름 뒤에 $와 이 모듈 이름 data가 붙어 Hilt 팩토리가 $data가 붙은 이름을 호출하므로,
-// 선언된 함수 이름을 호출하도록 @Provides는 public으로 유지
+// public 함수가 internal 타입을 받거나 반환하면 컴파일이 실패하므로, DatabaseModule 클래스를 internal로 제한
 @Module
 @InstallIn(SingletonComponent::class)
 internal object DatabaseModule {

@@ -157,10 +157,7 @@ class RetryInterceptorTest {
 
     @Test
     fun `연결이 시작부터 끊기면 기다리거나 다시 요청하지 않고 입출력 오류를 던져야 한다`() {
-        // 한 주소가 끊겨도 OkHttp가 다른 주소로 다시 붙을 수 있으므로, 끊기는 응답을 여러 개 둔다
-        repeat(DISCONNECT_RESPONSES) {
-            server.enqueue(MockResponse().setSocketPolicy(SocketPolicy.DISCONNECT_AT_START))
-        }
+        server.enqueue(MockResponse().setSocketPolicy(SocketPolicy.DISCONNECT_AT_START))
 
         assertThrows(IOException::class.java) {
             execute()
@@ -254,7 +251,6 @@ class RetryInterceptorTest {
         const val HTTP_VERSION_NOT_SUPPORTED = 505
         const val NON_TRANSIENT_STATUS_COUNT = 5
         const val MAX_ATTEMPTS = 3
-        const val DISCONNECT_RESPONSES = 4
         const val MAX_RETRY_AFTER_SECONDS = 5L
         const val MILLIS_PER_SECOND = 1_000L
         const val FIRST_DELAY_MS = 1_000L

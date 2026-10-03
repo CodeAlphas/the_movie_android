@@ -15,7 +15,7 @@ import kotlin.math.roundToInt
 
 private const val STAR_COUNT = 5
 
-// XML RatingBar의 stepSize 0.1과 같은 단위로 별점을 고르도록, 별 하나를 10칸으로 나눈 값
+// 별점을 0.1 단위로 고르도록, 별 하나를 10칸으로 분할
 private const val STEPS_PER_STAR = 10
 
 @Composable

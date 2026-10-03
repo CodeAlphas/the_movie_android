@@ -49,7 +49,7 @@ class JoinViewModel
             password: String,
             confirmPassword: String,
         ): JoinUiState {
-            // 비밀번호와 비밀번호 확인이 비어 있으면 문자열이 같아 일치 문구가 뜨므로,
+            // 비밀번호와 비밀번호 확인이 둘 다 비어 있으면 문자열이 같아 일치 문구가 뜨므로,
             // 비교 문구를 띄우지 않도록 null로 설정
             val passwordsMatch =
                 if (password.isEmpty() && confirmPassword.isEmpty()) {

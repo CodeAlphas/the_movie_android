@@ -67,7 +67,7 @@ fun MovieFabMenu(
             description = R.string.review_list_appbar_title,
             onClick = onReviewClick,
         )
-        // 스크롤하는 동안 목록을 가리지 않도록, XML FAB의 hide와 같게 크기를 줄이며 숨김 적용
+        // visible이 바뀔 때 FAB가 갑자기 사라지지 않도록, 크기를 줄이며 흐려지는 전환 적용
         AnimatedVisibility(visible = visible, enter = scaleIn() + fadeIn(), exit = scaleOut() + fadeOut()) {
             FloatingActionButton(
                 onClick = { onExpandedChange(!expanded) },

@@ -124,7 +124,7 @@ internal fun SearchMovieContent(
                 }
             }
         }
-        // XML 검색 탭은 검색 전에도 FAB를 보여 줬으므로, 목록 유무와 관계없이 스크롤하는 동안에만 숨김 적용
+        // FAB가 영화 목록을 가리지 않도록, 스크롤하는 동안 숨김 적용
         Box(modifier = Modifier.align(Alignment.BottomEnd).padding(Spacing.medium)) {
             floatingActionButton(!gridState.isScrollInProgress)
         }
@@ -162,8 +162,8 @@ private fun SearchField(
         keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
         singleLine = true,
         shape = CircleShape,
-        // XML 검색창의 colorSurfaceInverse가 라이트와 다크 모두 surfaceContainerHigh와 같은 색이므로,
-        // 밑줄 없는 같은 색 상자로 보이도록 포커스와 관계없이 surfaceContainerHigh 배경에 밑줄 색을 투명으로 적용
+        // TextField는 기본으로 아래에 밑줄을 그리고 포커스를 받으면 밑줄 색을 바꾸므로,
+        // 검색창이 밑줄 없는 둥근 상자로 보이도록 포커스와 관계없이 surfaceContainerHigh 배경에 밑줄 색을 투명으로 적용
         colors =
             TextFieldDefaults.colors(
                 focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,

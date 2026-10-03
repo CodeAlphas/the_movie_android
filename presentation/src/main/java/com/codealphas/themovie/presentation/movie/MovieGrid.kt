@@ -57,9 +57,9 @@ internal fun MovieHeaderBackground() {
         drawOval(
             brush =
                 Brush.verticalGradient(
-                    // XML gradient의 angle 90은 시작색을 아래, 끝색을 위에 칠하므로, 위에서 아래로 칠하는 verticalGradient에는 끝색부터 적용
+                    // primaryGradientStart는 헤더 아래쪽, primaryGradientEnd는 위쪽 색이므로, 위에서 아래로 칠하는 verticalGradient에는 끝색부터 적용
                     colors = listOf(gradientEnd, gradientStart),
-                    // XML gradient는 보이는 부분이 아니라 타원 전체에 걸쳐 칠하므로, 같은 색이 나오도록 타원 위끝부터 아래끝까지 범위 적용
+                    // 보이는 부분에만 그라데이션을 걸면 헤더 위끝이 끝색 그대로 칠해지므로, 타원 위끝부터 아래끝까지 범위 적용
                     startY = -overflowTop,
                     endY = size.height,
                 ),
@@ -100,7 +100,7 @@ internal fun MovieGrid(
     gridState: LazyGridState,
     onMovieClick: (Int) -> Unit,
 ) {
-    // XML은 2열 고정이라 가로 화면에서 포스터 사이가 크게 벌어졌으므로, 폰 세로에서는 2열이고 넓은 화면에서는 열이 늘도록 최소 폭 적용
+    // 2열로 고정하면 가로 화면에서 포스터 사이가 크게 벌어지므로, 넓은 화면에서는 열이 늘도록 최소 폭 적용
     LazyVerticalGrid(
         columns = GridCells.Adaptive(minSize = PosterMinWidth),
         modifier = Modifier.fillMaxSize(),

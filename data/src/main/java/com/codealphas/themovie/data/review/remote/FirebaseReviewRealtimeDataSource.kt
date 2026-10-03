@@ -12,7 +12,8 @@ internal class FirebaseReviewRealtimeDataSource
     constructor(
         private val database: FirebaseDatabase,
     ) : ReviewRealtimeDataSource {
-        // 오프라인에서 캐시가 없으면 리스너는 연결될 때까지 결과를 주지 않으므로, 실패로 끝나는 get()으로 읽음
+        // 오프라인에서 메모리 캐시가 없으면 리스너는 연결될 때까지 결과를 주지 않아 동기화가 끝나지 않으므로,
+        // 이때 기다리지 않고 실패를 돌려주는 get() 사용
         override suspend fun getAll(userId: String): List<Review> =
             reviewsReference(userId)
                 .get()
@@ -20,8 +21,8 @@ internal class FirebaseReviewRealtimeDataSource
                 .children
                 .mapNotNull(DataSnapshot::toReviewOrNull)
 
-        // 오프라인이면 쓰기가 연결될 때까지 완료되지 않아 화면이 멈추므로, 완료를 기다리지 않고 SDK 대기열에 맡김.
-        // 결과를 받지 않아 서버 쓰기가 빠져도 알 수 없고, Room에서 서버로 다시 올리지 않아 그 감상문은 이 기기에만 남는 한계를 허용
+        // 오프라인이면 쓰기가 연결될 때까지 완료되지 않아 화면이 멈추므로, 완료를 기다리지 않고 SDK 대기열에 위임
+        // SDK 대기열은 메모리에만 있어 연결 전에 앱이 종료되면 서버 쓰기가 빠지므로, 그 감상문이 이 기기에만 남는 한계를 허용
         override fun save(
             userId: String,
             review: Review,
@@ -40,8 +41,9 @@ internal class FirebaseReviewRealtimeDataSource
             reviewsReference(userId).child(review.id.toString()).updateChildren(fields)
         }
 
-        // 오프라인이면 삭제가 연결될 때까지 완료되지 않아 화면이 멈추므로, 완료를 기다리지 않고 SDK 대기열에 맡김.
-        // 결과를 받지 않아 서버 삭제가 빠져도 알 수 없고, 다음 동기화 때 삭제한 감상문이 사진 링크가 깨진 채 되살아나는 한계를 허용
+        // 오프라인이면 삭제가 연결될 때까지 완료되지 않아 화면이 멈추므로, 완료를 기다리지 않고 SDK 대기열에 위임
+        // SDK 대기열은 메모리에만 있어 연결 전에 앱이 종료되면 서버 삭제가 빠지므로,
+        // 다음 동기화 때 삭제한 감상문이 사진 링크가 깨진 채 되살아나는 한계를 허용
         override fun delete(
             userId: String,
             reviewId: Int,

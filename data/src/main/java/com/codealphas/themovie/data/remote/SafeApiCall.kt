@@ -13,7 +13,7 @@ internal suspend fun <T> safeApiCall(block: suspend () -> T): DataResult<T> =
     try {
         Outcome.Success(block())
     } catch (e: CancellationException) {
-        // 취소를 Failure로 바꾸면 ViewModel이 사라진 뒤에도 뒤따르는 코드가 실행되므로, 호출한 코루틴이 멈추도록 취소 예외를 다시 던짐
+        // 취소를 Failure로 바꾸면 ViewModel이 사라진 뒤에도 뒤따르는 코드가 실행되므로, 호출한 코루틴이 멈추도록 취소 예외를 그대로 전파
         throw e
     } catch (_: SocketTimeoutException) {
         Outcome.Failure(RemoteError.Timeout)

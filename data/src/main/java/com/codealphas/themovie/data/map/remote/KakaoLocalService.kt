@@ -4,14 +4,12 @@ import retrofit2.http.GET
 import retrofit2.http.Query
 
 internal interface KakaoLocalService {
-    // 현재 위치(좌표)의 주소 정보 요청
     @GET("v2/local/geo/coord2address.json")
     suspend fun getAddress(
         @Query("x") longitude: Double,
         @Query("y") latitude: Double,
     ): CoordToAddressDto
 
-    // 현재 위치를 기준으로 주변 영화관 정보 요청
     @GET("v2/local/search/keyword.json")
     suspend fun searchTheaters(
         @Query("x") longitude: Double,

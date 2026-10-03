@@ -18,15 +18,16 @@ class FusedCurrentLocationProvider
     ) : CurrentLocationProvider {
         private val client = LocationServices.getFusedLocationProviderClient(context)
 
-        // 주변 영화관 검색에는 수십 m 오차가 문제되지 않고 GPS는 응답이 느려서, 권한과 무관하게 균형 우선순위 적용
+        // 위치 권한은 지도 화면이 요청 전에 확인하므로, lint MissingPermission 경고 제외
         @SuppressLint("MissingPermission")
         override suspend fun getCurrentLocation(): LocationLatLng? {
             val cancellation = CancellationTokenSource()
-            // 요청마다 위치를 새로 측정하면 응답이 수 초 걸리므로, 1분 이내에 측정된 위치는 그대로 쓰도록 적용
             val request =
                 CurrentLocationRequest
                     .Builder()
+                    // 주변 영화관 검색에는 100m 안팎 오차가 문제되지 않고 GPS는 응답이 느리므로, 균형 우선순위 적용
                     .setPriority(Priority.PRIORITY_BALANCED_POWER_ACCURACY)
+                    // 요청마다 위치를 새로 측정하면 응답이 수 초 걸리므로, 1분 이내에 측정된 위치는 그대로 쓰도록 적용
                     .setMaxUpdateAgeMillis(MAX_LOCATION_AGE_MILLIS)
                     .build()
             return try {

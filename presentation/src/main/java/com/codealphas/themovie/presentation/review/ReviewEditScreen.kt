@@ -233,7 +233,7 @@ internal fun ReviewEditContent(
                     Modifier
                         .fillMaxSize()
                         .padding(innerPadding)
-                        // XML 화면처럼 입력란 밖을 누르면 키보드가 내려가도록 포커스 해제
+                        // Compose는 입력란 밖을 눌러도 포커스를 유지해 키보드가 남으므로, 입력란 밖을 누르면 키보드가 내려가도록 포커스 해제
                         .pointerInput(Unit) { detectTapGestures { focusManager.clearFocus() } }
                         .padding(Spacing.small),
                 verticalArrangement = Arrangement.spacedBy(Spacing.small),
@@ -295,7 +295,7 @@ private fun ReviewTextField(
         onValueChange = onValueChange,
         modifier = modifier.border(FieldBorderWidth, MaterialTheme.colorScheme.outline, FieldShape),
         placeholder = { Text(text = stringResource(hint)) },
-        // XML 제목 칸은 엔터를 누르면 키보드를 내렸으므로, 한 줄 칸의 완료 키로 포커스 해제
+        // 한 줄 칸은 엔터로 줄을 바꿀 수 없으므로, 완료 키를 누르면 키보드가 내려가도록 포커스 해제
         keyboardOptions = KeyboardOptions(imeAction = if (singleLine) ImeAction.Done else ImeAction.Default),
         keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
         singleLine = singleLine,
