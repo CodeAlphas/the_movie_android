@@ -53,7 +53,7 @@ internal class ReviewRepositoryImpl
             }
         }
 
-        override suspend fun getById(id: Int): Review? = reviewDao.getById(id)?.toReview()
+        override suspend fun getById(id: String): Review? = reviewDao.getById(id)?.toReview()
 
         override suspend fun save(draft: ReviewDraft): ReviewResult {
             val userId = authRepository.currentUserId() ?: return Outcome.Failure(ReviewError.Unknown)
@@ -77,13 +77,15 @@ internal class ReviewRepositoryImpl
             previous: ReviewEntity?,
             userId: String,
         ): ReviewResult {
+            // 키를 만들지 못해 실패할 때 이미 올린 사진이 고아 파일로 남지 않도록, 사진 업로드 전에 새 감상문 키 생성 처리
+            val id = draft.id ?: realtimeDataSource.newKey(userId)
             val photo =
                 resolvePhoto(draft.photo, previous, userId)
                     ?: return Outcome.Failure(ReviewError.PhotoUploadFailed)
             // 화면을 닫아 취소되면 Room에는 저장됐는데 서버에는 쓰이지 않은 상태로 남으므로,
             // Room 저장을 시작한 뒤에는 취소되지 않고 끝까지 처리
             // 업로드 직후 프로세스가 종료되면 코드로 막을 수 없고 드물어서, 남는 고아 사진 파일은 별도 정리 없이 허용
-            withContext(NonCancellable) { persist(draft, previous, photo, userId) }
+            withContext(NonCancellable) { persist(id, draft, previous, photo, userId) }
             return Outcome.Success(Unit)
         }
 
@@ -117,12 +119,12 @@ internal class ReviewRepositoryImpl
         }
 
         private suspend fun persist(
+            id: String,
             draft: ReviewDraft,
             previous: ReviewEntity?,
             photo: PhotoFields,
             userId: String,
         ) {
-            val existingId = draft.id
             val entity =
                 ReviewEntity(
                     title = draft.title,
@@ -131,27 +133,19 @@ internal class ReviewRepositoryImpl
                     time = SimpleDateFormat("yyyy/MM/dd HH:mm", Locale.KOREA).format(Date(clock.nowMillis())),
                     rating = draft.rating,
                     storageFileName = photo.fileName,
-                    id = existingId ?: 0,
+                    id = id,
                 )
             // Room 저장 실패를 catch(e: Exception)으로 잡아 사진을 지운 뒤 다시 던지면 detekt TooGenericExceptionCaught에 걸리므로,
             // 예외는 잡지 않고 그대로 올리면서 finally에서 stored가 false일 때만 새 사진 삭제
             var stored = false
-            val id =
-                try {
-                    val savedId =
-                        if (existingId == null) {
-                            reviewDao.insert(entity).toInt()
-                        } else {
-                            reviewDao.update(entity)
-                            existingId
-                        }
-                    stored = true
-                    savedId
-                } finally {
-                    // Room에 저장되지 않아 방금 올린 사진을 가리키는 곳이 없으므로, 고아 파일이 남지 않게 삭제 처리
-                    if (!stored && draft.photo is ReviewPhoto.New) deleteStorageFile(photo.fileName)
-                }
-            realtimeDataSource.save(userId, entity.toReview().copy(id = id))
+            try {
+                if (previous == null) reviewDao.insert(entity) else reviewDao.update(entity)
+                stored = true
+            } finally {
+                // Room에 저장되지 않아 방금 올린 사진을 가리키는 곳이 없으므로, 고아 파일이 남지 않게 삭제 처리
+                if (!stored && draft.photo is ReviewPhoto.New) deleteStorageFile(photo.fileName)
+            }
+            realtimeDataSource.save(userId, entity.toReview())
 
             // 사진을 그대로 두는데 파일을 지우면 저장된 URL이 죽은 링크가 되므로, 바꾸거나 지운 경우에만 기존 파일 삭제
             val previousFileName = previous?.storageFileName.orEmpty()

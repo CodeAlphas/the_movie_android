@@ -219,7 +219,7 @@ private class FakeHomeReviewRepository(
 
     override suspend fun syncFromRemote(): ReviewResult = error("사용하지 않음")
 
-    override suspend fun getById(id: Int): Review? = error("사용하지 않음")
+    override suspend fun getById(id: String): Review? = error("사용하지 않음")
 
     override suspend fun save(draft: ReviewDraft): ReviewResult = error("사용하지 않음")
 

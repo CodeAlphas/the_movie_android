@@ -220,7 +220,7 @@ private val REVIEW =
         time = "2024/01/02 03:04",
         rating = 9.0,
         storageFileName = "",
-        id = 1,
+        id = "-review",
     )
 
 private fun runReviewListTest(
@@ -264,7 +264,7 @@ private class FakeReviewListRepository(
         return syncResult
     }
 
-    override suspend fun getById(id: Int): Review? = error("사용하지 않음")
+    override suspend fun getById(id: String): Review? = error("사용하지 않음")
 
     override suspend fun save(draft: ReviewDraft): ReviewResult = error("사용하지 않음")
 

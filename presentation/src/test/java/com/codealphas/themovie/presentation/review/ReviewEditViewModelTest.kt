@@ -319,10 +319,10 @@ private val STORED_REVIEW =
         time = "2024/01/02 03:04",
         rating = 9.0,
         storageFileName = "photo.png",
-        id = 3,
+        id = "-stored",
     )
 
-private fun editHandle(reviewId: Int): SavedStateHandle = SavedStateHandle(mapOf("reviewId" to reviewId))
+private fun editHandle(reviewId: String): SavedStateHandle = SavedStateHandle(mapOf("reviewId" to reviewId))
 
 private fun fillInput(viewModel: ReviewEditViewModel) {
     viewModel.onIntent(ReviewEditIntent.TitleChanged("기생충"))
@@ -358,14 +358,14 @@ private class FakeReviewEditRepository(
     private val stored: Review? = null,
     private val saveResult: CompletableDeferred<ReviewResult> = CompletableDeferred(),
 ) : ReviewRepository {
-    val requestedIds = mutableListOf<Int>()
+    val requestedIds = mutableListOf<String>()
     val savedDrafts = mutableListOf<ReviewDraft>()
 
     override fun observeAll(): Flow<List<Review>> = error("사용하지 않음")
 
     override suspend fun syncFromRemote(): ReviewResult = error("사용하지 않음")
 
-    override suspend fun getById(id: Int): Review? {
+    override suspend fun getById(id: String): Review? {
         requestedIds += id
         return stored
     }

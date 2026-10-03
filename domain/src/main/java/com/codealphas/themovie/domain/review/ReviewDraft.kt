@@ -1,7 +1,7 @@
 package com.codealphas.themovie.domain.review
 
 data class ReviewDraft(
-    val id: Int?,
+    val id: String?,
     val title: String,
     val content: String,
     val rating: Double,

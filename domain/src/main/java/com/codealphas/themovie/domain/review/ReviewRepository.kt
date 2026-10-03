@@ -15,7 +15,7 @@ interface ReviewRepository {
      */
     suspend fun syncFromRemote(): ReviewResult
 
-    suspend fun getById(id: Int): Review?
+    suspend fun getById(id: String): Review?
 
     /**
      * 감상문을 Room과 서버에 저장한다. [ReviewDraft.id]가 null이면 새로 추가하고, 있으면 기존 감상문을 수정한다.

@@ -18,7 +18,8 @@ internal class ReviewEntity(
     val rating: Double,
     @ColumnInfo(name = "storageFileName")
     val storageFileName: String,
-    // 기기마다 1부터 자동 증가하는 id를 서버 키로도 쓰므로, 한 계정을 여러 기기에서 쓰면 id가 겹쳐 덮어써질 수 있어 단일 기기 사용을 전제로 허용
-    @PrimaryKey(autoGenerate = true)
-    var id: Int = 0,
+    // 기기마다 1부터 매기는 자동 증가 id를 서버 키로 쓰면 재설치 뒤나 다른 기기에서 서버 감상문을 덮어쓰므로,
+    // 기기끼리 겹치지 않고 문자열 순서가 작성 순서인 Firebase push 키를 Room id와 서버 키로 함께 사용
+    @PrimaryKey
+    val id: String,
 )

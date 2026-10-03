@@ -140,15 +140,12 @@ class ReviewRepositoryImplTest {
         }
 
     @Test
-    fun `사진 없는 새 감상문을 저장하면 Room이 준 id로 서버에 쓰고 파일은 지우지 않아야 한다`() =
+    fun `사진 없는 새 감상문을 저장하면 새로 만든 키로 Room과 서버에 쓰고 파일은 지우지 않아야 한다`() =
         runTest {
-            val draft =
-                ReviewDraft(id = null, title = "새 감상문", content = "재밌다", rating = 7.0, photo = ReviewPhoto.Unchanged)
-
-            val result = repository().save(draft)
+            val result = repository().save(newDraft(ReviewPhoto.Unchanged))
 
             assertEquals(Outcome.Success(Unit), result)
-            assertEquals(listOf("room.insert", "server.save"), calls)
+            assertEquals(listOf("server.newKey", "room.insert", "server.save"), calls)
             val expected =
                 Review(
                     title = "새 감상문",
@@ -157,11 +154,35 @@ class ReviewRepositoryImplTest {
                     time = "",
                     rating = 7.0,
                     storageFileName = "",
-                    id = FakeReviewDao.FIRST_ID,
+                    id = NEW_KEY,
                 )
-            assertEquals(expected, dao.saved(FakeReviewDao.FIRST_ID))
+            assertEquals(expected, dao.saved(NEW_KEY))
             assertEquals(USER_ID, realtime.savedUserIds.single())
             assertEquals(expected, realtime.saved.single().withoutTime())
+        }
+
+    @Test
+    fun `다시 설치한 뒤 서버 감상문을 받아 오기 전에 새 감상문을 저장하면 서버에 있던 감상문을 덮어쓰지 않아야 한다`() =
+        runTest {
+            // Room 자동 증가 id를 서버 키로 쓰면 빈 Room에서 새 감상문이 서버의 1번 감상문을 덮어쓰므로, 서버에 1번 키 감상문을 둔 상태 적용
+            val serverReview = STORED.toReview().copy(id = "1")
+            realtime.remote[serverReview.id] = serverReview
+
+            repository().save(newDraft(ReviewPhoto.Unchanged))
+
+            assertEquals(serverReview, realtime.remote["1"])
+            assertEquals("새 감상문", realtime.remote[NEW_KEY]?.title)
+        }
+
+    @Test
+    fun `새 감상문의 키를 만들지 못하면 사진을 올리거나 Room과 서버에 쓰지 않고 Unknown 실패를 반환해야 한다`() =
+        runTest {
+            realtime.failNewKey = true
+
+            val result = repository().save(newDraft(ReviewPhoto.New("content://photo/2")))
+
+            assertEquals(Outcome.Failure(ReviewError.Unknown), result)
+            assertEquals(listOf("server.newKey"), calls)
         }
 
     @Test
@@ -182,6 +203,30 @@ class ReviewRepositoryImplTest {
 
             assertEquals(Outcome.Failure(ReviewError.Unknown), result)
             assertEquals(emptyList<String>(), calls)
+        }
+
+    @Test
+    fun `서버에서 받아 온 감상문이 Room에 없으면 서버 키를 id로 Room에 추가해야 한다`() =
+        runTest {
+            val serverReview = STORED.toReview().copy(id = "-server")
+            realtime.remote[serverReview.id] = serverReview
+
+            val result = repository().syncFromRemote()
+
+            assertEquals(Outcome.Success(Unit), result)
+            assertEquals(serverReview, dao.saved("-server"))
+        }
+
+    @Test
+    fun `서버에서 받아 온 감상문과 같은 키의 감상문이 Room에 있으면 Room 감상문을 그대로 두어야 한다`() =
+        runTest {
+            dao.put(STORED)
+            realtime.remote[STORED.id] = STORED.toReview().copy(title = "서버에서 고친 제목")
+
+            val result = repository().syncFromRemote()
+
+            assertEquals(Outcome.Success(Unit), result)
+            assertEquals(STORED.toReview(), dao.saved(STORED.id))
         }
 
     @Test
@@ -276,6 +321,7 @@ class ReviewRepositoryImplTest {
 private const val USER_ID = "user-1234567890"
 private const val NOW_MILLIS = 1_700_000_000_000L
 private const val NEW_FILE_NAME = "user-12345$NOW_MILLIS.png"
+private const val NEW_KEY = "-new-key"
 
 private val STORED =
     ReviewEntity(
@@ -285,11 +331,14 @@ private val STORED =
         time = "",
         rating = 9.0,
         storageFileName = "old.png",
-        id = 3,
+        id = "-stored",
     )
 
 private fun editDraft(photo: ReviewPhoto): ReviewDraft =
     ReviewDraft(id = STORED.id, title = "수정한 제목", content = "잘 봤다", rating = 9.0, photo = photo)
+
+private fun newDraft(photo: ReviewPhoto): ReviewDraft =
+    ReviewDraft(id = null, title = "새 감상문", content = "재밌다", rating = 7.0, photo = photo)
 
 private fun downloadUrl(fileName: String): String = "https://storage.example.com/$fileName"
 
@@ -299,7 +348,7 @@ private fun Review.withoutTime(): Review = copy(time = "")
 private class FakeReviewDao(
     private val calls: MutableList<String>,
 ) : ReviewDao {
-    private val entities = mutableMapOf<Int, ReviewEntity>()
+    private val entities = mutableMapOf<String, ReviewEntity>()
 
     var failDelete: Boolean = false
 
@@ -307,14 +356,12 @@ private class FakeReviewDao(
         entities[entity.id] = entity
     }
 
-    fun saved(id: Int): Review? = entities[id]?.toReview()?.withoutTime()
+    fun saved(id: String): Review? = entities[id]?.toReview()?.withoutTime()
 
-    override suspend fun insert(review: ReviewEntity): Long {
+    // Room의 OnConflictStrategy.IGNORE처럼 같은 id가 있으면 기존 행을 두도록, 없는 id만 추가 적용
+    override suspend fun insert(review: ReviewEntity) {
         calls += "room.insert"
-        val id = if (review.id == 0) (entities.keys.maxOrNull() ?: 0) + FIRST_ID else review.id
-        if (id in entities) return IGNORED_ROW_ID
-        entities[id] = review.toReview().copy(id = id).toEntity()
-        return id.toLong()
+        if (review.id !in entities) entities[review.id] = review
     }
 
     override suspend fun delete(review: ReviewEntity) {
@@ -328,16 +375,11 @@ private class FakeReviewDao(
         entities[review.id] = review
     }
 
-    override suspend fun getById(id: Int): ReviewEntity? = entities[id]
+    override suspend fun getById(id: String): ReviewEntity? = entities[id]
 
     override suspend fun deleteAll() = error("사용하지 않음")
 
     override fun getAll(): Flow<List<ReviewEntity>> = error("사용하지 않음")
-
-    companion object {
-        const val FIRST_ID = 1
-        const val IGNORED_ROW_ID = -1L
-    }
 }
 
 private class FakeReviewRealtimeDataSource(
@@ -345,6 +387,11 @@ private class FakeReviewRealtimeDataSource(
 ) : ReviewRealtimeDataSource {
     val saved = mutableListOf<Review>()
     val savedUserIds = mutableListOf<String>()
+
+    // 서버에 쓰인 감상문을 키별로 남겨, 덮어쓰기 여부와 동기화로 받아 올 감상문을 확인하도록 서버 상태 적용
+    val remote = mutableMapOf<String, Review>()
+
+    var failNewKey: Boolean = false
 
     // Firebase Realtime Database SDK가 서버 감상문 읽기를 취소하면 동기화를 요청한 코루틴이 취소되지 않아도 취소 예외가 올라오므로,
     // 코루틴 취소 없이 읽기에서 CancellationException 발생 적용
@@ -360,7 +407,13 @@ private class FakeReviewRealtimeDataSource(
         calls += "server.getAll"
         if (cancelGetAll) throw CancellationException("SDK에서 취소된 읽기")
         if (suspendGetAll) awaitCancellation()
-        return emptyList()
+        return remote.values.toList()
+    }
+
+    override fun newKey(userId: String): String {
+        calls += "server.newKey"
+        if (failNewKey) throw IllegalStateException("키 생성 실패")
+        return NEW_KEY
     }
 
     override fun save(
@@ -370,11 +423,12 @@ private class FakeReviewRealtimeDataSource(
         calls += "server.save"
         savedUserIds += userId
         saved += review
+        remote[review.id] = review
     }
 
     override fun delete(
         userId: String,
-        reviewId: Int,
+        reviewId: String,
     ) {
         calls += "server.delete:$reviewId"
         if (failDelete) throw IllegalStateException("서버 삭제 요청 실패")

@@ -24,7 +24,7 @@ internal data object ReviewList
 
 @Serializable
 internal data class ReviewEdit(
-    val reviewId: Int? = null,
+    val reviewId: String? = null,
 )
 
 @Serializable
