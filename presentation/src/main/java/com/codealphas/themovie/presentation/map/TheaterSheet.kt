@@ -163,7 +163,7 @@ private fun DistanceChip(
     Row(
         modifier =
             modifier
-                .background(TheMovieTheme.extendedColors.onPrimaryScrim, CircleShape)
+                .background(TheMovieTheme.extendedColors.accentTranslucent, CircleShape)
                 .padding(
                     start = Spacing.small,
                     top = Spacing.extraSmall,

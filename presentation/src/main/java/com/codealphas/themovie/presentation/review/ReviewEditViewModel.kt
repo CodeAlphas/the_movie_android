@@ -26,7 +26,8 @@ class ReviewEditViewModel
         private val repository: ReviewRepository,
         private val savedStateHandle: SavedStateHandle,
     ) : ViewModel() {
-        // 작성 화면은 reviewId 없이 열리므로 null이면 새 감상문이고, MovieDetailViewModel과 같은 이유로 목적지 속성 이름으로 읽도록 적용
+        // toRoute()는 Bundle이 필요해 JVM 단위 테스트에서 실패하므로, Navigation이 속성 이름을 키로 넣어 둔 값 직접 조회
+        // 작성 화면은 reviewId 없이 열리므로, 값이 없으면 새 감상문으로 처리
         private val reviewId: Int? = savedStateHandle.get<Int>(ReviewEdit::reviewId.name)
 
         // 카메라 앱을 쓰는 동안 프로세스가 종료되면 입력이 사라지므로, SavedStateHandle에 남긴 입력으로 초기 상태 복원
@@ -46,7 +47,7 @@ class ReviewEditViewModel
         val effect: Flow<ReviewEditEffect> = _effect.receiveAsFlow()
 
         init {
-            // 회전하면 Activity onCreate가 다시 실행되어 Room을 다시 읽고 입력값을 덮어쓰므로, ViewModel을 만들 때 한 번만 읽음
+            // 회전할 때마다 Room을 다시 읽으면 고치던 입력이 Room 값으로 덮이므로, 회전에도 남는 ViewModel이 만들어질 때 한 번만 읽기 적용
             reviewId?.let(::loadReview)
         }
 
@@ -63,7 +64,7 @@ class ReviewEditViewModel
                         title = if (KEY_TITLE in savedStateHandle) it.title else review.title,
                         content = if (KEY_CONTENT in savedStateHandle) it.content else review.content,
                         rating = if (KEY_RATING in savedStateHandle) it.rating else review.rating,
-                        savedImageUrl = review.image,
+                        savedImageUrl = review.imageUrl,
                     )
                 }
             }
@@ -160,7 +161,7 @@ class ReviewEditViewModel
                         photo = state.photo,
                     )
                 when (val result = repository.save(draft)) {
-                    // 성공 뒤 화면이 닫히기 전에 저장 버튼을 다시 누르는 것을 막기 위해 isSaving은 그대로 유지
+                    // 성공 뒤 화면이 닫히기 전에 저장 버튼을 다시 누르면 같은 감상문이 한 번 더 저장되므로, isSaving 유지
                     is Outcome.Success -> _effect.send(ReviewEditEffect.Saved(isNew = reviewId == null))
                     is Outcome.Failure -> {
                         _state.update { it.copy(isSaving = false) }

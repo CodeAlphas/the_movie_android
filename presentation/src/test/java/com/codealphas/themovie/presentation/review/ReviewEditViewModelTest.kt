@@ -122,7 +122,7 @@ class ReviewEditViewModelTest {
                     content = STORED_REVIEW.content,
                     rating = STORED_REVIEW.rating,
                     photo = ReviewPhoto.Unchanged,
-                    savedImageUrl = STORED_REVIEW.image,
+                    savedImageUrl = STORED_REVIEW.imageUrl,
                     isEditing = true,
                 )
             assertEquals(expected, viewModel.state.value)
@@ -189,7 +189,7 @@ class ReviewEditViewModelTest {
         runReviewEditTest(FakeReviewEditRepository(stored = STORED_REVIEW), editHandle(STORED_REVIEW.id)) { viewModel ->
             runCurrent()
 
-            assertEquals(STORED_REVIEW.image, viewModel.state.value.shownImage)
+            assertEquals(STORED_REVIEW.imageUrl, viewModel.state.value.shownImage)
         }
     }
 
@@ -301,7 +301,7 @@ class ReviewEditViewModelTest {
                     title = "기생충 다시 보기",
                     content = STORED_REVIEW.content,
                     rating = STORED_REVIEW.rating,
-                    savedImageUrl = STORED_REVIEW.image,
+                    savedImageUrl = STORED_REVIEW.imageUrl,
                     isEditing = true,
                 )
             assertEquals(expected, restored.state.value)
@@ -314,7 +314,7 @@ private const val CAMERA_URI = "file:///cache/review_photo_1.jpg"
 private val STORED_REVIEW =
     Review(
         title = "기생충",
-        image = "https://example.com/photo.png",
+        imageUrl = "https://example.com/photo.png",
         content = "잘 봤다",
         time = "2024/01/02 03:04",
         rating = 9.0,

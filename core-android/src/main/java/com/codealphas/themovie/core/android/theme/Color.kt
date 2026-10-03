@@ -4,8 +4,6 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.graphics.Color
 
-// Compose가 그려지기 전의 창 배경은 이 상수를 참조하지 못해 colors.xml에 같은 값을 따로 두므로,
-// Surface를 바꿀 때 :presentation의 window_background도 같은 값으로 유지
 private val LightPrimary = Color(0xFF1A1916)
 private val LightOnPrimary = Color(0xFFF3F0EA)
 private val LightSecondary = Color(0xFFA34B2E)
@@ -13,6 +11,9 @@ private val LightOnSecondary = Color(0xFFFBF7F2)
 private val LightTertiary = Color(0xFFA34B2E)
 private val LightTertiaryContainer = Color(0xFFE4C2A4)
 private val LightOnTertiaryContainer = Color(0xFF1A1916)
+
+// Compose가 그려지기 전의 창 배경은 이 상수를 참조하지 못해 colors.xml에 같은 값을 따로 두므로,
+// LightSurface를 바꿀 때 :app values/colors.xml의 window_background도 같은 값으로 유지
 private val LightSurface = Color(0xFFF3F0EA)
 private val LightOnSurface = Color(0xFF1A1916)
 private val LightSurfaceRaised = Color(0xFFFFFCFA)
@@ -27,6 +28,9 @@ private val DarkOnSecondary = Color(0xFF1A100C)
 private val DarkTertiary = Color(0xFFE0A080)
 private val DarkTertiaryContainer = Color(0xFF4A382C)
 private val DarkOnTertiaryContainer = Color(0xFFF3EEE6)
+
+// Compose가 그려지기 전의 창 배경은 이 상수를 참조하지 못해 colors.xml에 같은 값을 따로 두므로,
+// DarkSurface를 바꿀 때 :app values-night/colors.xml의 window_background도 같은 값으로 유지
 private val DarkSurface = Color(0xFF0F0E0C)
 private val DarkOnSurface = Color(0xFFF3EEE6)
 private val DarkSurfaceRaised = Color(0xFF1A1916)

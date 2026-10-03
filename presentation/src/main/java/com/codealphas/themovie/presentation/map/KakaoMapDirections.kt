@@ -1,5 +1,7 @@
 package com.codealphas.themovie.presentation.map
 
+import com.codealphas.themovie.presentation.map.location.LocationLatLng
+
 // android.net.Uri는 로컬 단위 테스트에서 호출하면 "not mocked" 예외를 던지므로,
 // 좌표 순서와 쿼리 인자를 테스트에서 문자열로 비교하도록 Uri.Builder 대신 주소를 문자열로 조립
 object KakaoMapDirections {

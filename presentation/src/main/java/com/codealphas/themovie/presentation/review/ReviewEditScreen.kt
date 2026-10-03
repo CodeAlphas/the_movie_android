@@ -1,11 +1,8 @@
 package com.codealphas.themovie.presentation.review
 
-import android.Manifest
 import android.content.ActivityNotFoundException
-import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.widget.Toast
-import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -32,17 +29,13 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -62,8 +55,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -76,6 +67,7 @@ import coil3.compose.rememberAsyncImagePainter
 import com.codealphas.themovie.core.android.theme.Spacing
 import com.codealphas.themovie.core.android.theme.TheMovieTheme
 import com.codealphas.themovie.core.android.ui.BlockingProgressBox
+import com.codealphas.themovie.core.android.ui.TheMovieTopAppBar
 import com.codealphas.themovie.core.android.ui.rememberThrottledClick
 import com.codealphas.themovie.core.android.ui.showToast
 import com.codealphas.themovie.domain.review.ReviewError
@@ -96,10 +88,8 @@ fun ReviewEditScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    val activity = checkNotNull(LocalActivity.current)
     val lifecycleOwner = LocalLifecycleOwner.current
     val currentOnNavigateUp by rememberUpdatedState(onNavigateUp)
-    var showCameraRationale by rememberSaveable { mutableStateOf(false) }
     // 저장 완료와 불러오기 실패는 안내 직후 화면을 닫으므로, 화면이 사라진 뒤에도 안내가 남도록 앱 Context로 Toast 표시
     val appContext = context.applicationContext
 
@@ -122,7 +112,7 @@ fun ReviewEditScreen(
                         )
                     is ReviewEditEffect.SaveFailed ->
                         context.showToast(
-                            saveFailureMessage(effect.error),
+                            saveErrorMessage(effect.error),
                             Toast.LENGTH_LONG,
                         )
                     ReviewEditEffect.LoadFailed -> {
@@ -155,17 +145,6 @@ fun ReviewEditScreen(
             context.showToast(R.string.review_edit_photo_failed, Toast.LENGTH_LONG)
         }
     }
-    val cameraPermissionLauncher =
-        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
-            if (isGranted) {
-                launchCamera()
-            } else {
-                context.showToast(
-                    R.string.review_edit_permission_denied,
-                    Toast.LENGTH_LONG,
-                )
-            }
-        }
 
     ReviewEditContent(
         state = state,
@@ -175,32 +154,12 @@ fun ReviewEditScreen(
             // 권한이 필요 없는 Photo Picker로 갤러리 사진 선택 요청
             galleryLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
         },
-        onCameraClick = {
-            val permission = Manifest.permission.CAMERA
-            when {
-                ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED ->
-                    launchCamera()
-                // 한 번 거부한 뒤 바로 다시 요청하면 이유를 모른 채 같은 창을 보게 되므로, 권한이 필요한 이유 안내 창 표시
-                ActivityCompat.shouldShowRequestPermissionRationale(activity, permission) ->
-                    showCameraRationale = true
-                else -> cameraPermissionLauncher.launch(permission)
-            }
-        },
+        onCameraClick = launchCamera,
     )
-
-    if (showCameraRationale) {
-        CameraPermissionDialog(
-            onAllow = {
-                showCameraRationale = false
-                cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
-            },
-            onDeny = { showCameraRationale = false },
-        )
-    }
 }
 
 @StringRes
-private fun saveFailureMessage(error: ReviewError): Int =
+private fun saveErrorMessage(error: ReviewError): Int =
     when (error) {
         ReviewError.PhotoUploadFailed -> R.string.review_edit_upload_failed
         ReviewError.Unknown -> R.string.review_edit_save_failed
@@ -224,7 +183,12 @@ internal fun ReviewEditContent(
         // 상태 표시줄 뒤에는 창 배경이 보이도록 앱바를 상태 표시줄 높이만큼 내려 배치
         Scaffold(
             modifier = Modifier.windowInsetsPadding(WindowInsets.statusBars),
-            topBar = { ReviewEditTopAppBar(onNavigateUp = onNavigateUp) },
+            topBar = {
+                TheMovieTopAppBar(
+                    title = stringResource(R.string.review_edit_appbar_title),
+                    onNavigateUp = onNavigateUp,
+                )
+            },
             contentWindowInsets = WindowInsets.safeDrawing,
         ) { innerPadding ->
             Column(
@@ -232,7 +196,7 @@ internal fun ReviewEditContent(
                     Modifier
                         .fillMaxSize()
                         .padding(innerPadding)
-                        // XML 화면처럼 입력란 밖을 누르면 키보드가 내려가도록 포커스 해제
+                        // Compose는 입력란 밖을 눌러도 포커스를 유지해 키보드가 남으므로, 입력란 밖을 누르면 키보드가 내려가도록 포커스 해제
                         .pointerInput(Unit) { detectTapGestures { focusManager.clearFocus() } }
                         .padding(Spacing.small),
                 verticalArrangement = Arrangement.spacedBy(Spacing.small),
@@ -280,29 +244,6 @@ internal fun ReviewEditContent(
     }
 }
 
-// Material3 1.4.0의 TopAppBar는 아직 실험 API라서, 앱바 한 곳에만 opt-in 적용
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun ReviewEditTopAppBar(onNavigateUp: () -> Unit) {
-    TopAppBar(
-        title = { Text(text = stringResource(R.string.review_edit_appbar_title)) },
-        navigationIcon = {
-            IconButton(onClick = onNavigateUp) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_baseline_arrow_back_24),
-                    contentDescription = stringResource(R.string.common_navigate_up),
-                )
-            }
-        },
-        colors =
-            TopAppBarDefaults.topAppBarColors(
-                containerColor = MaterialTheme.colorScheme.primary,
-                titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
-            ),
-    )
-}
-
 @Composable
 private fun ReviewTextField(
     value: String,
@@ -317,7 +258,7 @@ private fun ReviewTextField(
         onValueChange = onValueChange,
         modifier = modifier.border(FieldBorderWidth, MaterialTheme.colorScheme.outline, FieldShape),
         placeholder = { Text(text = stringResource(hint)) },
-        // XML 제목 칸은 엔터를 누르면 키보드를 내렸으므로, 한 줄 칸의 완료 키로 포커스 해제
+        // 한 줄 칸은 엔터로 줄을 바꿀 수 없으므로, 완료 키를 누르면 키보드가 내려가도록 포커스 해제
         keyboardOptions = KeyboardOptions(imeAction = if (singleLine) ImeAction.Done else ImeAction.Default),
         keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
         singleLine = singleLine,
@@ -339,14 +280,17 @@ private fun ReviewPhotoBox(
     modifier: Modifier = Modifier,
 ) {
     val defaultImage = painterResource(R.drawable.set_image)
+    // 받는 동안 사진 추가 안내가 그려지면 사진이 있는 감상문도 사진이 없어 보이므로, 받는 동안은 기본 이미지 대신 진행 표시 적용
     val painter =
         rememberAsyncImagePainter(
             model = image,
-            placeholder = defaultImage,
             error = defaultImage,
             fallback = defaultImage,
         )
     val painterState by painter.state.collectAsStateWithLifecycle()
+    val isLoading =
+        image != null &&
+            (painterState is AsyncImagePainter.State.Empty || painterState is AsyncImagePainter.State.Loading)
     Box(
         modifier =
             modifier
@@ -363,6 +307,9 @@ private fun ReviewPhotoBox(
             contentScale =
                 if (painterState is AsyncImagePainter.State.Success) ContentScale.Crop else ContentScale.Fit,
         )
+        if (isLoading) {
+            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+        }
     }
 }
 
@@ -381,7 +328,7 @@ private fun ReviewEditBottomBar(
         horizontalArrangement = Arrangement.spacedBy(Spacing.small),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        StarRating(
+        RatingStarsPicker(
             starRating = state.starRating,
             onStarRatingChange = { onIntent(ReviewEditIntent.StarRatingChanged(it)) },
             starSize = StarSize,
@@ -424,24 +371,6 @@ private fun PhotoSourceDialog(
                 TextButton(onClick = onCamera) { Text(text = stringResource(R.string.review_edit_photo_camera)) }
                 TextButton(onClick = onGallery) { Text(text = stringResource(R.string.review_edit_photo_gallery)) }
             }
-        },
-    )
-}
-
-@Composable
-private fun CameraPermissionDialog(
-    onAllow: () -> Unit,
-    onDeny: () -> Unit,
-) {
-    AlertDialog(
-        onDismissRequest = onDeny,
-        title = { Text(text = stringResource(R.string.review_edit_permission_title)) },
-        text = { Text(text = stringResource(R.string.review_edit_permission_camera)) },
-        confirmButton = {
-            TextButton(onClick = onAllow) { Text(text = stringResource(R.string.review_edit_permission_allow)) }
-        },
-        dismissButton = {
-            TextButton(onClick = onDeny) { Text(text = stringResource(R.string.review_edit_permission_deny)) }
         },
     )
 }

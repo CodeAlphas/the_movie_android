@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="window_background">#FFF3F0EA</color>
     <color name="map_marker_current">#FFE53935</color>
     <color name="map_marker_theater">#FF1E88E5</color>
     <color name="map_label_text">#FF212121</color>

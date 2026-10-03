@@ -45,14 +45,18 @@ class LoginViewModel
         private fun signIn() {
             val current = _state.value
             if (current.isLoading) return
-            if (current.email.isBlank() || current.password.isBlank()) {
+            // 이메일 앞뒤 공백은 Firebase가 형식 오류로 거부하고 비밀번호 앞뒤 공백은 가입에서 막아 늘 잘못 들어간 값이므로,
+            // 키보드 자동완성이나 붙여 넣기로 붙은 공백 때문에 로그인이 실패하지 않도록 앞뒤 공백 제거
+            val email = current.email.trim()
+            val password = current.password.trim()
+            if (email.isEmpty() || password.isEmpty()) {
                 viewModelScope.launch { _effect.send(LoginEffect.ShowInvalidInput) }
                 return
             }
             _state.update { it.copy(isLoading = true) }
             viewModelScope.launch {
                 val effect =
-                    when (val result = authRepository.signIn(current.email, current.password)) {
+                    when (val result = authRepository.signIn(email, password)) {
                         is Outcome.Success -> LoginEffect.NavigateToHome
                         is Outcome.Failure -> LoginEffect.ShowError(result.error)
                     }

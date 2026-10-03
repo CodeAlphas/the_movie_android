@@ -7,6 +7,8 @@ import com.codealphas.themovie.domain.map.TheaterRepository
 import com.codealphas.themovie.domain.result.DataResult
 import com.codealphas.themovie.domain.result.Outcome
 import com.codealphas.themovie.domain.result.RemoteError
+import com.codealphas.themovie.presentation.map.location.CurrentLocationProvider
+import com.codealphas.themovie.presentation.map.location.LocationLatLng
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi

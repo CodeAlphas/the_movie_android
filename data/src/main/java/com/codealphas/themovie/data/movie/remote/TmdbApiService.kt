@@ -5,23 +5,20 @@ import retrofit2.http.Path
 import retrofit2.http.Query
 
 internal interface TmdbApiService {
-    // 일별 인기 영화 정보 요청
     @GET("movie/popular")
-    suspend fun getPopularMovieList(
+    suspend fun getPopularMovies(
         @Query("language") language: String = "ko",
         @Query("page") page: Int = 1,
     ): MoviesDto
 
-    // 최고 평점 영화 정보 요청
     @GET("movie/top_rated")
-    suspend fun getTopRatedMovieList(
+    suspend fun getTopRatedMovies(
         @Query("language") language: String = "ko",
         @Query("page") page: Int = 1,
     ): MoviesDto
 
-    // 사용자 검색 영화 정보 요청
     @GET("search/movie")
-    suspend fun getSearchedMovieList(
+    suspend fun searchMovies(
         @Query("language") language: String = "ko",
         @Query("query") query: String,
     ): MoviesDto
@@ -32,9 +29,8 @@ internal interface TmdbApiService {
         @Query("language") language: String = "ko",
     ): MovieDetailDto
 
-    // 영화 관계자 정보 요청
     @GET("movie/{movie_id}/credits")
-    suspend fun getCreditsList(
+    suspend fun getCredits(
         @Path("movie_id") movieId: Int,
         @Query("language") language: String = "en",
     ): CreditsDto
@@ -42,7 +38,7 @@ internal interface TmdbApiService {
     // TMDB는 language 하나로 요청하면 그 언어 영상만 주므로,
     // 한국 영화의 한국어 예고편과 외국 영화의 영어 예고편을 함께 받도록 두 언어 요청
     @GET("movie/{movie_id}/videos")
-    suspend fun getVideosList(
+    suspend fun getVideos(
         @Path("movie_id") movieId: Int,
         @Query("language") language: String = "ko",
         @Query("include_video_language") includeVideoLanguage: String = "ko,en",

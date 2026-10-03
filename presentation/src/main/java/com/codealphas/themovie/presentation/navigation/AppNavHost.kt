@@ -14,7 +14,7 @@ import com.codealphas.themovie.presentation.auth.JoinScreen
 import com.codealphas.themovie.presentation.auth.LoginScreen
 import com.codealphas.themovie.presentation.home.HomeScreen
 import com.codealphas.themovie.presentation.map.TheaterMapScreen
-import com.codealphas.themovie.presentation.movie.MovieDetailScreen
+import com.codealphas.themovie.presentation.movie.detail.MovieDetailScreen
 import com.codealphas.themovie.presentation.review.ReviewEditScreen
 import com.codealphas.themovie.presentation.review.ReviewListScreen
 

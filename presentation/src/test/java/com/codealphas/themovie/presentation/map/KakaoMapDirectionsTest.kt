@@ -1,5 +1,6 @@
 package com.codealphas.themovie.presentation.map
 
+import com.codealphas.themovie.presentation.map.location.LocationLatLng
 import org.junit.Assert.assertEquals
 import org.junit.Test
 

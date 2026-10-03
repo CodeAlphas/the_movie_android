@@ -11,10 +11,10 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.codealphas.themovie.presentation.movie.MovieCategory
-import com.codealphas.themovie.presentation.movie.MovieListScreen
-import com.codealphas.themovie.presentation.movie.MovieListViewModel
-import com.codealphas.themovie.presentation.movie.SearchMovieScreen
+import com.codealphas.themovie.presentation.movie.list.MovieCategory
+import com.codealphas.themovie.presentation.movie.list.MovieListScreen
+import com.codealphas.themovie.presentation.movie.list.MovieListViewModel
+import com.codealphas.themovie.presentation.movie.search.SearchMovieScreen
 
 @Composable
 internal fun HomeNavHost(

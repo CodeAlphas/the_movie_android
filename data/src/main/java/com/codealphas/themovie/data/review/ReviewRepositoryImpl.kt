@@ -38,7 +38,6 @@ internal class ReviewRepositoryImpl
         override fun observeAll(): Flow<List<Review>> =
             reviewDao.getAll().map { reviews -> reviews.map(ReviewEntity::toReview) }
 
-        // DAO insert가 IGNORE라 Room에 이미 있는 id는 서버 값으로 덮어쓰지 않음
         override suspend fun syncFromRemote(): ReviewResult {
             val userId = authRepository.currentUserId() ?: return Outcome.Failure(ReviewError.Unknown)
             return try {
@@ -82,13 +81,13 @@ internal class ReviewRepositoryImpl
                 resolvePhoto(draft.photo, previous, userId)
                     ?: return Outcome.Failure(ReviewError.PhotoUploadFailed)
             // 화면을 닫아 취소되면 Room에는 저장됐는데 서버에는 쓰이지 않은 상태로 남으므로,
-            // 업로드가 끝난 뒤의 저장 단계는 취소되지 않고 끝까지 처리.
+            // Room 저장을 시작한 뒤에는 취소되지 않고 끝까지 처리
             // 업로드 직후 프로세스가 종료되면 코드로 막을 수 없고 드물어서, 남는 고아 사진 파일은 별도 정리 없이 허용
             withContext(NonCancellable) { persist(draft, previous, photo, userId) }
             return Outcome.Success(Unit)
         }
 
-        // 업로드가 실패하면 null. 이때 기존 사진과 Room, 서버는 그대로
+        // 업로드가 실패하면 기존 사진과 Room, 서버를 바꾸지 않도록 null 반환
         private suspend fun resolvePhoto(
             photo: ReviewPhoto,
             previous: ReviewEntity?,
@@ -96,7 +95,7 @@ internal class ReviewRepositoryImpl
         ): PhotoFields? =
             when (photo) {
                 ReviewPhoto.Unchanged -> PhotoFields(previous?.image.orEmpty(), previous?.storageFileName.orEmpty())
-                ReviewPhoto.Removed -> PhotoFields(image = "", fileName = "")
+                ReviewPhoto.Removed -> PhotoFields(imageUrl = "", fileName = "")
                 is ReviewPhoto.New -> upload(photo.uri, userId)
             }
 
@@ -106,7 +105,7 @@ internal class ReviewRepositoryImpl
         ): PhotoFields? {
             val fileName = userId.take(USER_ID_PREFIX_LENGTH) + "${clock.nowMillis()}.png"
             return try {
-                PhotoFields(image = storageDataSource.upload(fileName, uri), fileName = fileName)
+                PhotoFields(imageUrl = storageDataSource.upload(fileName, uri), fileName = fileName)
             } catch (_: CancellationException) {
                 // Firebase Storage SDK가 사진 업로드를 취소해도 취소 예외로 끝나는데 그대로 올리면 저장 중 표시가 풀리지 않으므로,
                 // 저장을 요청한 코루틴이 취소되지 않았으면 업로드 실패로 처리
@@ -127,14 +126,15 @@ internal class ReviewRepositoryImpl
             val entity =
                 ReviewEntity(
                     title = draft.title,
-                    image = photo.image,
+                    image = photo.imageUrl,
                     content = draft.content,
                     time = SimpleDateFormat("yyyy/MM/dd HH:mm", Locale.KOREA).format(Date(clock.nowMillis())),
                     rating = draft.rating,
                     storageFileName = photo.fileName,
                     id = existingId ?: 0,
                 )
-            // 예외를 잡아 다시 던지면 detekt가 막으므로, 저장 성공 여부를 플래그에 남겨 finally에서 실패일 때만 정리 처리
+            // Room 저장 실패를 catch(e: Exception)으로 잡아 사진을 지운 뒤 다시 던지면 detekt TooGenericExceptionCaught에 걸리므로,
+            // 예외는 잡지 않고 그대로 올리면서 finally에서 stored가 false일 때만 새 사진 삭제
             var stored = false
             val id =
                 try {
@@ -205,6 +205,6 @@ internal class ReviewRepositoryImpl
     }
 
 private data class PhotoFields(
-    val image: String,
+    val imageUrl: String,
     val fileName: String,
 )

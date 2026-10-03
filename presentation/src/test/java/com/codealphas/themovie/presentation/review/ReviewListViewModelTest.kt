@@ -215,7 +215,7 @@ class ReviewListViewModelTest {
 private val REVIEW =
     Review(
         title = "기생충",
-        image = "",
+        imageUrl = "",
         content = "잘 봤다",
         time = "2024/01/02 03:04",
         rating = 9.0,

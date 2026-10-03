@@ -35,9 +35,20 @@ class LoginViewModelTest {
             viewModel.signIn("user@example.com", "")
             runCurrent()
 
-            assertEquals(0, repository.signInCalls)
+            assertEquals(0, repository.signInRequests.size)
             assertEquals(listOf(LoginEffect.ShowInvalidInput, LoginEffect.ShowInvalidInput), effects)
             assertFalse(viewModel.state.value.isLoading)
+        }
+    }
+
+    @Test
+    fun `이메일과 비밀번호 앞뒤에 공백을 넣고 로그인하면 공백을 뺀 값으로 로그인을 요청해야 한다`() {
+        val repository = FakeLoginAuthRepository(signInResult = CompletableDeferred(Outcome.Success(Unit)))
+        runLoginTest(repository) { viewModel ->
+            viewModel.signIn(" user@example.com ", " pass word ")
+            runCurrent()
+
+            assertEquals(listOf("user@example.com" to "pass word"), repository.signInRequests)
         }
     }
 
@@ -51,7 +62,7 @@ class LoginViewModelTest {
             viewModel.signIn("user@example.com", "password")
             runCurrent()
 
-            assertEquals(1, repository.signInCalls)
+            assertEquals(1, repository.signInRequests.size)
             assertTrue(viewModel.state.value.isLoading)
             result.complete(Outcome.Success(Unit))
         }
@@ -152,13 +163,13 @@ private fun TestScope.collectLoginEffects(viewModel: LoginViewModel): List<Login
 private class FakeLoginAuthRepository(
     private val signInResult: CompletableDeferred<AuthResult> = CompletableDeferred(),
 ) : AuthRepository {
-    var signInCalls: Int = 0
+    val signInRequests = mutableListOf<Pair<String, String>>()
 
     override suspend fun signIn(
         email: String,
         password: String,
     ): AuthResult {
-        signInCalls += 1
+        signInRequests += email to password
         return signInResult.await()
     }
 

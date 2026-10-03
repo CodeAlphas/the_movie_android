@@ -1,10 +1,10 @@
 package com.codealphas.themovie.data.di
 
 import com.codealphas.themovie.data.map.remote.KakaoApiKeyInterceptor
-import com.codealphas.themovie.data.map.remote.KakaoLocalService
+import com.codealphas.themovie.data.map.remote.KakaoLocalApiService
 import com.codealphas.themovie.data.movie.remote.TmdbApiKeyInterceptor
 import com.codealphas.themovie.data.movie.remote.TmdbApiService
-import com.codealphas.themovie.data.remote.RetryInterceptor
+import com.codealphas.themovie.data.network.RetryInterceptor
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -16,9 +16,7 @@ import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
 import javax.inject.Singleton
 
-// public 함수가 internal 타입을 받으면 컴파일이 실패하므로, NetworkModule 클래스를 internal로 제한
-// 함수에 internal을 붙이면 컴파일된 메서드 이름 뒤에 $와 이 모듈 이름 data가 붙어 Hilt 팩토리가 $data가 붙은 이름을 호출하므로,
-// 선언된 함수 이름을 호출하도록 @Provides는 public으로 유지
+// public 함수가 internal 타입을 받거나 반환하면 컴파일이 실패하므로, NetworkModule 클래스를 internal로 제한
 @Module
 @InstallIn(SingletonComponent::class)
 internal object NetworkModule {
@@ -36,7 +34,7 @@ internal object NetworkModule {
     @Singleton
     fun provideRetryInterceptor(): RetryInterceptor = RetryInterceptor()
 
-    // TMDB와 Kakao는 붙이는 인증 키가 다르므로, 클라이언트도 API별로 나눔
+    // TMDB와 Kakao는 붙이는 인증 키가 다르므로, 클라이언트도 API별로 분리
     @Provides
     @Singleton
     @TmdbOkHttp
@@ -46,7 +44,6 @@ internal object NetworkModule {
     ): OkHttpClient =
         OkHttpClient
             .Builder()
-            // proceed()는 다음 인터셉터로 들어가므로, 재시도마다 인증 키를 다시 붙이도록 키 인터셉터보다 먼저 등록
             .addInterceptor(retryInterceptor)
             .addInterceptor(TmdbApiKeyInterceptor(apiKey))
             .build()
@@ -60,7 +57,6 @@ internal object NetworkModule {
     ): OkHttpClient =
         OkHttpClient
             .Builder()
-            // proceed()는 다음 인터셉터로 들어가므로, 재시도마다 인증 키를 다시 붙이도록 키 인터셉터보다 먼저 등록
             .addInterceptor(retryInterceptor)
             .addInterceptor(KakaoApiKeyInterceptor(apiKey))
             .build()
@@ -101,7 +97,7 @@ internal object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideKakaoLocalService(
+    fun provideKakaoLocalApiService(
         @KakaoRetrofit retrofit: Retrofit,
-    ): KakaoLocalService = retrofit.create(KakaoLocalService::class.java)
+    ): KakaoLocalApiService = retrofit.create(KakaoLocalApiService::class.java)
 }

@@ -59,7 +59,7 @@ class ReviewRepositoryImplTest {
             val expected =
                 STORED.toReview().copy(
                     title = "수정한 제목",
-                    image = downloadUrl(NEW_FILE_NAME),
+                    imageUrl = downloadUrl(NEW_FILE_NAME),
                     storageFileName = NEW_FILE_NAME,
                 )
             assertEquals(expected, dao.saved(STORED.id))
@@ -135,7 +135,7 @@ class ReviewRepositoryImplTest {
 
             assertEquals(Outcome.Success(Unit), result)
             assertEquals(listOf("room.update", "server.save", "storage.delete:old.png"), calls)
-            val expected = STORED.toReview().copy(title = "수정한 제목", image = "", storageFileName = "")
+            val expected = STORED.toReview().copy(title = "수정한 제목", imageUrl = "", storageFileName = "")
             assertEquals(expected, dao.saved(STORED.id))
         }
 
@@ -152,7 +152,7 @@ class ReviewRepositoryImplTest {
             val expected =
                 Review(
                     title = "새 감상문",
-                    image = "",
+                    imageUrl = "",
                     content = "재밌다",
                     time = "",
                     rating = 7.0,

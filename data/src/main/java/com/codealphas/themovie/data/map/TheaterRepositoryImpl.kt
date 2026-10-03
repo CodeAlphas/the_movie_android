@@ -1,8 +1,8 @@
 package com.codealphas.themovie.data.map
 
-import com.codealphas.themovie.data.map.remote.KakaoLocalService
+import com.codealphas.themovie.data.map.remote.KakaoLocalApiService
 import com.codealphas.themovie.data.map.remote.PlaceDto
-import com.codealphas.themovie.data.remote.safeApiCall
+import com.codealphas.themovie.data.network.safeApiCall
 import com.codealphas.themovie.domain.map.Address
 import com.codealphas.themovie.domain.map.Theater
 import com.codealphas.themovie.domain.map.TheaterRepository
@@ -13,7 +13,7 @@ import javax.inject.Inject
 internal class TheaterRepositoryImpl
     @Inject
     constructor(
-        private val service: KakaoLocalService,
+        private val service: KakaoLocalApiService,
     ) : TheaterRepository {
         override suspend fun getAddress(
             latitude: Double,
@@ -36,7 +36,7 @@ internal class TheaterRepositoryImpl
             }
 
         private companion object {
-            // Kakao Local 키워드 검색은 size 15, page 45가 상한이지만 지도에 찍을 영화관은 45곳이면 충분하므로 3페이지로 제한
+            // Kakao Local 키워드 검색은 한 페이지에 최대 15곳이고 지도에 찍을 영화관은 45곳이면 충분하므로, 3페이지까지만 요청
             const val MAX_PAGES = 3
         }
     }

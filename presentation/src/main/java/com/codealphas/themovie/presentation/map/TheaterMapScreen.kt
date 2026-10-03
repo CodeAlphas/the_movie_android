@@ -1,19 +1,10 @@
 package com.codealphas.themovie.presentation.map
 
-import android.Manifest
-import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
-import android.content.IntentSender
-import android.content.pm.PackageManager
 import android.content.res.Configuration
-import android.net.Uri
-import android.provider.Settings
 import androidx.activity.compose.LocalActivity
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.IntentSenderRequest
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
@@ -23,21 +14,14 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -56,8 +40,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
@@ -67,16 +49,16 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import com.codealphas.themovie.core.android.theme.Spacing
 import com.codealphas.themovie.core.android.theme.TheMovieTheme
+import com.codealphas.themovie.core.android.ui.TheMovieTopAppBar
 import com.codealphas.themovie.core.android.ui.rememberThrottledClick
 import com.codealphas.themovie.core.android.ui.showToast
 import com.codealphas.themovie.domain.map.Theater
 import com.codealphas.themovie.presentation.R
+import com.codealphas.themovie.presentation.map.location.LocationLatLng
+import com.codealphas.themovie.presentation.map.location.LocationPermissionSettingsDialog
+import com.codealphas.themovie.presentation.map.location.openLocationPermissionSettings
+import com.codealphas.themovie.presentation.map.location.rememberCurrentLocationRequester
 import com.codealphas.themovie.presentation.ui.remoteErrorMessage
-import com.google.android.gms.common.api.ResolvableApiException
-import com.google.android.gms.location.LocationRequest
-import com.google.android.gms.location.LocationServices
-import com.google.android.gms.location.LocationSettingsRequest
-import com.google.android.gms.location.Priority
 import com.kakao.vectormap.KakaoMap
 import com.kakao.vectormap.KakaoMapReadyCallback
 import com.kakao.vectormap.LatLng
@@ -89,8 +71,6 @@ import kotlinx.coroutines.launch
 
 private const val MAP_ZOOM_LEVEL = 15
 private const val CAMERA_ANIMATION_MS = 200
-private val LOCATION_PERMISSIONS =
-    arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
 
 @Composable
 fun TheaterMapScreen(
@@ -108,16 +88,9 @@ fun TheaterMapScreen(
 
     val requestCurrentLocation =
         rememberCurrentLocationRequester(
+            snackbarHostState = snackbarHostState,
             onLocationReady = { viewModel.onIntent(TheaterMapIntent.LocationReady) },
             onLocationUnavailable = { viewModel.onIntent(TheaterMapIntent.LocationUnavailable) },
-            onPermissionDenied = {
-                scope.launch {
-                    snackbarHostState.showSnackbar(
-                        message = resources.getString(R.string.map_permission_denied),
-                        duration = SnackbarDuration.Long,
-                    )
-                }
-            },
             onPermissionBlocked = { showPermissionSettings = true },
         )
     val currentRequestCurrentLocation by rememberUpdatedState(requestCurrentLocation)
@@ -136,7 +109,7 @@ fun TheaterMapScreen(
                             val result =
                                 snackbarHostState.showSnackbar(
                                     message = resources.getString(R.string.map_location_unavailable),
-                                    actionLabel = resources.getString(R.string.map_location_retry),
+                                    actionLabel = resources.getString(R.string.common_retry),
                                     duration = SnackbarDuration.Long,
                                 )
                             if (result == SnackbarResult.ActionPerformed) currentRequestCurrentLocation()
@@ -177,15 +150,10 @@ fun TheaterMapScreen(
     }
 
     if (showPermissionSettings) {
-        PermissionSettingsDialog(
+        LocationPermissionSettingsDialog(
             onMove = {
                 showPermissionSettings = false
-                context.startActivity(
-                    Intent(
-                        Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                        Uri.fromParts("package", context.packageName, null),
-                    ),
-                )
+                context.openLocationPermissionSettings()
             },
             onCancel = { showPermissionSettings = false },
         )
@@ -209,7 +177,9 @@ internal fun TheaterMapContent(
     // 상태 표시줄 뒤에는 창 배경이 보이도록 앱바를 상태 표시줄 높이만큼 내려 배치
     Scaffold(
         modifier = Modifier.windowInsetsPadding(WindowInsets.statusBars),
-        topBar = { TheaterMapTopAppBar(onNavigateUp = onNavigateUp) },
+        topBar = {
+            TheMovieTopAppBar(title = stringResource(R.string.map_appbar_title), onNavigateUp = onNavigateUp)
+        },
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         contentWindowInsets = WindowInsets.safeDrawing,
     ) { innerPadding ->
@@ -237,29 +207,6 @@ internal fun TheaterMapContent(
             onDirectionsClick = { onDirectionsClick(theater) },
         )
     }
-}
-
-// Material3 1.4.0의 TopAppBar는 아직 실험 API라서, 앱바 한 곳에만 opt-in 적용
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun TheaterMapTopAppBar(onNavigateUp: () -> Unit) {
-    TopAppBar(
-        title = { Text(text = stringResource(R.string.map_appbar_title)) },
-        navigationIcon = {
-            IconButton(onClick = onNavigateUp) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_baseline_arrow_back_24),
-                    contentDescription = stringResource(R.string.common_navigate_up),
-                )
-            }
-        },
-        colors =
-            TopAppBarDefaults.topAppBarColors(
-                containerColor = MaterialTheme.colorScheme.primary,
-                titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
-            ),
-    )
 }
 
 @Composable
@@ -329,73 +276,6 @@ private fun TheaterKakaoMap(
 private fun cameraUpdate(location: LocationLatLng): CameraUpdate =
     CameraUpdateFactory.newCenterPosition(LatLng.from(location.latitude, location.longitude), MAP_ZOOM_LEVEL)
 
-@Composable
-private fun rememberCurrentLocationRequester(
-    onLocationReady: () -> Unit,
-    onLocationUnavailable: () -> Unit,
-    onPermissionDenied: () -> Unit,
-    onPermissionBlocked: () -> Unit,
-): () -> Unit {
-    // 위치 권한 확인과 위치 설정 대화상자에 Activity가 필요하고 지도 화면은 Activity 안에서만 그리므로,
-    // 없으면 바로 드러나도록 checkNotNull 적용
-    val activity = checkNotNull(LocalActivity.current)
-    val currentOnLocationReady by rememberUpdatedState(onLocationReady)
-    val currentOnLocationUnavailable by rememberUpdatedState(onLocationUnavailable)
-    val currentOnPermissionDenied by rememberUpdatedState(onPermissionDenied)
-    val currentOnPermissionBlocked by rememberUpdatedState(onPermissionBlocked)
-
-    val locationSettingsLauncher =
-        rememberLauncherForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
-            if (result.resultCode == Activity.RESULT_OK) currentOnLocationReady() else currentOnLocationUnavailable()
-        }
-    // 위치가 꺼져 있으면 설정 화면으로 보내지 않고, 시스템 대화상자로 앱 안에서 켜도록 적용
-    val checkLocationSettings = {
-        val request = LocationRequest.Builder(Priority.PRIORITY_BALANCED_POWER_ACCURACY, 0L).build()
-        val settingsRequest = LocationSettingsRequest.Builder().addLocationRequest(request).build()
-        LocationServices
-            .getSettingsClient(activity)
-            .checkLocationSettings(settingsRequest)
-            .addOnSuccessListener { currentOnLocationReady() }
-            .addOnFailureListener { error ->
-                if (error is ResolvableApiException) {
-                    try {
-                        locationSettingsLauncher.launch(IntentSenderRequest.Builder(error.resolution).build())
-                    } catch (_: IntentSender.SendIntentException) {
-                        currentOnLocationUnavailable()
-                    }
-                } else {
-                    currentOnLocationUnavailable()
-                }
-            }
-    }
-    val permissionLauncher =
-        rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { grants ->
-            when {
-                // Android 12 이상에서 대략적인 위치만 허용해도 위치 조회가 가능하므로, 둘 중 하나만 허용돼도 성공 처리
-                grants.values.any { it } -> checkLocationSettings()
-                activity.isLocationPermissionBlocked() -> currentOnPermissionBlocked()
-                else -> currentOnPermissionDenied()
-            }
-        }
-
-    return {
-        if (activity.hasLocationPermission()) {
-            checkLocationSettings()
-        } else {
-            permissionLauncher.launch(
-                LOCATION_PERMISSIONS,
-            )
-        }
-    }
-}
-
-private fun Context.hasLocationPermission(): Boolean =
-    LOCATION_PERMISSIONS.any { ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED }
-
-// 두 번 거부하면 시스템이 권한 요청 창을 더 이상 띄우지 않으므로, 근거 표시 여부로 영구 거부를 판별해 설정 이동 안내 적용
-private fun Activity.isLocationPermissionBlocked(): Boolean =
-    LOCATION_PERMISSIONS.none { ActivityCompat.shouldShowRequestPermissionRationale(this, it) }
-
 // Android 11부터 resolveActivity는 <queries> 선언 없이는 설치된 카카오맵도 찾지 못하므로,
 // 설치 여부를 미리 확인하지 않고 앱 실행이 실패하면 웹 길찾기로 대체
 private fun Context.openDirections(
@@ -412,24 +292,6 @@ private fun Context.openDirections(
             showToast(R.string.map_directions_unavailable)
         }
     }
-}
-
-@Composable
-private fun PermissionSettingsDialog(
-    onMove: () -> Unit,
-    onCancel: () -> Unit,
-) {
-    AlertDialog(
-        onDismissRequest = onCancel,
-        title = { Text(text = stringResource(R.string.map_permission_settings_title)) },
-        text = { Text(text = stringResource(R.string.map_permission_settings_message)) },
-        confirmButton = {
-            TextButton(onClick = onMove) { Text(text = stringResource(R.string.map_permission_settings_move)) }
-        },
-        dismissButton = {
-            TextButton(onClick = onCancel) { Text(text = stringResource(R.string.map_permission_settings_cancel)) }
-        },
-    )
 }
 
 @Preview(name = "라이트")

@@ -38,6 +38,8 @@ internal fun Throwable.toAuthError(): AuthError =
         // 약한 비밀번호가 자격 증명 오류로 바뀌지 않도록 먼저 매핑
         is FirebaseAuthWeakPasswordException -> AuthError.WeakPassword
         is FirebaseAuthInvalidCredentialsException ->
+            // FirebaseAuthInvalidCredentialsException은 틀린 비밀번호와 잘못된 이메일 형식에 함께 쓰이므로,
+            // 예외 타입 대신 errorCode가 ERROR_INVALID_EMAIL인지 보고 이메일 형식 오류만 InvalidEmail로 매핑
             if (errorCode == ERROR_INVALID_EMAIL) {
                 AuthError.InvalidEmail
             } else {

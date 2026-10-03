@@ -73,9 +73,11 @@ fun JoinScreen(
                 when (effect) {
                     JoinEffect.NavigateToLogin -> currentOnNavigateToLogin()
                     JoinEffect.ShowLoginPrompt -> context.showToast(R.string.join_succeeded)
-                    JoinEffect.ShowInvalidInput -> context.showToast(R.string.join_failed_blank)
+                    JoinEffect.ShowInvalidInput -> context.showToast(R.string.common_error_blank_input)
                     JoinEffect.ShowPasswordMismatch -> context.showToast(R.string.join_failed_password)
-                    is JoinEffect.ShowError -> context.showToast(joinFailureMessage(effect.error))
+                    JoinEffect.ShowPasswordEdgeWhitespace ->
+                        context.showToast(R.string.join_failed_password_whitespace)
+                    is JoinEffect.ShowError -> context.showToast(joinErrorMessage(effect.error))
                 }
             }
         }
@@ -219,7 +221,8 @@ private fun JoinTextField(
         keyboardActions = KeyboardActions(onDone = { onDone?.invoke() }),
         singleLine = true,
         shape = FieldShape,
-        // XML 입력란처럼 밑줄 없는 채운 상자로 보이도록, 포커스와 관계없이 surfaceVariant 배경에 밑줄 색을 투명으로 적용
+        // TextField는 기본으로 아래에 밑줄을 그리고 포커스를 받으면 밑줄 색을 바꾸므로,
+        // 밑줄 없는 채운 상자로 보이도록 포커스와 관계없이 surfaceVariant 배경에 밑줄 색을 투명으로 적용
         colors =
             TextFieldDefaults.colors(
                 focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,

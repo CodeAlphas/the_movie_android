@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.codealphas.themovie.domain.map.TheaterRepository
 import com.codealphas.themovie.domain.result.Outcome
+import com.codealphas.themovie.presentation.map.location.CurrentLocationProvider
+import com.codealphas.themovie.presentation.map.location.LocationLatLng
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel

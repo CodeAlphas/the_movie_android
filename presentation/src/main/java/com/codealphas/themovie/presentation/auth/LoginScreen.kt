@@ -81,8 +81,8 @@ fun LoginScreen(
                 when (effect) {
                     LoginEffect.NavigateToHome -> currentOnNavigateToHome()
                     LoginEffect.NavigateToJoin -> currentOnNavigateToJoin()
-                    LoginEffect.ShowInvalidInput -> context.showToast(R.string.login_failed)
-                    is LoginEffect.ShowError -> context.showToast(loginFailureMessage(effect.error))
+                    LoginEffect.ShowInvalidInput -> context.showToast(R.string.common_error_blank_input)
+                    is LoginEffect.ShowError -> context.showToast(loginErrorMessage(effect.error))
                 }
             }
         }
@@ -108,7 +108,7 @@ internal fun LoginContent(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Image(
-                painter = painterResource(R.drawable.the_movie),
+                painter = painterResource(R.drawable.logo_the_movie),
                 contentDescription = null,
                 modifier =
                     Modifier
@@ -202,7 +202,8 @@ private fun LoginTextField(
         keyboardActions = KeyboardActions(onDone = { onDone() }),
         singleLine = true,
         shape = FieldShape,
-        // XML 입력란처럼 밑줄 없는 채운 상자로 보이도록, 포커스와 관계없이 surfaceVariant 배경에 밑줄 색을 투명으로 적용
+        // TextField는 기본으로 아래에 밑줄을 그리고 포커스를 받으면 밑줄 색을 바꾸므로,
+        // 밑줄 없는 채운 상자로 보이도록 포커스와 관계없이 surfaceVariant 배경에 밑줄 색을 투명으로 적용
         colors =
             TextFieldDefaults.colors(
                 focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,

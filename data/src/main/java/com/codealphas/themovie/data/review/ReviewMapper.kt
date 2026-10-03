@@ -6,7 +6,7 @@ import com.codealphas.themovie.domain.review.Review
 internal fun ReviewEntity.toReview(): Review =
     Review(
         title = title,
-        image = image,
+        imageUrl = image,
         content = content,
         time = time,
         rating = rating,
@@ -17,7 +17,7 @@ internal fun ReviewEntity.toReview(): Review =
 internal fun Review.toEntity(): ReviewEntity =
     ReviewEntity(
         title = title,
-        image = image,
+        image = imageUrl,
         content = content,
         time = time,
         rating = rating,

@@ -1,7 +1,7 @@
 package com.codealphas.themovie.data.map
 
 import com.codealphas.themovie.data.map.remote.CoordToAddressDto
-import com.codealphas.themovie.data.map.remote.KakaoLocalService
+import com.codealphas.themovie.data.map.remote.KakaoLocalApiService
 import com.codealphas.themovie.data.map.remote.KeywordSearchDto
 import com.codealphas.themovie.data.map.remote.KeywordSearchMetaDto
 import com.codealphas.themovie.data.map.remote.PlaceDto
@@ -18,7 +18,7 @@ class TheaterRepositoryImplTest {
     @Test
     fun `첫 페이지가 마지막이면 한 번만 요청해야 한다`() =
         runTest {
-            val service = FakeKakaoLocalService(pages = listOf(page("A", isEnd = true)))
+            val service = FakeKakaoLocalApiService(pages = listOf(page("A", isEnd = true)))
 
             val result = TheaterRepositoryImpl(service).getNearbyTheaters(latitude = 37.5, longitude = 127.0)
 
@@ -29,7 +29,7 @@ class TheaterRepositoryImplTest {
     @Test
     fun `마지막 페이지가 나올 때까지 페이지를 이어서 합쳐야 한다`() =
         runTest {
-            val service = FakeKakaoLocalService(pages = listOf(page("A"), page("B", isEnd = true), page("C")))
+            val service = FakeKakaoLocalApiService(pages = listOf(page("A"), page("B", isEnd = true), page("C")))
 
             val result = TheaterRepositoryImpl(service).getNearbyTheaters(latitude = 37.5, longitude = 127.0)
 
@@ -40,7 +40,7 @@ class TheaterRepositoryImplTest {
     @Test
     fun `마지막 페이지가 계속 나오지 않아도 3페이지까지만 요청해야 한다`() =
         runTest {
-            val service = FakeKakaoLocalService(pages = listOf(page("A"), page("B"), page("C"), page("D")))
+            val service = FakeKakaoLocalApiService(pages = listOf(page("A"), page("B"), page("C"), page("D")))
 
             val result = TheaterRepositoryImpl(service).getNearbyTheaters(latitude = 37.5, longitude = 127.0)
 
@@ -51,7 +51,7 @@ class TheaterRepositoryImplTest {
     @Test
     fun `중간 페이지 요청이 실패하면 전체를 실패로 반환해야 한다`() =
         runTest {
-            val service = FakeKakaoLocalService(pages = listOf(page("A")), failFromPage = 2)
+            val service = FakeKakaoLocalApiService(pages = listOf(page("A")), failFromPage = 2)
 
             val result = TheaterRepositoryImpl(service).getNearbyTheaters(latitude = 37.5, longitude = 127.0)
 
@@ -61,7 +61,7 @@ class TheaterRepositoryImplTest {
     @Test
     fun `주소 요청은 경도를 x, 위도를 y로 넘겨야 한다`() =
         runTest {
-            val service = FakeKakaoLocalService(pages = emptyList())
+            val service = FakeKakaoLocalApiService(pages = emptyList())
 
             TheaterRepositoryImpl(service).getAddress(latitude = 37.1, longitude = 127.2)
 
@@ -90,10 +90,10 @@ private fun page(
         meta = KeywordSearchMetaDto(isEnd = isEnd),
     )
 
-private class FakeKakaoLocalService(
+private class FakeKakaoLocalApiService(
     private val pages: List<KeywordSearchDto>,
     private val failFromPage: Int = Int.MAX_VALUE,
-) : KakaoLocalService {
+) : KakaoLocalApiService {
     val requestedPages = mutableListOf<Int>()
     var requestedAddressXy: Pair<Double, Double>? = null
 

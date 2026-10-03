@@ -23,15 +23,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -55,12 +52,13 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.codealphas.themovie.core.android.theme.Spacing
 import com.codealphas.themovie.core.android.theme.TheMovieTheme
 import com.codealphas.themovie.core.android.ui.RatingStars
+import com.codealphas.themovie.core.android.ui.TheMovieTopAppBar
 import com.codealphas.themovie.core.android.ui.rememberThrottledClick
 import com.codealphas.themovie.core.android.ui.showToast
 import com.codealphas.themovie.domain.review.Review
 import com.codealphas.themovie.presentation.R
-import com.codealphas.themovie.presentation.movie.MovieHeaderBackground
-import com.codealphas.themovie.presentation.movie.MovieHeaderTexts
+import com.codealphas.themovie.presentation.ui.ScreenHeaderBackground
+import com.codealphas.themovie.presentation.ui.ScreenHeaderTexts
 
 private val PanelShape = RoundedCornerShape(5.dp)
 private val PanelBorderWidth = 1.dp
@@ -118,17 +116,27 @@ internal fun ReviewListContent(
     Scaffold(
         modifier = Modifier.windowInsetsPadding(WindowInsets.statusBars),
         topBar = {
-            ReviewListTopAppBar(
+            TheMovieTopAppBar(
+                title = stringResource(R.string.review_list_appbar_title),
                 onNavigateUp = onNavigateUp,
-                onLogoutClick = { onIntent(ReviewListIntent.LogoutClicked) },
+                actions = {
+                    IconButton(
+                        onClick = rememberThrottledClick(onClick = { onIntent(ReviewListIntent.LogoutClicked) }),
+                    ) {
+                        Icon(
+                            painter = painterResource(android.R.drawable.ic_lock_power_off),
+                            contentDescription = stringResource(R.string.common_logout),
+                        )
+                    }
+                },
             )
         },
         contentWindowInsets = WindowInsets.safeDrawing,
     ) { innerPadding ->
         Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
-            MovieHeaderBackground()
+            ScreenHeaderBackground()
             Column(modifier = Modifier.fillMaxSize()) {
-                MovieHeaderTexts(title = R.string.review_list_title, subtitle = R.string.review_list_subtitle)
+                ScreenHeaderTexts(title = R.string.review_list_title, subtitle = R.string.review_list_subtitle)
                 ReviewListPanel(
                     state = state,
                     onReviewClick = { review -> onNavigateToEdit(review.id) },
@@ -139,41 +147,6 @@ internal fun ReviewListContent(
             }
         }
     }
-}
-
-// Material3 1.4.0의 TopAppBar는 아직 실험 API라서, 앱바 한 곳에만 opt-in 적용
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun ReviewListTopAppBar(
-    onNavigateUp: () -> Unit,
-    onLogoutClick: () -> Unit,
-) {
-    TopAppBar(
-        title = { Text(text = stringResource(R.string.review_list_appbar_title)) },
-        navigationIcon = {
-            IconButton(onClick = onNavigateUp) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_baseline_arrow_back_24),
-                    contentDescription = stringResource(R.string.common_navigate_up),
-                )
-            }
-        },
-        actions = {
-            IconButton(onClick = rememberThrottledClick(onClick = onLogoutClick)) {
-                Icon(
-                    painter = painterResource(android.R.drawable.ic_lock_power_off),
-                    contentDescription = stringResource(R.string.common_logout),
-                )
-            }
-        },
-        colors =
-            TopAppBarDefaults.topAppBarColors(
-                containerColor = MaterialTheme.colorScheme.primary,
-                titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
-                actionIconContentColor = MaterialTheme.colorScheme.onPrimary,
-            ),
-    )
 }
 
 @Composable
@@ -207,7 +180,7 @@ private fun ReviewListPanel(
                 }
             }
         }
-        // Room에 감상문이 이미 있으면 동기화가 그 위에 덮어쓰므로, 목록을 가리지 않도록 보여 줄 감상문이 없을 때만 로딩 표시
+        // 동기화는 Room에 없는 감상문만 더해 이미 있는 목록은 그대로 보이므로, 목록을 가리지 않도록 보여 줄 감상문이 없을 때만 로딩 표시
         if (reviews.isNullOrEmpty() && state.isSyncing) {
             CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
         }
@@ -344,7 +317,7 @@ private fun ReviewListContentPreview(state: ReviewListUiState) {
 private fun previewReview(index: Int): Review =
     Review(
         title = "Review $index",
-        image = "",
+        imageUrl = "",
         content = "",
         time = "2026/10/02 12:00",
         rating = 7.0,
