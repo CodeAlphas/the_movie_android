@@ -2,9 +2,9 @@ package com.codealphas.themovie.presentation.home
 
 import android.content.res.Configuration
 import androidx.activity.compose.LocalActivity
-import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -13,18 +13,14 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -46,6 +42,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.codealphas.themovie.core.android.theme.TheMovieTheme
+import com.codealphas.themovie.core.android.ui.TheMovieTopAppBar
 import com.codealphas.themovie.core.android.ui.rememberThrottledClick
 import com.codealphas.themovie.presentation.R
 import com.codealphas.themovie.presentation.home.navigation.HomeNavHost
@@ -146,10 +143,14 @@ internal fun HomeContent(
     Scaffold(
         modifier = Modifier.windowInsetsPadding(WindowInsets.statusBars),
         topBar = {
-            HomeTopAppBar(
-                title = selectedTab.appBarTitle,
-                onLogoutClick = { onIntent(HomeIntent.LogoutClicked) },
-                onNotificationSettingsClick = onNotificationSettingsClick,
+            TheMovieTopAppBar(
+                title = stringResource(selectedTab.appBarTitle),
+                actions = {
+                    HomeAppBarActions(
+                        onLogoutClick = { onIntent(HomeIntent.LogoutClicked) },
+                        onNotificationSettingsClick = onNotificationSettingsClick,
+                    )
+                },
             )
         },
         contentWindowInsets = WindowInsets.safeDrawing,
@@ -181,47 +182,33 @@ internal fun HomeContent(
     }
 }
 
-// Material3 1.4.0의 TopAppBar는 아직 실험 API라서, 앱바 한 곳에만 opt-in 적용
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun HomeTopAppBar(
-    @StringRes title: Int,
+private fun RowScope.HomeAppBarActions(
     onLogoutClick: () -> Unit,
     onNotificationSettingsClick: () -> Unit,
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
-    TopAppBar(
-        title = { Text(text = stringResource(title)) },
-        actions = {
-            IconButton(onClick = rememberThrottledClick(onClick = onLogoutClick)) {
-                Icon(
-                    painter = painterResource(android.R.drawable.ic_lock_power_off),
-                    contentDescription = stringResource(R.string.common_logout),
-                )
-            }
-            IconButton(onClick = { menuExpanded = true }) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_baseline_more_vert_24),
-                    contentDescription = stringResource(R.string.common_more_menu),
-                )
-            }
-            DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
-                DropdownMenuItem(
-                    text = { Text(text = stringResource(R.string.notification_settings_menu)) },
-                    onClick = {
-                        menuExpanded = false
-                        onNotificationSettingsClick()
-                    },
-                )
-            }
-        },
-        colors =
-            TopAppBarDefaults.topAppBarColors(
-                containerColor = MaterialTheme.colorScheme.primary,
-                titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                actionIconContentColor = MaterialTheme.colorScheme.onPrimary,
-            ),
-    )
+    IconButton(onClick = rememberThrottledClick(onClick = onLogoutClick)) {
+        Icon(
+            painter = painterResource(android.R.drawable.ic_lock_power_off),
+            contentDescription = stringResource(R.string.common_logout),
+        )
+    }
+    IconButton(onClick = { menuExpanded = true }) {
+        Icon(
+            painter = painterResource(R.drawable.ic_baseline_more_vert_24),
+            contentDescription = stringResource(R.string.common_more_menu),
+        )
+    }
+    DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
+        DropdownMenuItem(
+            text = { Text(text = stringResource(R.string.notification_settings_menu)) },
+            onClick = {
+                menuExpanded = false
+                onNotificationSettingsClick()
+            },
+        )
+    }
 }
 
 @Preview(name = "라이트")

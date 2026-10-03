@@ -23,17 +23,13 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -64,6 +60,7 @@ import coil3.compose.AsyncImage
 import com.codealphas.themovie.core.android.theme.Spacing
 import com.codealphas.themovie.core.android.theme.TheMovieTheme
 import com.codealphas.themovie.core.android.ui.RatingStars
+import com.codealphas.themovie.core.android.ui.TheMovieTopAppBar
 import com.codealphas.themovie.domain.movie.Cast
 import com.codealphas.themovie.domain.movie.MovieDetail
 import com.codealphas.themovie.domain.movie.Video
@@ -126,7 +123,9 @@ internal fun MovieDetailContent(
     // 상태 표시줄 뒤에는 창 배경이 보이도록 앱바를 상태 표시줄 높이만큼 내려 배치
     Scaffold(
         modifier = Modifier.windowInsetsPadding(WindowInsets.statusBars),
-        topBar = { MovieDetailTopAppBar(onNavigateUp = onNavigateUp) },
+        topBar = {
+            TheMovieTopAppBar(title = stringResource(R.string.app_name), onNavigateUp = onNavigateUp)
+        },
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         contentWindowInsets = WindowInsets.safeDrawing,
     ) { innerPadding ->
@@ -145,29 +144,6 @@ internal fun MovieDetailContent(
             }
         }
     }
-}
-
-// Material3 1.4.0의 TopAppBar는 아직 실험 API라서, 앱바 한 곳에만 opt-in 적용
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun MovieDetailTopAppBar(onNavigateUp: () -> Unit) {
-    TopAppBar(
-        title = { Text(text = stringResource(R.string.app_name)) },
-        navigationIcon = {
-            IconButton(onClick = onNavigateUp) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_baseline_arrow_back_24),
-                    contentDescription = stringResource(R.string.common_navigate_up),
-                )
-            }
-        },
-        colors =
-            TopAppBarDefaults.topAppBarColors(
-                containerColor = MaterialTheme.colorScheme.primary,
-                titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
-            ),
-    )
 }
 
 @Composable

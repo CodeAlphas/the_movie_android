@@ -23,15 +23,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -55,6 +52,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.codealphas.themovie.core.android.theme.Spacing
 import com.codealphas.themovie.core.android.theme.TheMovieTheme
 import com.codealphas.themovie.core.android.ui.RatingStars
+import com.codealphas.themovie.core.android.ui.TheMovieTopAppBar
 import com.codealphas.themovie.core.android.ui.rememberThrottledClick
 import com.codealphas.themovie.core.android.ui.showToast
 import com.codealphas.themovie.domain.review.Review
@@ -118,9 +116,19 @@ internal fun ReviewListContent(
     Scaffold(
         modifier = Modifier.windowInsetsPadding(WindowInsets.statusBars),
         topBar = {
-            ReviewListTopAppBar(
+            TheMovieTopAppBar(
+                title = stringResource(R.string.review_list_appbar_title),
                 onNavigateUp = onNavigateUp,
-                onLogoutClick = { onIntent(ReviewListIntent.LogoutClicked) },
+                actions = {
+                    IconButton(
+                        onClick = rememberThrottledClick(onClick = { onIntent(ReviewListIntent.LogoutClicked) }),
+                    ) {
+                        Icon(
+                            painter = painterResource(android.R.drawable.ic_lock_power_off),
+                            contentDescription = stringResource(R.string.common_logout),
+                        )
+                    }
+                },
             )
         },
         contentWindowInsets = WindowInsets.safeDrawing,
@@ -139,41 +147,6 @@ internal fun ReviewListContent(
             }
         }
     }
-}
-
-// Material3 1.4.0의 TopAppBar는 아직 실험 API라서, 앱바 한 곳에만 opt-in 적용
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun ReviewListTopAppBar(
-    onNavigateUp: () -> Unit,
-    onLogoutClick: () -> Unit,
-) {
-    TopAppBar(
-        title = { Text(text = stringResource(R.string.review_list_appbar_title)) },
-        navigationIcon = {
-            IconButton(onClick = onNavigateUp) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_baseline_arrow_back_24),
-                    contentDescription = stringResource(R.string.common_navigate_up),
-                )
-            }
-        },
-        actions = {
-            IconButton(onClick = rememberThrottledClick(onClick = onLogoutClick)) {
-                Icon(
-                    painter = painterResource(android.R.drawable.ic_lock_power_off),
-                    contentDescription = stringResource(R.string.common_logout),
-                )
-            }
-        },
-        colors =
-            TopAppBarDefaults.topAppBarColors(
-                containerColor = MaterialTheme.colorScheme.primary,
-                titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
-                actionIconContentColor = MaterialTheme.colorScheme.onPrimary,
-            ),
-    )
 }
 
 @Composable
