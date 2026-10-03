@@ -1,6 +1,5 @@
-package com.codealphas.themovie.data.map
+package com.codealphas.themovie.data.map.remote
 
-import com.codealphas.themovie.data.map.remote.KakaoApiKeyInterceptor
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.mockwebserver.MockResponse

@@ -1,4 +1,4 @@
-package com.codealphas.themovie.data.review.di
+package com.codealphas.themovie.data.di
 
 import android.content.Context
 import androidx.room.Room

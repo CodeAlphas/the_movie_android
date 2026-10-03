@@ -2,7 +2,7 @@ package com.codealphas.themovie.data.map
 
 import com.codealphas.themovie.data.map.remote.KakaoLocalApiService
 import com.codealphas.themovie.data.map.remote.PlaceDto
-import com.codealphas.themovie.data.remote.safeApiCall
+import com.codealphas.themovie.data.network.safeApiCall
 import com.codealphas.themovie.domain.map.Address
 import com.codealphas.themovie.domain.map.Theater
 import com.codealphas.themovie.domain.map.TheaterRepository

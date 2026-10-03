@@ -4,7 +4,7 @@ import com.codealphas.themovie.data.map.remote.KakaoApiKeyInterceptor
 import com.codealphas.themovie.data.map.remote.KakaoLocalApiService
 import com.codealphas.themovie.data.movie.remote.TmdbApiKeyInterceptor
 import com.codealphas.themovie.data.movie.remote.TmdbApiService
-import com.codealphas.themovie.data.remote.RetryInterceptor
+import com.codealphas.themovie.data.network.RetryInterceptor
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

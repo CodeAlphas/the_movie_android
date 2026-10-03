@@ -44,6 +44,8 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.codealphas.themovie.core.android.theme.Spacing
 import com.codealphas.themovie.core.android.theme.TheMovieTheme
 import com.codealphas.themovie.presentation.R
+import com.codealphas.themovie.presentation.ui.ScreenHeaderBackground
+import com.codealphas.themovie.presentation.ui.ScreenHeaderTexts
 import com.codealphas.themovie.presentation.ui.remoteErrorMessage
 
 private const val PREVIEW_MOVIE_COUNT = 4
@@ -100,10 +102,10 @@ internal fun SearchMovieContent(
     ClearFocusWhenImeHides()
 
     Box(modifier = Modifier.fillMaxSize()) {
-        MovieHeaderBackground()
+        ScreenHeaderBackground()
         Column(modifier = Modifier.fillMaxSize()) {
             SearchField(query = state.query, onQueryChange = { onIntent(SearchMovieIntent.QueryChanged(it)) })
-            MovieHeaderTexts(title = R.string.search_result_title, subtitle = R.string.search_result_subtitle)
+            ScreenHeaderTexts(title = R.string.search_result_title, subtitle = R.string.search_result_subtitle)
             Box(modifier = Modifier.fillMaxSize()) {
                 state.movies?.let { movies ->
                     MovieGrid(movies = movies, gridState = gridState, onMovieClick = onMovieClick)

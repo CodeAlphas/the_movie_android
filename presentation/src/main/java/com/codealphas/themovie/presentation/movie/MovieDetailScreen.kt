@@ -178,7 +178,7 @@ private fun MovieSummary(detail: MovieDetail) {
         horizontalArrangement = Arrangement.spacedBy(Spacing.medium),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        val placeholder = painterResource(R.drawable.ic_launcher_foreground)
+        val placeholder = painterResource(R.drawable.poster_placeholder)
         AsyncImage(
             model = detail.posterUrl,
             contentDescription = null,

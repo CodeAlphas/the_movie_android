@@ -57,8 +57,8 @@ import com.codealphas.themovie.core.android.ui.rememberThrottledClick
 import com.codealphas.themovie.core.android.ui.showToast
 import com.codealphas.themovie.domain.review.Review
 import com.codealphas.themovie.presentation.R
-import com.codealphas.themovie.presentation.movie.MovieHeaderBackground
-import com.codealphas.themovie.presentation.movie.MovieHeaderTexts
+import com.codealphas.themovie.presentation.ui.ScreenHeaderBackground
+import com.codealphas.themovie.presentation.ui.ScreenHeaderTexts
 
 private val PanelShape = RoundedCornerShape(5.dp)
 private val PanelBorderWidth = 1.dp
@@ -134,9 +134,9 @@ internal fun ReviewListContent(
         contentWindowInsets = WindowInsets.safeDrawing,
     ) { innerPadding ->
         Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
-            MovieHeaderBackground()
+            ScreenHeaderBackground()
             Column(modifier = Modifier.fillMaxSize()) {
-                MovieHeaderTexts(title = R.string.review_list_title, subtitle = R.string.review_list_subtitle)
+                ScreenHeaderTexts(title = R.string.review_list_title, subtitle = R.string.review_list_subtitle)
                 ReviewListPanel(
                     state = state,
                     onReviewClick = { review -> onNavigateToEdit(review.id) },

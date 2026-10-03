@@ -2,7 +2,7 @@ package com.codealphas.themovie.data.movie
 
 import com.codealphas.themovie.data.movie.remote.MovieDto
 import com.codealphas.themovie.data.movie.remote.TmdbApiService
-import com.codealphas.themovie.data.remote.safeApiCall
+import com.codealphas.themovie.data.network.safeApiCall
 import com.codealphas.themovie.domain.movie.Movie
 import com.codealphas.themovie.domain.movie.MovieDetailResult
 import com.codealphas.themovie.domain.movie.MovieRepository

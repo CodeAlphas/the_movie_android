@@ -1,4 +1,4 @@
-package com.codealphas.themovie.data.remote
+package com.codealphas.themovie.data.network
 
 import com.codealphas.themovie.domain.result.Outcome
 import com.codealphas.themovie.domain.result.RemoteError
