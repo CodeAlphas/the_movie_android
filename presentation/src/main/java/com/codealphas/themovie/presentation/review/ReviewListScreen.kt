@@ -72,7 +72,7 @@ private const val PREVIEW_REVIEW_COUNT = 3
 fun ReviewListScreen(
     onNavigateUp: () -> Unit,
     onNavigateToLogin: () -> Unit,
-    onNavigateToEdit: (reviewId: Int?) -> Unit,
+    onNavigateToEdit: (reviewId: String?) -> Unit,
     viewModel: ReviewListViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -109,7 +109,7 @@ internal fun ReviewListContent(
     state: ReviewListUiState,
     onIntent: (ReviewListIntent) -> Unit,
     onNavigateUp: () -> Unit,
-    onNavigateToEdit: (reviewId: Int?) -> Unit,
+    onNavigateToEdit: (reviewId: String?) -> Unit,
 ) {
     // 앱바 색이 라이트에서 어둡고 다크에서 밝아 상태 표시줄 뒤까지 칠하면 같은 계열 색의 시계와 배터리 아이콘이 묻히므로,
     // 상태 표시줄 뒤에는 창 배경이 보이도록 앱바를 상태 표시줄 높이만큼 내려 배치
@@ -322,5 +322,5 @@ private fun previewReview(index: Int): Review =
         time = "2026/10/02 12:00",
         rating = 7.0,
         storageFileName = "",
-        id = index,
+        id = index.toString(),
     )

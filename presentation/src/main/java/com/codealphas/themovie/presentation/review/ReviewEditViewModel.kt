@@ -28,7 +28,7 @@ class ReviewEditViewModel
     ) : ViewModel() {
         // toRoute()는 Bundle이 필요해 JVM 단위 테스트에서 실패하므로, Navigation이 속성 이름을 키로 넣어 둔 값 직접 조회
         // 작성 화면은 reviewId 없이 열리므로, 값이 없으면 새 감상문으로 처리
-        private val reviewId: Int? = savedStateHandle.get<Int>(ReviewEdit::reviewId.name)
+        private val reviewId: String? = savedStateHandle.get<String>(ReviewEdit::reviewId.name)
 
         // 카메라 앱을 쓰는 동안 프로세스가 종료되면 입력이 사라지므로, SavedStateHandle에 남긴 입력으로 초기 상태 복원
         private val _state =
@@ -51,7 +51,7 @@ class ReviewEditViewModel
             reviewId?.let(::loadReview)
         }
 
-        private fun loadReview(id: Int) {
+        private fun loadReview(id: String) {
             viewModelScope.launch {
                 val review = repository.getById(id)
                 if (review == null) {

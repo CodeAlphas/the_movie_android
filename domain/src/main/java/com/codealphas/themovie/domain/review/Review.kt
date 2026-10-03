@@ -7,5 +7,5 @@ data class Review(
     val time: String,
     val rating: Double,
     val storageFileName: String,
-    val id: Int = 0,
+    val id: String,
 )

@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 internal interface ReviewDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun insert(review: ReviewEntity): Long
+    suspend fun insert(review: ReviewEntity)
 
     @Delete
     suspend fun delete(review: ReviewEntity)
@@ -20,7 +20,7 @@ internal interface ReviewDao {
     suspend fun update(review: ReviewEntity)
 
     @Query("SELECT * FROM reviewTable WHERE id = :id")
-    suspend fun getById(id: Int): ReviewEntity?
+    suspend fun getById(id: String): ReviewEntity?
 
     @Query("DELETE FROM reviewTable")
     suspend fun deleteAll()

@@ -21,6 +21,10 @@ internal class FirebaseReviewRealtimeDataSource
                 .children
                 .mapNotNull(DataSnapshot::toReviewOrNull)
 
+        // push 키가 null인 경우는 루트 경로에서 push()할 때뿐이라 사용자 감상문 경로에서는 없으므로, null이면 예외 처리
+        override fun newKey(userId: String): String =
+            checkNotNull(reviewsReference(userId).push().key) { "감상문 서버 키를 만들지 못함" }
+
         // 오프라인이면 쓰기가 연결될 때까지 완료되지 않아 화면이 멈추므로, 완료를 기다리지 않고 SDK 대기열에 위임
         // SDK 대기열은 메모리에만 있어 연결 전에 앱이 종료되면 서버 쓰기가 빠지므로, 그 감상문이 이 기기에만 남는 한계를 허용
         override fun save(
@@ -29,7 +33,6 @@ internal class FirebaseReviewRealtimeDataSource
         ) {
             val fields =
                 mapOf(
-                    "id" to review.id,
                     "image" to review.imageUrl,
                     "title" to review.title,
                     "content" to review.content,
@@ -37,8 +40,7 @@ internal class FirebaseReviewRealtimeDataSource
                     "rating" to review.rating,
                     "storageFileName" to review.storageFileName,
                 )
-            // 기기별 자동 증가 id가 키라서, 한 계정을 여러 기기에서 쓰면 키가 겹쳐 덮어써질 수 있어 단일 기기 사용을 전제로 허용
-            reviewsReference(userId).child(review.id.toString()).updateChildren(fields)
+            reviewsReference(userId).child(review.id).updateChildren(fields)
         }
 
         // 오프라인이면 삭제가 연결될 때까지 완료되지 않아 화면이 멈추므로, 완료를 기다리지 않고 SDK 대기열에 위임
@@ -46,9 +48,9 @@ internal class FirebaseReviewRealtimeDataSource
         // 다음 동기화 때 삭제한 감상문이 사진 링크가 깨진 채 되살아나는 한계를 허용
         override fun delete(
             userId: String,
-            reviewId: Int,
+            reviewId: String,
         ) {
-            reviewsReference(userId).child(reviewId.toString()).removeValue()
+            reviewsReference(userId).child(reviewId).removeValue()
         }
 
         private fun reviewsReference(userId: String): DatabaseReference =
@@ -60,7 +62,7 @@ internal class FirebaseReviewRealtimeDataSource
 
 // 필드가 빠진 항목 하나가 예외를 던지면 목록 전체 동기화가 중단되므로, 읽지 못한 항목만 제외
 private fun DataSnapshot.toReviewOrNull(): Review? {
-    val id = key?.toIntOrNull()
+    val id = key
     val rating = child("rating").value?.toString()?.toDoubleOrNull()
     if (id == null || rating == null) return null
     return Review(

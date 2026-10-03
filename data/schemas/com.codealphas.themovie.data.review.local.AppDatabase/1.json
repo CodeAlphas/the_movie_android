@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "ff00431d8f06771de79bbfd021e23f44",
+    "identityHash": "5e7fd451e26d6db54c73a9a0b05ab8b7",
     "entities": [
       {
         "tableName": "reviewTable",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`title` TEXT NOT NULL, `image` TEXT NOT NULL, `content` TEXT NOT NULL, `time` TEXT NOT NULL, `rating` REAL NOT NULL, `storageFileName` TEXT NOT NULL, `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`title` TEXT NOT NULL, `image` TEXT NOT NULL, `content` TEXT NOT NULL, `time` TEXT NOT NULL, `rating` REAL NOT NULL, `storageFileName` TEXT NOT NULL, `id` TEXT NOT NULL, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "title",
@@ -47,12 +47,12 @@
           {
             "fieldPath": "id",
             "columnName": "id",
-            "affinity": "INTEGER",
+            "affinity": "TEXT",
             "notNull": true
           }
         ],
         "primaryKey": {
-          "autoGenerate": true,
+          "autoGenerate": false,
           "columnNames": [
             "id"
           ]
@@ -61,7 +61,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'ff00431d8f06771de79bbfd021e23f44')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '5e7fd451e26d6db54c73a9a0b05ab8b7')"
     ]
   }
 }
