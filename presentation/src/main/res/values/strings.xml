@@ -66,11 +66,6 @@
     <string name="review_edit_photo_delete">삭제</string>
     <string name="review_edit_photo_gallery">갤러리</string>
     <string name="review_edit_photo_camera">카메라</string>
-    <string name="review_edit_permission_title">권한이 필요합니다.</string>
-    <string name="review_edit_permission_camera">더 무비앱에서 사진을 촬영하기 위해 권한이 필요합니다.</string>
-    <string name="review_edit_permission_allow">허용</string>
-    <string name="review_edit_permission_deny">차단</string>
-    <string name="review_edit_permission_denied">권한을 거부하셨습니다.</string>
     <string name="review_edit_photo_failed">사진을 가져오지 못했습니다.</string>
     <string name="review_edit_updated">감상문이 수정되었습니다.</string>
     <string name="review_edit_created">감상문이 등록되었습니다.</string>

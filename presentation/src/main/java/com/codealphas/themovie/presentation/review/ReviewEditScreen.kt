@@ -1,11 +1,8 @@
 package com.codealphas.themovie.presentation.review
 
-import android.Manifest
 import android.content.ActivityNotFoundException
-import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.widget.Toast
-import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -32,6 +29,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -57,8 +55,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -92,10 +88,8 @@ fun ReviewEditScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    val activity = checkNotNull(LocalActivity.current)
     val lifecycleOwner = LocalLifecycleOwner.current
     val currentOnNavigateUp by rememberUpdatedState(onNavigateUp)
-    var showCameraRationale by rememberSaveable { mutableStateOf(false) }
     // 저장 완료와 불러오기 실패는 안내 직후 화면을 닫으므로, 화면이 사라진 뒤에도 안내가 남도록 앱 Context로 Toast 표시
     val appContext = context.applicationContext
 
@@ -151,17 +145,6 @@ fun ReviewEditScreen(
             context.showToast(R.string.review_edit_photo_failed, Toast.LENGTH_LONG)
         }
     }
-    val cameraPermissionLauncher =
-        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
-            if (isGranted) {
-                launchCamera()
-            } else {
-                context.showToast(
-                    R.string.review_edit_permission_denied,
-                    Toast.LENGTH_LONG,
-                )
-            }
-        }
 
     ReviewEditContent(
         state = state,
@@ -171,28 +154,8 @@ fun ReviewEditScreen(
             // 권한이 필요 없는 Photo Picker로 갤러리 사진 선택 요청
             galleryLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
         },
-        onCameraClick = {
-            val permission = Manifest.permission.CAMERA
-            when {
-                ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED ->
-                    launchCamera()
-                // 한 번 거부한 뒤 바로 다시 요청하면 이유를 모른 채 같은 창을 보게 되므로, 권한이 필요한 이유 안내 창 표시
-                ActivityCompat.shouldShowRequestPermissionRationale(activity, permission) ->
-                    showCameraRationale = true
-                else -> cameraPermissionLauncher.launch(permission)
-            }
-        },
+        onCameraClick = launchCamera,
     )
-
-    if (showCameraRationale) {
-        CameraPermissionDialog(
-            onAllow = {
-                showCameraRationale = false
-                cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
-            },
-            onDeny = { showCameraRationale = false },
-        )
-    }
 }
 
 @StringRes
@@ -317,14 +280,17 @@ private fun ReviewPhotoBox(
     modifier: Modifier = Modifier,
 ) {
     val defaultImage = painterResource(R.drawable.set_image)
+    // 받는 동안 사진 추가 안내가 그려지면 사진이 있는 감상문도 사진이 없어 보이므로, 받는 동안은 기본 이미지 대신 진행 표시 적용
     val painter =
         rememberAsyncImagePainter(
             model = image,
-            placeholder = defaultImage,
             error = defaultImage,
             fallback = defaultImage,
         )
     val painterState by painter.state.collectAsStateWithLifecycle()
+    val isLoading =
+        image != null &&
+            (painterState is AsyncImagePainter.State.Empty || painterState is AsyncImagePainter.State.Loading)
     Box(
         modifier =
             modifier
@@ -341,6 +307,9 @@ private fun ReviewPhotoBox(
             contentScale =
                 if (painterState is AsyncImagePainter.State.Success) ContentScale.Crop else ContentScale.Fit,
         )
+        if (isLoading) {
+            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+        }
     }
 }
 
@@ -402,24 +371,6 @@ private fun PhotoSourceDialog(
                 TextButton(onClick = onCamera) { Text(text = stringResource(R.string.review_edit_photo_camera)) }
                 TextButton(onClick = onGallery) { Text(text = stringResource(R.string.review_edit_photo_gallery)) }
             }
-        },
-    )
-}
-
-@Composable
-private fun CameraPermissionDialog(
-    onAllow: () -> Unit,
-    onDeny: () -> Unit,
-) {
-    AlertDialog(
-        onDismissRequest = onDeny,
-        title = { Text(text = stringResource(R.string.review_edit_permission_title)) },
-        text = { Text(text = stringResource(R.string.review_edit_permission_camera)) },
-        confirmButton = {
-            TextButton(onClick = onAllow) { Text(text = stringResource(R.string.review_edit_permission_allow)) }
-        },
-        dismissButton = {
-            TextButton(onClick = onDeny) { Text(text = stringResource(R.string.review_edit_permission_deny)) }
         },
     )
 }
