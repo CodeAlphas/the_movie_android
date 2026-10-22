@@ -25,6 +25,7 @@ dependencies {
     implementation(project(":domain"))
     implementation(libs.androidx.annotation.experimental)
     implementation(libs.androidx.datastore.preferences)
+    implementation(libs.androidx.paging.common)
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
@@ -38,6 +39,7 @@ dependencies {
     // Firebase Auth, Realtime Database, Storage는 결과를 Task 콜백으로 주므로, 코루틴에서 결과를 기다리도록 await 확장 추가
     implementation(libs.kotlinx.coroutines.play.services)
     testImplementation(libs.junit)
+    testImplementation(libs.androidx.paging.testing)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.okhttp.mockwebserver)
 }
