@@ -2,7 +2,9 @@ package com.codealphas.themovie.presentation.movie.list
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.codealphas.themovie.domain.movie.MoviePage
 import com.codealphas.themovie.domain.movie.MovieRepository
+import com.codealphas.themovie.domain.result.map
 import com.codealphas.themovie.domain.result.onFailure
 import com.codealphas.themovie.domain.result.onSuccess
 import dagger.assisted.Assisted
@@ -51,10 +53,12 @@ class MovieListViewModel
                     _state.update { it.copy(isLoading = true, loadError = null) }
                     val result =
                         when (category) {
-                            MovieCategory.POPULAR -> repository.getPopularMovies()
-                            MovieCategory.TOP_RATED -> repository.getTopRatedMovies()
+                            MovieCategory.POPULAR -> repository.getPopularMovies(page = FIRST_PAGE)
+                            MovieCategory.TOP_RATED -> repository.getTopRatedMovies(page = FIRST_PAGE)
                         }
+                    // 목록은 아직 한 번에 한 페이지만 보여 주므로, 첫 페이지의 영화만 꺼내 적용
                     result
+                        .map(MoviePage::movies)
                         .onSuccess { movies -> _state.value = MovieListUiState(movies = movies) }
                         .onFailure { error ->
                             // 실패를 빈 목록으로 넣으면 화면이 다시 보일 때 오는 PageShown에서 목록이 있다고 보고 다시 요청하지 않으므로,
@@ -68,5 +72,9 @@ class MovieListViewModel
         @AssistedFactory
         interface Factory {
             fun create(category: MovieCategory): MovieListViewModel
+        }
+
+        private companion object {
+            const val FIRST_PAGE = 1
         }
     }

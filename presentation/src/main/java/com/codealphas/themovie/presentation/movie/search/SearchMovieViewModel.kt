@@ -2,7 +2,9 @@ package com.codealphas.themovie.presentation.movie.search
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.codealphas.themovie.domain.movie.MoviePage
 import com.codealphas.themovie.domain.movie.MovieRepository
+import com.codealphas.themovie.domain.result.map
 import com.codealphas.themovie.domain.result.onFailure
 import com.codealphas.themovie.domain.result.onSuccess
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -75,7 +77,8 @@ class SearchMovieViewModel
                     .combine(retryCount) { query, _ -> query }
                     .mapLatest { query ->
                         _state.update { it.copy(isLoading = true, loadError = null) }
-                        repository.searchMovies(query)
+                        // 검색 결과는 아직 한 번에 한 페이지만 보여 주므로, 첫 페이지의 영화만 꺼내 적용
+                        repository.searchMovies(query, page = FIRST_PAGE).map(MoviePage::movies)
                     }.collect { result ->
                         result
                             .onSuccess { movies ->
@@ -90,5 +93,6 @@ class SearchMovieViewModel
 
         private companion object {
             const val SEARCH_DEBOUNCE_MS = 300L
+            const val FIRST_PAGE = 1
         }
     }

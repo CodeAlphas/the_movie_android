@@ -8,19 +8,20 @@ internal interface TmdbApiService {
     @GET("movie/popular")
     suspend fun getPopularMovies(
         @Query("language") language: String = "ko",
-        @Query("page") page: Int = 1,
+        @Query("page") page: Int,
     ): MoviesDto
 
     @GET("movie/top_rated")
     suspend fun getTopRatedMovies(
         @Query("language") language: String = "ko",
-        @Query("page") page: Int = 1,
+        @Query("page") page: Int,
     ): MoviesDto
 
     @GET("search/movie")
     suspend fun searchMovies(
         @Query("language") language: String = "ko",
         @Query("query") query: String,
+        @Query("page") page: Int,
     ): MoviesDto
 
     @GET("movie/{movie_id}")

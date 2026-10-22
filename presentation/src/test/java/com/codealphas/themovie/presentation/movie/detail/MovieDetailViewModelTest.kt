@@ -2,9 +2,9 @@ package com.codealphas.themovie.presentation.movie.detail
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
-import com.codealphas.themovie.domain.movie.Movie
 import com.codealphas.themovie.domain.movie.MovieDetail
 import com.codealphas.themovie.domain.movie.MovieDetailResult
+import com.codealphas.themovie.domain.movie.MoviePage
 import com.codealphas.themovie.domain.movie.MovieRepository
 import com.codealphas.themovie.domain.result.DataResult
 import com.codealphas.themovie.domain.result.RemoteError
@@ -211,9 +211,12 @@ private class FakeMovieDetailRepository(
         return results[minOf(requestedIds.size, results.size) - 1]
     }
 
-    override suspend fun getPopularMovies(): DataResult<List<Movie>> = error("사용하지 않음")
+    override suspend fun getPopularMovies(page: Int): DataResult<MoviePage> = error("사용하지 않음")
 
-    override suspend fun getTopRatedMovies(): DataResult<List<Movie>> = error("사용하지 않음")
+    override suspend fun getTopRatedMovies(page: Int): DataResult<MoviePage> = error("사용하지 않음")
 
-    override suspend fun searchMovies(query: String): DataResult<List<Movie>> = error("사용하지 않음")
+    override suspend fun searchMovies(
+        query: String,
+        page: Int,
+    ): DataResult<MoviePage> = error("사용하지 않음")
 }

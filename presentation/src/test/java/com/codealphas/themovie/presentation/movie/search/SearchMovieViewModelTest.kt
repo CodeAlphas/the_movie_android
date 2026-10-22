@@ -3,10 +3,12 @@ package com.codealphas.themovie.presentation.movie.search
 import androidx.lifecycle.viewModelScope
 import com.codealphas.themovie.domain.movie.Movie
 import com.codealphas.themovie.domain.movie.MovieDetailResult
+import com.codealphas.themovie.domain.movie.MoviePage
 import com.codealphas.themovie.domain.movie.MovieRepository
 import com.codealphas.themovie.domain.result.DataResult
 import com.codealphas.themovie.domain.result.Outcome
 import com.codealphas.themovie.domain.result.RemoteError
+import com.codealphas.themovie.domain.result.map
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel
@@ -367,17 +369,22 @@ private class FakeSearchMovieRepository(
 ) : MovieRepository {
     val queries = mutableListOf<String>()
 
-    override suspend fun searchMovies(query: String): DataResult<List<Movie>> {
+    override suspend fun searchMovies(
+        query: String,
+        page: Int,
+    ): DataResult<MoviePage> {
         val isFirstRequest = query !in queries
         queries += query
         if (query in slowQueries) delay(SLOW_SEARCH_MS)
         if (query in failOnceQueries && isFirstRequest) return Outcome.Failure(RemoteError.Network)
-        return results[query] ?: Outcome.Success(listOf(movie(query)))
+        return (results[query] ?: Outcome.Success(listOf(movie(query)))).map {
+            MoviePage(movies = it, page = page, totalPages = 1)
+        }
     }
 
-    override suspend fun getPopularMovies(): DataResult<List<Movie>> = error("사용하지 않음")
+    override suspend fun getPopularMovies(page: Int): DataResult<MoviePage> = error("사용하지 않음")
 
-    override suspend fun getTopRatedMovies(): DataResult<List<Movie>> = error("사용하지 않음")
+    override suspend fun getTopRatedMovies(page: Int): DataResult<MoviePage> = error("사용하지 않음")
 
     override suspend fun getMovieDetail(movieId: Int): MovieDetailResult = error("사용하지 않음")
 }

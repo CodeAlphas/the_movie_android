@@ -1,10 +1,10 @@
 package com.codealphas.themovie.data.movie
 
-import com.codealphas.themovie.data.movie.remote.MovieDto
+import com.codealphas.themovie.data.movie.remote.MoviesDto
 import com.codealphas.themovie.data.movie.remote.TmdbApiService
 import com.codealphas.themovie.data.network.safeApiCall
-import com.codealphas.themovie.domain.movie.Movie
 import com.codealphas.themovie.domain.movie.MovieDetailResult
+import com.codealphas.themovie.domain.movie.MoviePage
 import com.codealphas.themovie.domain.movie.MovieRepository
 import com.codealphas.themovie.domain.result.DataResult
 import com.codealphas.themovie.domain.result.map
@@ -17,14 +17,17 @@ internal class MovieRepositoryImpl
     constructor(
         private val service: TmdbApiService,
     ) : MovieRepository {
-        override suspend fun getPopularMovies(): DataResult<List<Movie>> =
-            safeApiCall { service.getPopularMovies() }.map { it.results.map(MovieDto::toMovie) }
+        override suspend fun getPopularMovies(page: Int): DataResult<MoviePage> =
+            safeApiCall { service.getPopularMovies(page = page) }.map(MoviesDto::toMoviePage)
 
-        override suspend fun getTopRatedMovies(): DataResult<List<Movie>> =
-            safeApiCall { service.getTopRatedMovies() }.map { it.results.map(MovieDto::toMovie) }
+        override suspend fun getTopRatedMovies(page: Int): DataResult<MoviePage> =
+            safeApiCall { service.getTopRatedMovies(page = page) }.map(MoviesDto::toMoviePage)
 
-        override suspend fun searchMovies(query: String): DataResult<List<Movie>> =
-            safeApiCall { service.searchMovies(query = query) }.map { it.results.map(MovieDto::toMovie) }
+        override suspend fun searchMovies(
+            query: String,
+            page: Int,
+        ): DataResult<MoviePage> =
+            safeApiCall { service.searchMovies(query = query, page = page) }.map(MoviesDto::toMoviePage)
 
         override suspend fun getMovieDetail(movieId: Int): MovieDetailResult =
             coroutineScope {
