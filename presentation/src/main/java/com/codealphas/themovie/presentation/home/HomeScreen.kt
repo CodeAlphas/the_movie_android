@@ -120,7 +120,6 @@ fun HomeScreen(
     ) {
         HomeNavHost(
             navController = navController,
-            snackbarHostState = snackbarHostState,
             onNavigateToDetail = onNavigateToDetail,
             floatingActionButton = fabMenu,
         )

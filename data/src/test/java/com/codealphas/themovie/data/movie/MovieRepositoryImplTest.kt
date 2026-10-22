@@ -27,7 +27,7 @@ private const val MOVIES_PER_PAGE = 2
 
 class MovieRepositoryImplTest {
     @Test
-    fun `getPopularMovies를 수집하면 1페이지부터 요청해 영화를 돌려줘야 한다`() =
+    fun `getPopularMovies의 첫 페이지를 불러오면 service의 getPopularMovies에 page 1을 넘기고 받은 영화를 돌려줘야 한다`() =
         runTest {
             val service = FakeTmdbApiService()
 
@@ -38,7 +38,7 @@ class MovieRepositoryImplTest {
         }
 
     @Test
-    fun `getTopRatedMovies를 수집하면 평점 높은 영화 서비스로 요청해야 한다`() =
+    fun `getTopRatedMovies의 첫 페이지를 불러오면 service의 getTopRatedMovies에 page 1을 넘기고 getPopularMovies는 부르지 않아야 한다`() =
         runTest {
             val service = FakeTmdbApiService()
 
@@ -89,13 +89,24 @@ class MovieRepositoryImplTest {
         }
 
     @Test
-    fun `영화를 검색하면 검색어와 넘긴 페이지로 요청해야 한다`() =
+    fun `searchMovies의 첫 페이지를 불러오면 service의 searchMovies에 검색어와 page 1을 넘기고 받은 영화를 돌려줘야 한다`() =
         runTest {
             val service = FakeTmdbApiService()
 
-            MovieRepositoryImpl(service).searchMovies(query = "avatar", page = 4)
+            val movies = MovieRepositoryImpl(service).searchMovies("avatar").asSnapshot()
 
-            assertEquals(listOf("avatar" to 4), service.searchRequests)
+            assertEquals("avatar" to 1, service.searchRequests.first())
+            assertEquals(listOf(100, 101), movies.take(MOVIES_PER_PAGE).map { it.id })
+        }
+
+    @Test
+    fun `searchMovies의 다음 페이지를 불러오면 service의 searchMovies에 같은 검색어와 page 2를 넘겨야 한다`() =
+        runTest {
+            val service = FakeTmdbApiService(totalPages = 3)
+
+            MovieRepositoryImpl(service).searchMovies("avatar").asSnapshot { scrollTo(index = MOVIES_PER_PAGE) }
+
+            assertEquals(listOf("avatar" to 1, "avatar" to 2), service.searchRequests.take(2))
         }
 }
 

@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -16,9 +17,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -26,68 +24,54 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.repeatOnLifecycle
+import androidx.paging.LoadState
+import androidx.paging.LoadStates
+import androidx.paging.PagingData
+import androidx.paging.compose.LazyPagingItems
+import androidx.paging.compose.collectAsLazyPagingItems
 import com.codealphas.themovie.core.android.theme.Spacing
 import com.codealphas.themovie.core.android.theme.TheMovieTheme
+import com.codealphas.themovie.domain.movie.Movie
+import com.codealphas.themovie.domain.result.RemoteError
+import com.codealphas.themovie.domain.result.RemoteErrorException
 import com.codealphas.themovie.presentation.R
+import com.codealphas.themovie.presentation.movie.LoadErrorContent
 import com.codealphas.themovie.presentation.movie.MovieFabMenu
 import com.codealphas.themovie.presentation.movie.MovieGrid
 import com.codealphas.themovie.presentation.movie.previewMovie
 import com.codealphas.themovie.presentation.ui.ScreenHeaderBackground
 import com.codealphas.themovie.presentation.ui.ScreenHeaderTexts
-import com.codealphas.themovie.presentation.ui.remoteErrorMessage
+import com.codealphas.themovie.presentation.ui.remoteError
+import kotlinx.coroutines.flow.flowOf
 
 private const val PREVIEW_MOVIE_COUNT = 4
 
 @Composable
 fun SearchMovieScreen(
-    snackbarHostState: SnackbarHostState,
     onMovieClick: (Int) -> Unit,
     floatingActionButton: @Composable (visible: Boolean) -> Unit,
     viewModel: SearchMovieViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val resources = LocalResources.current
-    val lifecycleOwner = LocalLifecycleOwner.current
-
-    // 화면이 멈춘 동안 보낸 안내를 돌아와서 받도록, 수집은 STARTED 동안만 하고 채널에 남은 effect는 다시 시작할 때 처리
-    LaunchedEffect(viewModel, lifecycleOwner) {
-        lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-            viewModel.effect.collect { effect ->
-                when (effect) {
-                    is SearchMovieEffect.ShowError -> {
-                        // 검색이 실패해도 앞 검색어의 목록을 남기므로, 목록을 가리는 실패 화면 대신 스낵바에 다시 시도 적용
-                        val result =
-                            snackbarHostState.showSnackbar(
-                                message = remoteErrorMessage(resources, effect.error),
-                                actionLabel = resources.getString(R.string.common_retry),
-                                duration = SnackbarDuration.Long,
-                            )
-                        if (result == SnackbarResult.ActionPerformed) {
-                            viewModel.onIntent(SearchMovieIntent.RetryClicked)
-                        }
-                    }
-                }
-            }
-        }
-    }
+    val movies = viewModel.movies.collectAsLazyPagingItems()
 
     SearchMovieContent(
         state = state,
+        movies = movies,
         onIntent = viewModel::onIntent,
         onMovieClick = onMovieClick,
         floatingActionButton = floatingActionButton,
@@ -97,12 +81,18 @@ fun SearchMovieScreen(
 @Composable
 internal fun SearchMovieContent(
     state: SearchMovieUiState,
+    movies: LazyPagingItems<Movie>,
     onIntent: (SearchMovieIntent) -> Unit,
     onMovieClick: (Int) -> Unit,
     floatingActionButton: @Composable (visible: Boolean) -> Unit,
 ) {
     val gridState = rememberLazyGridState()
     ClearFocusWhenImeHides()
+    ScrollToTopOnNewResults(
+        query = state.query,
+        isRefreshing = movies.loadState.refresh is LoadState.Loading,
+        gridState = gridState,
+    )
 
     Box(modifier = Modifier.fillMaxSize()) {
         ScreenHeaderBackground()
@@ -110,16 +100,27 @@ internal fun SearchMovieContent(
             SearchField(query = state.query, onQueryChange = { onIntent(SearchMovieIntent.QueryChanged(it)) })
             ScreenHeaderTexts(title = R.string.search_result_title, subtitle = R.string.search_result_subtitle)
             Box(modifier = Modifier.fillMaxSize()) {
-                state.movies?.let { movies ->
+                val refresh = movies.loadState.refresh
+                // 새 검색어의 첫 로드가 실패해도 Paging은 앞 검색어의 목록을 남겨 실패한 검색어의 결과처럼 보이므로,
+                // 실패하면 목록 대신 실패 화면만 표시
+                if (refresh is LoadState.Error) {
+                    LoadErrorContent(
+                        error = refresh.remoteError,
+                        onRetry = movies::retry,
+                        modifier = Modifier.align(Alignment.Center),
+                    )
+                } else if (movies.itemCount > 0) {
                     MovieGrid(movies = movies, gridState = gridState, onMovieClick = onMovieClick)
                 }
-                if (state.isLoading) {
+                if (refresh is LoadState.Loading) {
                     CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                 }
-                // 검색이 실패하면 목록이 앞 검색어의 결과로 남으므로,
-                // 앞 검색어가 0건이었을 때 실패한 검색어까지 결과 없음으로 보이지 않도록 오류가 있으면 문구 표시 제외
-                val isEmptyResult = state.movies?.isEmpty() == true && !state.isLoading
-                if (isEmptyResult && state.loadError == null) {
+                // 검색 전의 빈 목록도 로드가 끝난 0건과 같은 상태로 보이므로, 끝에 닿았는지까지 확인해 검색 결과가 0건일 때만 문구 표시
+                val isEmptyResult =
+                    refresh is LoadState.NotLoading &&
+                        movies.itemCount == 0 &&
+                        movies.loadState.append.endOfPaginationReached
+                if (isEmptyResult) {
                     Text(
                         text = stringResource(R.string.search_empty_result),
                         modifier = Modifier.align(Alignment.Center),
@@ -180,6 +181,30 @@ private fun SearchField(
 }
 
 @Composable
+private fun ScrollToTopOnNewResults(
+    query: String,
+    isRefreshing: Boolean,
+    gridState: LazyGridState,
+) {
+    var lastQuery by remember { mutableStateOf(query) }
+    var scrollToTopPending by remember { mutableStateOf(false) }
+    // 입력 중에는 목록이 튀지 않도록, 검색어가 바뀌면 바로 이동하지 않고 이동할 일이 있다고만 기록
+    LaunchedEffect(query) {
+        if (query != lastQuery) {
+            lastQuery = query
+            scrollToTopPending = true
+        }
+    }
+    // 앞 검색어의 스크롤 위치가 남아 새 결과가 맨 위가 아닌 곳부터 보일 수 있으므로, 첫 로드가 끝나면 맨 위로 이동 적용
+    LaunchedEffect(isRefreshing) {
+        if (!isRefreshing && scrollToTopPending) {
+            scrollToTopPending = false
+            gridState.scrollToItem(0)
+        }
+    }
+}
+
+@Composable
 private fun ClearFocusWhenImeHides() {
     val focusManager = LocalFocusManager.current
     val isImeVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
@@ -196,11 +221,9 @@ private fun SearchMovieContentPreview() {
     TheMovieTheme {
         Surface {
             SearchMovieContent(
-                state =
-                    SearchMovieUiState(
-                        query = "Movie",
-                        movies = List(PREVIEW_MOVIE_COUNT) { previewMovie(it) },
-                    ),
+                state = SearchMovieUiState(query = "Movie"),
+                movies =
+                    flowOf(PagingData.from(List(PREVIEW_MOVIE_COUNT) { previewMovie(it) })).collectAsLazyPagingItems(),
                 onIntent = {},
                 onMovieClick = {},
                 floatingActionButton = { visible ->
@@ -220,10 +243,36 @@ private fun SearchMovieContentPreview() {
 @Preview(name = "결과 없음")
 @Composable
 private fun SearchMovieContentEmptyPreview() {
+    val finished = LoadState.NotLoading(endOfPaginationReached = true)
+    val emptyStates = LoadStates(refresh = finished, prepend = finished, append = finished)
     TheMovieTheme {
         Surface {
             SearchMovieContent(
-                state = SearchMovieUiState(query = "zzz", movies = emptyList()),
+                state = SearchMovieUiState(query = "zzz"),
+                movies = flowOf(PagingData.empty<Movie>(sourceLoadStates = emptyStates)).collectAsLazyPagingItems(),
+                onIntent = {},
+                onMovieClick = {},
+                floatingActionButton = {},
+            )
+        }
+    }
+}
+
+@Preview(name = "실패")
+@Composable
+private fun SearchMovieContentErrorPreview() {
+    val notLoading = LoadState.NotLoading(endOfPaginationReached = false)
+    val failedStates =
+        LoadStates(
+            refresh = LoadState.Error(RemoteErrorException(RemoteError.Network)),
+            prepend = notLoading,
+            append = notLoading,
+        )
+    TheMovieTheme {
+        Surface {
+            SearchMovieContent(
+                state = SearchMovieUiState(query = "bad"),
+                movies = flowOf(PagingData.empty<Movie>(sourceLoadStates = failedStates)).collectAsLazyPagingItems(),
                 onIntent = {},
                 onMovieClick = {},
                 floatingActionButton = {},

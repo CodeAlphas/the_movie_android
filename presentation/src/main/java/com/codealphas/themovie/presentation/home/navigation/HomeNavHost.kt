@@ -2,7 +2,6 @@ package com.codealphas.themovie.presentation.home.navigation
 
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -19,7 +18,6 @@ import com.codealphas.themovie.presentation.movie.search.SearchMovieScreen
 @Composable
 internal fun HomeNavHost(
     navController: NavHostController,
-    snackbarHostState: SnackbarHostState,
     onNavigateToDetail: (movieId: Int) -> Unit,
     floatingActionButton: @Composable (visible: Boolean) -> Unit,
     modifier: Modifier = Modifier,
@@ -48,7 +46,6 @@ internal fun HomeNavHost(
         }
         composable<SearchTab> {
             SearchMovieScreen(
-                snackbarHostState = snackbarHostState,
                 onMovieClick = onNavigateToDetail,
                 floatingActionButton = floatingActionButton,
             )

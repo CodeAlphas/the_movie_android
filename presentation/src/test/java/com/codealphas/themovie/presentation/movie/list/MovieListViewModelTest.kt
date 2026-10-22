@@ -9,9 +9,7 @@ import androidx.paging.PagingState
 import androidx.paging.testing.asSnapshot
 import com.codealphas.themovie.domain.movie.Movie
 import com.codealphas.themovie.domain.movie.MovieDetailResult
-import com.codealphas.themovie.domain.movie.MoviePage
 import com.codealphas.themovie.domain.movie.MovieRepository
-import com.codealphas.themovie.domain.result.DataResult
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel
@@ -62,7 +60,7 @@ class MovieListViewModelTest {
         }
 
     @Test
-    fun `movies를 두 번 수집해도 Repository의 Flow는 한 번만 수집해야 한다`() =
+    fun `movies를 두 번 받아도 Repository의 Flow는 한 번만 시작해야 한다`() =
         runTest {
             Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
             val repository = FakeMovieRepository()
@@ -118,10 +116,7 @@ private class FakeMovieRepository : MovieRepository {
             emitAll(pagerOf(listMovie("topRated")))
         }
 
-    override suspend fun searchMovies(
-        query: String,
-        page: Int,
-    ): DataResult<MoviePage> = error("사용하지 않음")
+    override fun searchMovies(query: String): Flow<PagingData<Movie>> = error("사용하지 않음")
 
     override suspend fun getMovieDetail(movieId: Int): MovieDetailResult = error("사용하지 않음")
 }

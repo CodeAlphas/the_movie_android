@@ -9,7 +9,6 @@ import com.codealphas.themovie.data.movie.remote.VideoDto
 import com.codealphas.themovie.domain.movie.Cast
 import com.codealphas.themovie.domain.movie.Movie
 import com.codealphas.themovie.domain.movie.MovieDetail
-import com.codealphas.themovie.domain.movie.MoviePage
 import com.codealphas.themovie.domain.movie.Video
 import com.codealphas.themovie.domain.result.Outcome
 import com.codealphas.themovie.domain.result.RemoteError

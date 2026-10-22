@@ -4,7 +4,6 @@ import androidx.paging.PagingSource
 import androidx.paging.PagingState
 import androidx.paging.testing.TestPager
 import com.codealphas.themovie.domain.movie.Movie
-import com.codealphas.themovie.domain.movie.MoviePage
 import com.codealphas.themovie.domain.result.DataResult
 import com.codealphas.themovie.domain.result.Outcome
 import com.codealphas.themovie.domain.result.RemoteError

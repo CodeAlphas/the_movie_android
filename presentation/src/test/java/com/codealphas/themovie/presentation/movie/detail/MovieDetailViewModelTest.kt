@@ -6,9 +6,7 @@ import androidx.paging.PagingData
 import com.codealphas.themovie.domain.movie.Movie
 import com.codealphas.themovie.domain.movie.MovieDetail
 import com.codealphas.themovie.domain.movie.MovieDetailResult
-import com.codealphas.themovie.domain.movie.MoviePage
 import com.codealphas.themovie.domain.movie.MovieRepository
-import com.codealphas.themovie.domain.result.DataResult
 import com.codealphas.themovie.domain.result.RemoteError
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
@@ -218,8 +216,5 @@ private class FakeMovieDetailRepository(
 
     override fun getTopRatedMovies(): Flow<PagingData<Movie>> = error("사용하지 않음")
 
-    override suspend fun searchMovies(
-        query: String,
-        page: Int,
-    ): DataResult<MoviePage> = error("사용하지 않음")
+    override fun searchMovies(query: String): Flow<PagingData<Movie>> = error("사용하지 않음")
 }

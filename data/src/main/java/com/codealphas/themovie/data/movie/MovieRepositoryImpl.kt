@@ -7,9 +7,7 @@ import com.codealphas.themovie.data.movie.remote.TmdbApiService
 import com.codealphas.themovie.data.network.safeApiCall
 import com.codealphas.themovie.domain.movie.Movie
 import com.codealphas.themovie.domain.movie.MovieDetailResult
-import com.codealphas.themovie.domain.movie.MoviePage
 import com.codealphas.themovie.domain.movie.MovieRepository
-import com.codealphas.themovie.domain.result.DataResult
 import com.codealphas.themovie.domain.result.map
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -25,11 +23,8 @@ internal class MovieRepositoryImpl
 
         override fun getTopRatedMovies(): Flow<PagingData<Movie>> = pagedMovies { service.getTopRatedMovies(page = it) }
 
-        override suspend fun searchMovies(
-            query: String,
-            page: Int,
-        ): DataResult<MoviePage> =
-            safeApiCall { service.searchMovies(query = query, page = page) }.map(MoviesDto::toMoviePage)
+        override fun searchMovies(query: String): Flow<PagingData<Movie>> =
+            pagedMovies { service.searchMovies(query = query, page = it) }
 
         private fun pagedMovies(request: suspend (page: Int) -> MoviesDto): Flow<PagingData<Movie>> =
             Pager(MoviePagingConfig) {

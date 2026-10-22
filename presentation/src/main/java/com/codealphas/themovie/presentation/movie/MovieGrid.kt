@@ -46,19 +46,6 @@ private val CardElevation = 4.dp
 
 @Composable
 internal fun MovieGrid(
-    movies: List<Movie>,
-    gridState: LazyGridState,
-    onMovieClick: (Int) -> Unit,
-) {
-    PosterGrid(gridState = gridState) {
-        items(items = movies, key = { it.id }) { movie ->
-            MovieCard(movie = movie, onClick = { onMovieClick(movie.id) })
-        }
-    }
-}
-
-@Composable
-internal fun MovieGrid(
     movies: LazyPagingItems<Movie>,
     gridState: LazyGridState,
     onMovieClick: (Int) -> Unit,
