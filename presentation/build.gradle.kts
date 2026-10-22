@@ -25,6 +25,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.paging.compose)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.kotlinx.coroutines.play.services)
     implementation(libs.coil.compose)
@@ -33,5 +34,6 @@ dependencies {
     implementation(libs.play.services.location)
     implementation(libs.android.youtube.player)
     testImplementation(libs.junit)
+    testImplementation(libs.androidx.paging.testing)
     testImplementation(libs.kotlinx.coroutines.test)
 }

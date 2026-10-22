@@ -23,7 +23,8 @@
 | 기능     | 내용                                    |
 | ------ | ------------------------------------- |
 | 🔐 인증  | 회원가입, 로그인, 로그아웃                       |
-| 🎬 영화  | 인기 영화, 높은 평점 영화, 영화 검색, 상세 정보와 예고편 재생 |
+| 🎬 영화  | 무한 스크롤로 보는 인기 영화, 높은 평점 영화, 영화 검색 |
+| 🎞 영화 상세 | 개봉일, 평점, 출연진, 줄거리 확인과 예고편 재생 |
 | 🖊 감상문 | 사진을 포함한 감상문 작성, 수정, 삭제, 계정별 서버 백업     |
 | 📍 영화관 | 현재 위치 주변 영화관 지도 표시, 카카오맵 길찾기 연동       |
 | 🔔 알림  | 푸시 알림 수신                              |
@@ -42,6 +43,7 @@
 | Architecture | 클린 아키텍처, MVI, 멀티모듈                                          |
 | DI           | Hilt                                                        |
 | Async        | Coroutines, Flow                                            |
+| Paging       | Paging 3 (paging-compose)                                   |
 | Network      | Retrofit, OkHttp, kotlinx.serialization                     |
 | Local        | Room, DataStore                                             |
 | Image        | Coil                                                        |
@@ -80,7 +82,7 @@ graph TD
 
 - `:domain`은 Android에 의존하지 않는 순수 Kotlin 모듈이며, `:presentation`과 `:data`는 모두 `:domain`에 의존합니다.
 - `:presentation`은 `:data`에 의존하지 않으므로, 화면 코드에서 Retrofit, Room, Firebase를 직접 참조할 수 없습니다.
-- 화면은 MVI 패턴을 따르며, 화면마다 `Contract`에 `UiState`, `Intent`, `Effect`를 정의합니다.
+- 화면은 `Contract`에 `UiState`, `Intent`, `Effect`를 정의하는 MVI 패턴을 따릅니다. 다만 영화 목록과 검색 결과는 `UiState` 대신 Paging 라이브러리에 상태 관리를 맡겼습니다. `UiState`는 값을 비교해 변경을 감지하고 화면이 다시 구독하면 마지막 값을 그대로 전달하는데, `PagingData`는 내용으로 비교되지 않고 같은 객체를 두 번 받아 쓸 수도 없기 때문입니다. 게다가 로딩·오류 상태는 화면의 `LazyPagingItems`에서 계산되므로, 이를 ViewModel의 `UiState`로 모으면 같은 상태를 두 곳에서 관리하게 됩니다.
   - 화면은 사용자 입력을 `Intent`로 ViewModel에 전달하고, ViewModel은 상태를 갱신해 `StateFlow`로 화면에 내려보냅니다.
   - 토스트나 화면 이동처럼 한 번만 처리해야 하는 이벤트는 `Effect`로 분리해 `Channel`로 전달합니다. 화면은 `repeatOnLifecycle(STARTED)` 안에서 `Effect`를 수집하므로, 앱이 백그라운드에 있는 동안 발생한 이벤트도 `Channel` 버퍼에 보관됐다가 화면이 다시 보일 때 처리됩니다.
 

@@ -1,13 +1,14 @@
 package com.codealphas.themovie.domain.movie
 
-import com.codealphas.themovie.domain.result.DataResult
+import androidx.paging.PagingData
+import kotlinx.coroutines.flow.Flow
 
 interface MovieRepository {
-    suspend fun getPopularMovies(): DataResult<List<Movie>>
+    fun getPopularMovies(): Flow<PagingData<Movie>>
 
-    suspend fun getTopRatedMovies(): DataResult<List<Movie>>
+    fun getTopRatedMovies(): Flow<PagingData<Movie>>
 
-    suspend fun searchMovies(query: String): DataResult<List<Movie>>
+    fun searchMovies(query: String): Flow<PagingData<Movie>>
 
     suspend fun getMovieDetail(movieId: Int): MovieDetailResult
 }

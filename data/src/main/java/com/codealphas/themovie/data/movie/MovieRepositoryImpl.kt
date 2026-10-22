@@ -1,15 +1,17 @@
 package com.codealphas.themovie.data.movie
 
-import com.codealphas.themovie.data.movie.remote.MovieDto
+import androidx.paging.Pager
+import androidx.paging.PagingData
+import com.codealphas.themovie.data.movie.remote.MoviesDto
 import com.codealphas.themovie.data.movie.remote.TmdbApiService
 import com.codealphas.themovie.data.network.safeApiCall
 import com.codealphas.themovie.domain.movie.Movie
 import com.codealphas.themovie.domain.movie.MovieDetailResult
 import com.codealphas.themovie.domain.movie.MovieRepository
-import com.codealphas.themovie.domain.result.DataResult
 import com.codealphas.themovie.domain.result.map
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
 internal class MovieRepositoryImpl
@@ -17,14 +19,17 @@ internal class MovieRepositoryImpl
     constructor(
         private val service: TmdbApiService,
     ) : MovieRepository {
-        override suspend fun getPopularMovies(): DataResult<List<Movie>> =
-            safeApiCall { service.getPopularMovies() }.map { it.results.map(MovieDto::toMovie) }
+        override fun getPopularMovies(): Flow<PagingData<Movie>> = pagedMovies { service.getPopularMovies(page = it) }
 
-        override suspend fun getTopRatedMovies(): DataResult<List<Movie>> =
-            safeApiCall { service.getTopRatedMovies() }.map { it.results.map(MovieDto::toMovie) }
+        override fun getTopRatedMovies(): Flow<PagingData<Movie>> = pagedMovies { service.getTopRatedMovies(page = it) }
 
-        override suspend fun searchMovies(query: String): DataResult<List<Movie>> =
-            safeApiCall { service.searchMovies(query = query) }.map { it.results.map(MovieDto::toMovie) }
+        override fun searchMovies(query: String): Flow<PagingData<Movie>> =
+            pagedMovies { service.searchMovies(query = query, page = it) }
+
+        private fun pagedMovies(request: suspend (page: Int) -> MoviesDto): Flow<PagingData<Movie>> =
+            Pager(MoviePagingConfig) {
+                MoviePagingSource { page -> safeApiCall { request(page) }.map(MoviesDto::toMoviePage) }
+            }.flow
 
         override suspend fun getMovieDetail(movieId: Int): MovieDetailResult =
             coroutineScope {

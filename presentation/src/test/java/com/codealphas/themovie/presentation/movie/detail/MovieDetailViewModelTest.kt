@@ -2,16 +2,17 @@ package com.codealphas.themovie.presentation.movie.detail
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
+import androidx.paging.PagingData
 import com.codealphas.themovie.domain.movie.Movie
 import com.codealphas.themovie.domain.movie.MovieDetail
 import com.codealphas.themovie.domain.movie.MovieDetailResult
 import com.codealphas.themovie.domain.movie.MovieRepository
-import com.codealphas.themovie.domain.result.DataResult
 import com.codealphas.themovie.domain.result.RemoteError
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -211,9 +212,9 @@ private class FakeMovieDetailRepository(
         return results[minOf(requestedIds.size, results.size) - 1]
     }
 
-    override suspend fun getPopularMovies(): DataResult<List<Movie>> = error("사용하지 않음")
+    override fun getPopularMovies(): Flow<PagingData<Movie>> = error("사용하지 않음")
 
-    override suspend fun getTopRatedMovies(): DataResult<List<Movie>> = error("사용하지 않음")
+    override fun getTopRatedMovies(): Flow<PagingData<Movie>> = error("사용하지 않음")
 
-    override suspend fun searchMovies(query: String): DataResult<List<Movie>> = error("사용하지 않음")
+    override fun searchMovies(query: String): Flow<PagingData<Movie>> = error("사용하지 않음")
 }

@@ -7,6 +7,8 @@ import kotlinx.serialization.Serializable
 internal data class MoviesDto(
     val page: Int,
     val results: List<MovieDto>,
+    @SerialName("total_pages")
+    val totalPages: Int,
 )
 
 @Serializable

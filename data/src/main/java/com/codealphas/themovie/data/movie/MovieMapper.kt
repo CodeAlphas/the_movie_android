@@ -4,6 +4,7 @@ import com.codealphas.themovie.data.movie.remote.CreditDto
 import com.codealphas.themovie.data.movie.remote.CreditsDto
 import com.codealphas.themovie.data.movie.remote.MovieDetailDto
 import com.codealphas.themovie.data.movie.remote.MovieDto
+import com.codealphas.themovie.data.movie.remote.MoviesDto
 import com.codealphas.themovie.data.movie.remote.VideoDto
 import com.codealphas.themovie.data.movie.remote.VideosDto
 import com.codealphas.themovie.domain.movie.Cast
@@ -14,6 +15,9 @@ import com.codealphas.themovie.domain.movie.Video
 import com.codealphas.themovie.domain.result.DataResult
 import com.codealphas.themovie.domain.result.Outcome
 import com.codealphas.themovie.domain.result.RemoteError
+
+// 순위와 검색 모두 400건을 넘겨 보는 일이 거의 없어서, TMDB의 전체 페이지 수와 관계없이 20페이지 상한 적용
+internal const val MAX_PAGES = 20
 
 private const val TMDB_W500_IMAGE_URL = "https://image.tmdb.org/t/p/w500"
 
@@ -28,6 +32,12 @@ internal fun MovieDto.toMovie(): Movie =
         releaseDate = releaseDate,
         overview = overview,
         voteAverage = voteAverage,
+    )
+
+internal fun MoviesDto.toMoviePage(): MoviePage =
+    MoviePage(
+        movies = results.map(MovieDto::toMovie),
+        totalPages = minOf(totalPages, MAX_PAGES),
     )
 
 internal fun CreditDto.toCast(): Cast =

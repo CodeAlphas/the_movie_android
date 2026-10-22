@@ -4,6 +4,7 @@ import com.codealphas.themovie.data.movie.remote.CreditDto
 import com.codealphas.themovie.data.movie.remote.CreditsDto
 import com.codealphas.themovie.data.movie.remote.MovieDetailDto
 import com.codealphas.themovie.data.movie.remote.MovieDto
+import com.codealphas.themovie.data.movie.remote.MoviesDto
 import com.codealphas.themovie.data.movie.remote.VideoDto
 import com.codealphas.themovie.domain.movie.Cast
 import com.codealphas.themovie.domain.movie.Movie
@@ -52,6 +53,30 @@ class MovieMapperTest {
             ),
             movie,
         )
+    }
+
+    @Test
+    fun `MoviesDto를 MoviePage로 변환하면 results는 movies로 매핑하고 totalPages는 그대로 유지해야 한다`() {
+        val page = MoviesDto(page = 3, results = listOf(movieItem(id = 7)), totalPages = 12).toMoviePage()
+
+        assertEquals(
+            MoviePage(movies = listOf(movieItem(id = 7).toMovie()), totalPages = 12),
+            page,
+        )
+    }
+
+    @Test
+    fun `totalPages가 MAX_PAGES보다 크면 MAX_PAGES로 줄여야 한다`() {
+        val page = MoviesDto(page = 1, results = emptyList(), totalPages = 500).toMoviePage()
+
+        assertEquals(MAX_PAGES, page.totalPages)
+    }
+
+    @Test
+    fun `totalPages가 MAX_PAGES보다 작으면 그대로 유지해야 한다`() {
+        val page = MoviesDto(page = 1, results = emptyList(), totalPages = 3).toMoviePage()
+
+        assertEquals(3, page.totalPages)
     }
 
     @Test
