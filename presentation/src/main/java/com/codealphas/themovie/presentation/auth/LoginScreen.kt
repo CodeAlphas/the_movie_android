@@ -97,8 +97,8 @@ internal fun LoginContent(
     state: LoginUiState,
     onIntent: (LoginIntent) -> Unit,
 ) {
-    // 키보드가 열린 채 홈으로 넘어가면 홈이 키보드 높이만큼 줄었다 늘어나며 튀므로,
-    // 로그인 요청 중에는 덮개로 입력과 뒤로 가기를 막고 요청 시작 때 키보드를 닫도록 차단 적용
+    // 로그인 요청 중에도 입력란, 가입하기 버튼, 뒤로 가기가 동작하고 진행 표시가 없으므로,
+    // 요청이 끝날 때까지 다른 입력을 받지 않고 진행 중임을 알리도록 덮개로 차단 적용
     BlockingProgressBox(isBlocking = state.isLoading, modifier = Modifier.fillMaxSize()) {
         // Edge-to-Edge라 시스템이 창을 줄여 주지 않으므로, 시스템 바와 키보드에 입력란이 가리지 않도록 safeDrawing만큼 안쪽 여백 적용
         Scaffold(contentWindowInsets = WindowInsets.safeDrawing) { innerPadding ->
