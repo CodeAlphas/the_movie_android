@@ -167,7 +167,8 @@ internal fun HomeContent(
                 HomeTab.entries.forEach { tab ->
                     NavigationBarItem(
                         selected = tab == selectedTab,
-                        onClick = { onTabSelected(tab) },
+                        // 선택된 탭을 다시 누르면 그 탭을 빼냈다 복원하며 검색 탭의 키보드까지 닫히므로, 선택된 탭은 무시하도록 적용
+                        onClick = { if (tab != selectedTab) onTabSelected(tab) },
                         icon = { Icon(painter = painterResource(tab.icon), contentDescription = null) },
                         label = { Text(text = stringResource(tab.label)) },
                     )
