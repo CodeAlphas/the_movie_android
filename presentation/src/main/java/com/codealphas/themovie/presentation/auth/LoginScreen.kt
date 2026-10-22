@@ -52,6 +52,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import com.codealphas.themovie.core.android.theme.Spacing
 import com.codealphas.themovie.core.android.theme.TheMovieTheme
+import com.codealphas.themovie.core.android.ui.BlockingProgressBox
 import com.codealphas.themovie.core.android.ui.rememberThrottledClick
 import com.codealphas.themovie.core.android.ui.showToast
 import com.codealphas.themovie.presentation.R
@@ -96,32 +97,36 @@ internal fun LoginContent(
     state: LoginUiState,
     onIntent: (LoginIntent) -> Unit,
 ) {
-    // Edge-to-Edge라 시스템이 창을 줄여 주지 않으므로, 시스템 바와 키보드에 입력란이 가리지 않도록 safeDrawing만큼 안쪽 여백 적용
-    Scaffold(contentWindowInsets = WindowInsets.safeDrawing) { innerPadding ->
-        Column(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = Spacing.large),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Image(
-                painter = painterResource(R.drawable.logo_the_movie),
-                contentDescription = null,
+    // 키보드가 열린 채 홈으로 넘어가면 홈이 키보드 높이만큼 줄었다 늘어나며 튀므로,
+    // 로그인 요청 중에는 덮개로 입력과 뒤로 가기를 막고 요청 시작 때 키보드를 닫도록 차단 적용
+    BlockingProgressBox(isBlocking = state.isLoading, modifier = Modifier.fillMaxSize()) {
+        // Edge-to-Edge라 시스템이 창을 줄여 주지 않으므로, 시스템 바와 키보드에 입력란이 가리지 않도록 safeDrawing만큼 안쪽 여백 적용
+        Scaffold(contentWindowInsets = WindowInsets.safeDrawing) { innerPadding ->
+            Column(
                 modifier =
                     Modifier
-                        .padding(vertical = LogoVerticalPadding)
-                        .size(width = LogoWidth, height = LogoHeight),
-                contentScale = ContentScale.Fit,
-                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSurface),
-            )
-            LoginForm(
-                state = state,
-                onIntent = onIntent,
-                modifier = Modifier.widthIn(max = FormMaxWidth).fillMaxWidth(),
-            )
+                        .fillMaxSize()
+                        .padding(innerPadding)
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = Spacing.large),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Image(
+                    painter = painterResource(R.drawable.logo_the_movie),
+                    contentDescription = null,
+                    modifier =
+                        Modifier
+                            .padding(vertical = LogoVerticalPadding)
+                            .size(width = LogoWidth, height = LogoHeight),
+                    contentScale = ContentScale.Fit,
+                    colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSurface),
+                )
+                LoginForm(
+                    state = state,
+                    onIntent = onIntent,
+                    modifier = Modifier.widthIn(max = FormMaxWidth).fillMaxWidth(),
+                )
+            }
         }
     }
 }

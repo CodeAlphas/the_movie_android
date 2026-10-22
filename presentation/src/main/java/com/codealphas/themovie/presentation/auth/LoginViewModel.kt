@@ -55,13 +55,15 @@ class LoginViewModel
             }
             _state.update { it.copy(isLoading = true) }
             viewModelScope.launch {
-                val effect =
-                    when (val result = authRepository.signIn(email, password)) {
-                        is Outcome.Success -> LoginEffect.NavigateToHome
-                        is Outcome.Failure -> LoginEffect.ShowError(result.error)
+                when (val result = authRepository.signIn(email, password)) {
+                    // 로그인 화면은 홈으로 넘어가며 사라져 로딩을 되돌릴 필요가 없으므로,
+                    // 이동 직전에 덮개가 걷혀 화면이 깜빡이지 않도록 성공하면 isLoading 유지
+                    is Outcome.Success -> _effect.send(LoginEffect.NavigateToHome)
+                    is Outcome.Failure -> {
+                        _state.update { it.copy(isLoading = false) }
+                        _effect.send(LoginEffect.ShowError(result.error))
                     }
-                _state.update { it.copy(isLoading = false) }
-                _effect.send(effect)
+                }
             }
         }
 
