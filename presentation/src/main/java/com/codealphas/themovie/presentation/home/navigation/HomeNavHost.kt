@@ -3,7 +3,9 @@ package com.codealphas.themovie.presentation.home.navigation
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -22,6 +24,14 @@ internal fun HomeNavHost(
     floatingActionButton: @Composable (visible: Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val focusManager = LocalFocusManager.current
+    // 탭 전환은 바깥 NavController의 목적지 변경으로 잡히지 않으므로,
+    // 검색 탭에서 키보드가 열린 채 탭을 바꿔도 다른 탭에 키보드가 남지 않도록 탭이 바뀌는 즉시 키보드 닫기 적용
+    DisposableEffect(navController, focusManager) {
+        val listener = NavController.OnDestinationChangedListener { _, _, _ -> focusManager.clearFocus() }
+        navController.addOnDestinationChangedListener(listener)
+        onDispose { navController.removeOnDestinationChangedListener(listener) }
+    }
     // 하단 탭은 밀어 넘기지 않고 제자리에서 바뀌므로, 탭 사이 페이드가 보이지 않도록 전환 애니메이션 제거
     NavHost(
         navController = navController,
