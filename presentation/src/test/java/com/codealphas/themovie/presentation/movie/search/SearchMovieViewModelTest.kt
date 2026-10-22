@@ -1,6 +1,7 @@
 package com.codealphas.themovie.presentation.movie.search
 
 import androidx.lifecycle.viewModelScope
+import androidx.paging.PagingData
 import com.codealphas.themovie.domain.movie.Movie
 import com.codealphas.themovie.domain.movie.MovieDetailResult
 import com.codealphas.themovie.domain.movie.MoviePage
@@ -13,6 +14,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
@@ -382,9 +384,9 @@ private class FakeSearchMovieRepository(
         }
     }
 
-    override suspend fun getPopularMovies(page: Int): DataResult<MoviePage> = error("사용하지 않음")
+    override fun getPopularMovies(): Flow<PagingData<Movie>> = error("사용하지 않음")
 
-    override suspend fun getTopRatedMovies(page: Int): DataResult<MoviePage> = error("사용하지 않음")
+    override fun getTopRatedMovies(): Flow<PagingData<Movie>> = error("사용하지 않음")
 
     override suspend fun getMovieDetail(movieId: Int): MovieDetailResult = error("사용하지 않음")
 }

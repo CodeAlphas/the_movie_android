@@ -1,40 +1,91 @@
 package com.codealphas.themovie.data.movie
 
+import androidx.paging.LoadState
+import androidx.paging.PagingDataEvent
+import androidx.paging.PagingDataPresenter
+import androidx.paging.testing.asSnapshot
 import com.codealphas.themovie.data.movie.remote.CreditsDto
 import com.codealphas.themovie.data.movie.remote.MovieDetailDto
 import com.codealphas.themovie.data.movie.remote.MovieDto
 import com.codealphas.themovie.data.movie.remote.MoviesDto
 import com.codealphas.themovie.data.movie.remote.TmdbApiService
 import com.codealphas.themovie.data.movie.remote.VideosDto
-import com.codealphas.themovie.domain.result.Outcome
+import com.codealphas.themovie.domain.movie.Movie
 import com.codealphas.themovie.domain.result.RemoteError
+import com.codealphas.themovie.domain.result.RemoteErrorException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.IOException
 
+private const val MOVIES_PER_PAGE = 2
+
 class MovieRepositoryImplTest {
     @Test
-    fun `인기 영화를 요청하면 넘긴 페이지로 요청하고 페이지 정보를 돌려줘야 한다`() =
-        runTest {
-            val service = FakeTmdbApiService(totalPages = 8)
-
-            val result = MovieRepositoryImpl(service).getPopularMovies(page = 2)
-
-            assertEquals(listOf(2), service.popularPages)
-            val page = (result as Outcome.Success).data
-            assertEquals(2, page.page)
-            assertEquals(8, page.totalPages)
-        }
-
-    @Test
-    fun `평점 높은 영화를 요청하면 넘긴 페이지로 요청해야 한다`() =
+    fun `getPopularMovies를 수집하면 1페이지부터 요청해 영화를 돌려줘야 한다`() =
         runTest {
             val service = FakeTmdbApiService()
 
-            MovieRepositoryImpl(service).getTopRatedMovies(page = 3)
+            val movies = MovieRepositoryImpl(service).getPopularMovies().asSnapshot()
 
-            assertEquals(listOf(3), service.topRatedPages)
+            assertEquals(1, service.popularPages.first())
+            assertEquals(listOf(100, 101), movies.take(MOVIES_PER_PAGE).map { it.id })
+        }
+
+    @Test
+    fun `getTopRatedMovies를 수집하면 평점 높은 영화 서비스로 요청해야 한다`() =
+        runTest {
+            val service = FakeTmdbApiService()
+
+            MovieRepositoryImpl(service).getTopRatedMovies().asSnapshot()
+
+            assertEquals(1, service.topRatedPages.first())
+            assertTrue(service.popularPages.isEmpty())
+        }
+
+    @Test
+    fun `다음 페이지를 이어 받으면 1페이지의 영화 뒤에 2페이지의 영화가 이어져야 한다`() =
+        runTest {
+            val service = FakeTmdbApiService(totalPages = 3)
+
+            val movies =
+                MovieRepositoryImpl(
+                    service,
+                ).getPopularMovies().asSnapshot { scrollTo(index = MOVIES_PER_PAGE) }
+
+            assertEquals(listOf(100, 101, 200, 201), movies.take(MOVIES_PER_PAGE * 2).map { it.id })
+        }
+
+    @Test
+    fun `total_pages가 MAX_PAGES보다 커도 MAX_PAGES페이지까지만 요청해야 한다`() =
+        runTest {
+            val service = FakeTmdbApiService(totalPages = 500)
+
+            val movies = MovieRepositoryImpl(service).getPopularMovies().asSnapshot { appendScrollWhile { true } }
+
+            assertEquals(MAX_PAGES, service.popularPages.max())
+            assertEquals(MAX_PAGES * MOVIES_PER_PAGE, movies.size)
+        }
+
+    @Test
+    fun `첫 페이지 요청이 실패하면 RemoteError를 담은 LoadState Error가 되어야 한다`() =
+        runTest {
+            val service = FakeTmdbApiService(failure = IOException())
+            val presenter = RecordingPresenter()
+
+            val collecting =
+                launch(Dispatchers.Default) {
+                    MovieRepositoryImpl(service).getPopularMovies().collectLatest { presenter.collectFrom(it) }
+                }
+            val error = presenter.loadStateFlow.first { it?.refresh is LoadState.Error }?.refresh as LoadState.Error
+            collecting.cancel()
+
+            assertEquals(RemoteError.Network, (error.error as RemoteErrorException).error)
         }
 
     @Test
@@ -46,17 +97,29 @@ class MovieRepositoryImplTest {
 
             assertEquals(listOf("avatar" to 4), service.searchRequests)
         }
-
-    @Test
-    fun `목록 요청이 네트워크 오류로 실패하면 오류를 돌려줘야 한다`() =
-        runTest {
-            val service = FakeTmdbApiService(failure = IOException())
-
-            val result = MovieRepositoryImpl(service).getPopularMovies(page = 1)
-
-            assertEquals(Outcome.Failure(RemoteError.Network), result)
-        }
 }
+
+private class RecordingPresenter : PagingDataPresenter<Movie>(Dispatchers.Unconfined) {
+    override suspend fun presentPagingDataEvent(event: PagingDataEvent<Movie>) = Unit
+}
+
+private fun movieDto(id: Int): MovieDto =
+    MovieDto(
+        adult = false,
+        backdropPath = null,
+        genreIds = emptyList(),
+        id = id,
+        originalLanguage = "ko",
+        originalTitle = "Original",
+        overview = "",
+        popularity = 1.0,
+        posterPath = null,
+        releaseDate = "",
+        title = "Movie $id",
+        video = false,
+        voteAverage = 0.0,
+        voteCount = 0,
+    )
 
 private class FakeTmdbApiService(
     private val totalPages: Int = 1,
@@ -109,6 +172,10 @@ private class FakeTmdbApiService(
 
     private fun response(page: Int): MoviesDto {
         failure?.let { throw it }
-        return MoviesDto(page = page, results = emptyList<MovieDto>(), totalPages = totalPages)
+        return MoviesDto(
+            page = page,
+            results = List(MOVIES_PER_PAGE) { movieDto(id = page * 100 + it) },
+            totalPages = totalPages,
+        )
     }
 }

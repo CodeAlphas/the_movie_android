@@ -41,9 +41,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.paging.PagingData
+import androidx.paging.compose.collectAsLazyPagingItems
 import com.codealphas.themovie.core.android.theme.TheMovieTheme
 import com.codealphas.themovie.core.android.ui.TheMovieTopAppBar
 import com.codealphas.themovie.core.android.ui.rememberThrottledClick
+import com.codealphas.themovie.domain.movie.Movie
 import com.codealphas.themovie.presentation.R
 import com.codealphas.themovie.presentation.home.navigation.HomeNavHost
 import com.codealphas.themovie.presentation.home.navigation.HomeTab
@@ -52,11 +55,11 @@ import com.codealphas.themovie.presentation.home.navigation.toHomeTab
 import com.codealphas.themovie.presentation.movie.MovieFabMenu
 import com.codealphas.themovie.presentation.movie.list.MovieCategory
 import com.codealphas.themovie.presentation.movie.list.MovieListContent
-import com.codealphas.themovie.presentation.movie.list.MovieListUiState
 import com.codealphas.themovie.presentation.notification.NotificationPromptDialog
 import com.codealphas.themovie.presentation.notification.notificationPermissionState
 import com.codealphas.themovie.presentation.notification.openNotificationSettings
 import com.codealphas.themovie.presentation.notification.rememberNotificationPermissionRequester
+import kotlinx.coroutines.flow.flowOf
 
 @Composable
 fun HomeScreen(
@@ -237,8 +240,7 @@ private fun HomeContentPreview(state: HomeUiState) {
         ) {
             MovieListContent(
                 category = MovieCategory.POPULAR,
-                state = MovieListUiState(isLoading = true),
-                onIntent = {},
+                movies = flowOf(PagingData.empty<Movie>()).collectAsLazyPagingItems(),
                 onMovieClick = {},
                 floatingActionButton = {},
             )

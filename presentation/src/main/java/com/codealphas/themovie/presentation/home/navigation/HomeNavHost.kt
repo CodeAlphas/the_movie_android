@@ -35,7 +35,6 @@ internal fun HomeNavHost(
         composable<PopularTab> {
             MovieListScreen(
                 viewModel = movieListViewModel(MovieCategory.POPULAR),
-                snackbarHostState = snackbarHostState,
                 onMovieClick = onNavigateToDetail,
                 floatingActionButton = floatingActionButton,
             )
@@ -43,7 +42,6 @@ internal fun HomeNavHost(
         composable<TopRatedTab> {
             MovieListScreen(
                 viewModel = movieListViewModel(MovieCategory.TOP_RATED),
-                snackbarHostState = snackbarHostState,
                 onMovieClick = onNavigateToDetail,
                 floatingActionButton = floatingActionButton,
             )

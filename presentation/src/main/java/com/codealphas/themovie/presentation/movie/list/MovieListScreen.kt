@@ -7,24 +7,22 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleResumeEffect
-import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.repeatOnLifecycle
+import androidx.paging.LoadState
+import androidx.paging.LoadStates
+import androidx.paging.PagingData
+import androidx.paging.compose.LazyPagingItems
+import androidx.paging.compose.collectAsLazyPagingItems
 import com.codealphas.themovie.core.android.theme.Spacing
 import com.codealphas.themovie.core.android.theme.TheMovieTheme
+import com.codealphas.themovie.domain.movie.Movie
 import com.codealphas.themovie.domain.result.RemoteError
+import com.codealphas.themovie.domain.result.RemoteErrorException
 import com.codealphas.themovie.presentation.R
 import com.codealphas.themovie.presentation.movie.LoadErrorContent
 import com.codealphas.themovie.presentation.movie.MovieFabMenu
@@ -32,46 +30,28 @@ import com.codealphas.themovie.presentation.movie.MovieGrid
 import com.codealphas.themovie.presentation.movie.previewMovie
 import com.codealphas.themovie.presentation.ui.ScreenHeaderBackground
 import com.codealphas.themovie.presentation.ui.ScreenHeaderTexts
-import com.codealphas.themovie.presentation.ui.remoteErrorMessage
+import com.codealphas.themovie.presentation.ui.remoteError
+import kotlinx.coroutines.flow.flowOf
 
 private const val PREVIEW_MOVIE_COUNT = 4
 
 @Composable
 fun MovieListScreen(
     viewModel: MovieListViewModel,
-    snackbarHostState: SnackbarHostState,
     onMovieClick: (Int) -> Unit,
     floatingActionButton: @Composable (visible: Boolean) -> Unit,
 ) {
-    val state by viewModel.state.collectAsStateWithLifecycle()
-    val resources = LocalResources.current
-    val lifecycleOwner = LocalLifecycleOwner.current
+    val movies = viewModel.movies.collectAsLazyPagingItems()
 
-    // 화면이 멈춘 동안 보낸 안내를 돌아와서 받도록, 수집은 STARTED 동안만 하고 채널에 남은 effect는 다시 시작할 때 처리
-    LaunchedEffect(viewModel, lifecycleOwner) {
-        lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-            viewModel.effect.collect { effect ->
-                when (effect) {
-                    is MovieListEffect.ShowError ->
-                        snackbarHostState.showSnackbar(
-                            message = remoteErrorMessage(resources, effect.error),
-                            duration = SnackbarDuration.Long,
-                        )
-                }
-            }
-        }
-    }
-
-    // 요청이 실패해 목록을 받지 못했으면 탭을 다시 고르거나 앱으로 돌아올 때 다시 받도록, 화면이 보일 때마다 요청 적용
-    LifecycleResumeEffect(viewModel) {
-        viewModel.onIntent(MovieListIntent.PageShown)
+    // 첫 로드가 실패해 목록을 받지 못했으면 탭을 다시 고르거나 앱으로 돌아올 때 다시 받도록, 화면이 보일 때마다 재시도 적용
+    LifecycleResumeEffect(movies) {
+        if (movies.itemCount == 0 && movies.loadState.refresh is LoadState.Error) movies.retry()
         onPauseOrDispose { }
     }
 
     MovieListContent(
         category = viewModel.category,
-        state = state,
-        onIntent = viewModel::onIntent,
+        movies = movies,
         onMovieClick = onMovieClick,
         floatingActionButton = floatingActionButton,
     )
@@ -80,8 +60,7 @@ fun MovieListScreen(
 @Composable
 internal fun MovieListContent(
     category: MovieCategory,
-    state: MovieListUiState,
-    onIntent: (MovieListIntent) -> Unit,
+    movies: LazyPagingItems<Movie>,
     onMovieClick: (Int) -> Unit,
     floatingActionButton: @Composable (visible: Boolean) -> Unit,
 ) {
@@ -93,19 +72,23 @@ internal fun MovieListContent(
             val (title, subtitle) = category.headerTexts()
             ScreenHeaderTexts(title = title, subtitle = subtitle)
             Box(modifier = Modifier.fillMaxSize()) {
-                state.movies?.let { movies ->
+                if (movies.itemCount > 0) {
                     MovieGrid(movies = movies, gridState = gridState, onMovieClick = onMovieClick)
                 }
-                if (state.isLoading) {
-                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-                }
-                val loadError = state.loadError
-                if (loadError != null && state.movies == null && !state.isLoading) {
-                    LoadErrorContent(
-                        error = loadError,
-                        onRetry = { onIntent(MovieListIntent.RetryClicked) },
-                        modifier = Modifier.align(Alignment.Center),
-                    )
+                when (val refresh = movies.loadState.refresh) {
+                    is LoadState.Loading ->
+                        if (movies.itemCount == 0) {
+                            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                        }
+                    is LoadState.Error ->
+                        if (movies.itemCount == 0) {
+                            LoadErrorContent(
+                                error = refresh.remoteError,
+                                onRetry = movies::retry,
+                                modifier = Modifier.align(Alignment.Center),
+                            )
+                        }
+                    is LoadState.NotLoading -> Unit
                 }
             }
         }
@@ -130,8 +113,10 @@ private fun MovieListContentPreview() {
         Surface {
             MovieListContent(
                 category = MovieCategory.POPULAR,
-                state = MovieListUiState(movies = List(PREVIEW_MOVIE_COUNT) { previewMovie(it) }),
-                onIntent = {},
+                movies =
+                    flowOf(
+                        PagingData.from(List(PREVIEW_MOVIE_COUNT) { previewMovie(it) }),
+                    ).collectAsLazyPagingItems(),
                 onMovieClick = {},
                 floatingActionButton = { visible ->
                     MovieFabMenu(
@@ -150,12 +135,18 @@ private fun MovieListContentPreview() {
 @Preview(name = "실패")
 @Composable
 private fun MovieListContentErrorPreview() {
+    val notLoading = LoadState.NotLoading(endOfPaginationReached = true)
+    val failedStates =
+        LoadStates(
+            refresh = LoadState.Error(RemoteErrorException(RemoteError.Network)),
+            prepend = notLoading,
+            append = notLoading,
+        )
     TheMovieTheme {
         Surface {
             MovieListContent(
                 category = MovieCategory.TOP_RATED,
-                state = MovieListUiState(loadError = RemoteError.Network),
-                onIntent = {},
+                movies = flowOf(PagingData.empty<Movie>(sourceLoadStates = failedStates)).collectAsLazyPagingItems(),
                 onMovieClick = {},
                 floatingActionButton = {},
             )
