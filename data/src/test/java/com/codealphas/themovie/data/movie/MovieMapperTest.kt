@@ -56,11 +56,11 @@ class MovieMapperTest {
     }
 
     @Test
-    fun `MoviesDto를 MoviePage로 변환하면 results는 movies로 매핑하고 page와 totalPages는 그대로 유지해야 한다`() {
+    fun `MoviesDto를 MoviePage로 변환하면 results는 movies로 매핑하고 totalPages는 그대로 유지해야 한다`() {
         val page = MoviesDto(page = 3, results = listOf(movieItem(id = 7)), totalPages = 12).toMoviePage()
 
         assertEquals(
-            MoviePage(movies = listOf(movieItem(id = 7).toMovie()), page = 3, totalPages = 12),
+            MoviePage(movies = listOf(movieItem(id = 7).toMovie()), totalPages = 12),
             page,
         )
     }

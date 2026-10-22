@@ -140,7 +140,6 @@ private fun fakePages(
         Outcome.Success(
             MoviePage(
                 movies = idsByPage.getValue(page).map(::movie),
-                page = page,
                 totalPages = totalPages,
             ),
         )

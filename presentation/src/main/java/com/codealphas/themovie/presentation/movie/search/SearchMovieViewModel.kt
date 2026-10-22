@@ -29,7 +29,7 @@ import kotlin.time.Duration.Companion.milliseconds
 class SearchMovieViewModel
     @Inject
     constructor(
-        private val repository: MovieRepository,
+        repository: MovieRepository,
     ) : ViewModel() {
         private val _state = MutableStateFlow(SearchMovieUiState())
         val state: StateFlow<SearchMovieUiState> = _state.asStateFlow()

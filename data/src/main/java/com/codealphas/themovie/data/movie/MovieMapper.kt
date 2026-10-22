@@ -37,7 +37,6 @@ internal fun MovieDto.toMovie(): Movie =
 internal fun MoviesDto.toMoviePage(): MoviePage =
     MoviePage(
         movies = results.map(MovieDto::toMovie),
-        page = page,
         totalPages = minOf(totalPages, MAX_PAGES),
     )
 
