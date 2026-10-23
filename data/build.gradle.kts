@@ -29,6 +29,10 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
+    implementation(libs.androidx.work.runtime)
+    implementation(libs.androidx.hilt.work)
+    // @HiltWorker는 Dagger Hilt 컴파일러가 처리하지 않으므로, HiltWorkerFactory가 Worker를 만들 수 있도록 AndroidX Hilt 컴파일러 추가
+    ksp(libs.androidx.hilt.compiler)
     implementation(libs.retrofit)
     implementation(libs.retrofit.converter.kotlinx.serialization)
     implementation(libs.kotlinx.serialization.json)
