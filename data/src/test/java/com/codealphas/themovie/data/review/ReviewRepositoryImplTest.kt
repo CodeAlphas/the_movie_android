@@ -5,6 +5,7 @@ import com.codealphas.themovie.data.review.local.ReviewEntity
 import com.codealphas.themovie.data.review.local.ReviewSyncState
 import com.codealphas.themovie.data.review.remote.ReviewRealtimeDataSource
 import com.codealphas.themovie.data.review.remote.ReviewStorageDataSource
+import com.codealphas.themovie.data.review.sync.ReviewSyncScheduler
 import com.codealphas.themovie.domain.auth.AuthRepository
 import com.codealphas.themovie.domain.auth.AuthResult
 import com.codealphas.themovie.domain.result.Outcome
@@ -30,23 +31,23 @@ class ReviewRepositoryImplTest {
     private val dao = FakeReviewDao(calls)
     private val realtime = FakeReviewRealtimeDataSource(calls)
     private val storage = FakeReviewStorageDataSource(calls)
+    private val scheduler = FakeReviewSyncScheduler(calls)
 
     @Test
-    fun `사진을 그대로 두고 수정하면 업로드하거나 파일을 지우지 않고 기존 사진으로 Room과 서버에 써야 한다`() =
+    fun `사진을 그대로 두고 수정하면 사진을 올리거나 지우지 않고 기존 사진으로 Room에 저장한 뒤 서버 업로드를 예약해야 한다`() =
         runTest {
             dao.put(STORED)
 
             val result = repository().save(editDraft(ReviewPhoto.Unchanged))
 
             assertEquals(Outcome.Success(Unit), result)
-            assertEquals(listOf("room.update", "server.save"), calls)
+            assertEquals(listOf("room.update", "sync.schedule"), calls)
             val expected = STORED.toReview().copy(title = "수정한 제목", updatedAt = NOW_MILLIS)
             assertEquals(expected, dao.saved(STORED.id))
-            assertEquals(expected, realtime.saved.single())
         }
 
     @Test
-    fun `새 사진으로 수정하면 업로드 뒤 Room과 서버에 쓰고 마지막에 이전 파일을 지워야 한다`() =
+    fun `새 사진으로 수정하면 사진을 올린 뒤 Room에 저장하고 서버 업로드를 예약한 다음 이전 사진 파일을 지워야 한다`() =
         runTest {
             dao.put(STORED)
 
@@ -54,7 +55,7 @@ class ReviewRepositoryImplTest {
 
             assertEquals(Outcome.Success(Unit), result)
             assertEquals(
-                listOf("storage.upload:$NEW_FILE_NAME", "room.update", "server.save", "storage.delete:old.png"),
+                listOf("storage.upload:$NEW_FILE_NAME", "room.update", "sync.schedule", "storage.delete:old.png"),
                 calls,
             )
             val expected =
@@ -65,11 +66,10 @@ class ReviewRepositoryImplTest {
                     storageFileName = NEW_FILE_NAME,
                 )
             assertEquals(expected, dao.saved(STORED.id))
-            assertEquals(expected, realtime.saved.single())
         }
 
     @Test
-    fun `사진 업로드가 실패하면 Room과 서버에 쓰지 않고 이전 파일도 지우지 않아야 한다`() =
+    fun `사진 업로드가 실패하면 Room에 저장하거나 서버 업로드를 예약하지 않고 이전 사진 파일도 지우지 않아야 한다`() =
         runTest {
             dao.put(STORED)
             storage.failUpload = true
@@ -82,7 +82,7 @@ class ReviewRepositoryImplTest {
         }
 
     @Test
-    fun `사진 업로드가 SDK에서 취소되면 Room과 서버에 쓰지 않고 업로드 실패를 반환해야 한다`() =
+    fun `사진 업로드가 SDK에서 취소되면 Room에 저장하지 않고 PhotoUploadFailed를 반환해야 한다`() =
         runTest {
             dao.put(STORED)
             storage.cancelUpload = true
@@ -104,7 +104,7 @@ class ReviewRepositoryImplTest {
 
             assertEquals(Outcome.Success(Unit), result)
             assertEquals(
-                listOf("storage.upload:$NEW_FILE_NAME", "room.update", "server.save", "storage.delete:old.png"),
+                listOf("storage.upload:$NEW_FILE_NAME", "room.update", "sync.schedule", "storage.delete:old.png"),
                 calls,
             )
             assertEquals(NEW_FILE_NAME, dao.saved(STORED.id)?.storageFileName)
@@ -136,19 +136,19 @@ class ReviewRepositoryImplTest {
             val result = repository().save(editDraft(ReviewPhoto.Removed))
 
             assertEquals(Outcome.Success(Unit), result)
-            assertEquals(listOf("room.update", "server.save", "storage.delete:old.png"), calls)
+            assertEquals(listOf("room.update", "sync.schedule", "storage.delete:old.png"), calls)
             val expected =
                 STORED.toReview().copy(title = "수정한 제목", imageUrl = "", updatedAt = NOW_MILLIS, storageFileName = "")
             assertEquals(expected, dao.saved(STORED.id))
         }
 
     @Test
-    fun `사진 없는 새 감상문을 저장하면 새로 만든 키로 Room과 서버에 쓰고 파일은 지우지 않아야 한다`() =
+    fun `사진 없는 새 감상문을 저장하면 새로 만든 키로 Room에 저장하고 서버 업로드를 예약해야 한다`() =
         runTest {
             val result = repository().save(newDraft(ReviewPhoto.Unchanged))
 
             assertEquals(Outcome.Success(Unit), result)
-            assertEquals(listOf("server.newKey", "room.insert", "server.save"), calls)
+            assertEquals(listOf("server.newKey", "room.insert", "sync.schedule"), calls)
             val expected =
                 Review(
                     title = "새 감상문",
@@ -161,8 +161,26 @@ class ReviewRepositoryImplTest {
                     id = NEW_KEY,
                 )
             assertEquals(expected, dao.saved(NEW_KEY))
-            assertEquals(USER_ID, realtime.savedUserIds.single())
-            assertEquals(expected, realtime.saved.single())
+        }
+
+    @Test
+    fun `새 감상문을 저장하면 Room에 syncState는 PENDING_UPSERT, localVersion은 1로 넣어야 한다`() =
+        runTest {
+            repository().save(newDraft(ReviewPhoto.Unchanged))
+
+            assertEquals(ReviewSyncState.PENDING_UPSERT, dao.entity(NEW_KEY)?.syncState)
+            assertEquals(1, dao.entity(NEW_KEY)?.localVersion)
+        }
+
+    @Test
+    fun `감상문을 수정하면 Room에서 syncState를 PENDING_UPSERT로 바꾸고 localVersion을 1 올려야 한다`() =
+        runTest {
+            dao.put(STORED)
+
+            repository().save(editDraft(ReviewPhoto.Unchanged))
+
+            assertEquals(ReviewSyncState.PENDING_UPSERT, dao.entity(STORED.id)?.syncState)
+            assertEquals(STORED.localVersion + 1, dao.entity(STORED.id)?.localVersion)
         }
 
     @Test
@@ -175,8 +193,6 @@ class ReviewRepositoryImplTest {
             val saved = dao.saved(STORED.id)
             assertEquals(STORED.createdAt, saved?.createdAt)
             assertEquals(NOW_MILLIS, saved?.updatedAt)
-            assertEquals(STORED.createdAt, realtime.saved.single().createdAt)
-            assertEquals(NOW_MILLIS, realtime.saved.single().updatedAt)
         }
 
     @Test
@@ -187,25 +203,24 @@ class ReviewRepositoryImplTest {
             val saved = dao.saved(NEW_KEY)
             assertEquals(NOW_MILLIS, saved?.createdAt)
             assertEquals(NOW_MILLIS, saved?.updatedAt)
-            assertEquals(NOW_MILLIS, realtime.saved.single().createdAt)
-            assertEquals(NOW_MILLIS, realtime.saved.single().updatedAt)
         }
 
     @Test
-    fun `다시 설치한 뒤 서버 감상문을 받아 오기 전에 새 감상문을 저장하면 서버에 있던 감상문을 덮어쓰지 않아야 한다`() =
+    fun `다시 설치한 뒤 서버 감상문을 받아 오기 전에 새 감상문을 저장하면 서버에 있던 감상문과 다른 키로 저장해야 한다`() =
         runTest {
-            // Room 자동 증가 id를 서버 키로 쓰면 빈 Room에서 새 감상문이 서버의 1번 감상문을 덮어쓰므로, 서버에 1번 키 감상문을 둔 상태 적용
+            // Room 자동 증가 id를 서버 키로 쓰면 빈 Room에서 새 감상문이 서버의 1번 감상문과 같은 키가 되므로, 서버에 1번 키 감상문을 둔 상태 적용
             val serverReview = STORED.toReview().copy(id = "1")
             realtime.remote[serverReview.id] = serverReview
 
             repository().save(newDraft(ReviewPhoto.Unchanged))
+            repository().syncFromRemote()
 
-            assertEquals(serverReview, realtime.remote["1"])
-            assertEquals("새 감상문", realtime.remote[NEW_KEY]?.title)
+            assertEquals(serverReview, dao.saved("1"))
+            assertEquals("새 감상문", dao.saved(NEW_KEY)?.title)
         }
 
     @Test
-    fun `새 감상문의 키를 만들지 못하면 사진을 올리거나 Room과 서버에 쓰지 않고 Unknown 실패를 반환해야 한다`() =
+    fun `새 감상문의 키를 만들지 못하면 사진을 올리거나 Room에 저장하지 않고 Unknown 실패를 반환해야 한다`() =
         runTest {
             realtime.failNewKey = true
 
@@ -216,7 +231,7 @@ class ReviewRepositoryImplTest {
         }
 
     @Test
-    fun `수정할 감상문이 Room에 없으면 사진을 올리거나 Room과 서버에 쓰지 않고 Unknown 실패를 반환해야 한다`() =
+    fun `수정할 감상문이 Room에 없으면 사진을 올리거나 서버 업로드를 예약하지 않고 Unknown 실패를 반환해야 한다`() =
         runTest {
             val result = repository().save(editDraft(ReviewPhoto.New("content://photo/2")))
 
@@ -225,7 +240,7 @@ class ReviewRepositoryImplTest {
         }
 
     @Test
-    fun `로그인하지 않은 상태면 사진을 올리거나 Room과 서버에 쓰지 않고 Unknown 실패를 반환해야 한다`() =
+    fun `로그인하지 않은 상태면 사진을 올리거나 Room에 저장하지 않고 Unknown 실패를 반환해야 한다`() =
         runTest {
             dao.put(STORED)
 
@@ -268,6 +283,39 @@ class ReviewRepositoryImplTest {
 
             assertEquals(Outcome.Success(Unit), result)
             assertEquals(STORED.toReview(), dao.saved(STORED.id))
+        }
+
+    @Test
+    fun `서버 감상문을 받아 온 뒤 서버에 올리지 않은 감상문이 Room에 남아 있으면 서버 업로드를 예약해야 한다`() =
+        runTest {
+            dao.put(
+                ReviewEntity(
+                    title = "올리지 못한 감상문",
+                    image = "",
+                    content = "서버가 거부함",
+                    createdAt = STORED_CREATED_AT,
+                    updatedAt = STORED_UPDATED_AT,
+                    rating = 5.0,
+                    storageFileName = "",
+                    syncState = ReviewSyncState.PENDING_UPSERT,
+                    localVersion = 1,
+                    id = "-pending",
+                ),
+            )
+
+            repository().syncFromRemote()
+
+            assertEquals(listOf("server.getAll", "sync.schedule"), calls)
+        }
+
+    @Test
+    fun `서버 감상문을 받아 온 뒤 서버에 올리지 않은 감상문이 Room에 없으면 서버 업로드를 예약하지 않아야 한다`() =
+        runTest {
+            dao.put(STORED)
+
+            repository().syncFromRemote()
+
+            assertEquals(listOf("server.getAll"), calls)
         }
 
     @Test
@@ -355,6 +403,7 @@ class ReviewRepositoryImplTest {
             storageDataSource = storage,
             authRepository = FakeReviewAuthRepository(userId),
             clock = { NOW_MILLIS },
+            syncScheduler = scheduler,
         )
 }
 
@@ -379,7 +428,9 @@ private val STORED =
         rating = 9.0,
         storageFileName = "old.png",
         syncState = ReviewSyncState.SYNCED,
-        localVersion = 0,
+        // 저장된 localVersion이 0이면 수정한 뒤 기대하는 localVersion이 새 감상문과 같은 1이라 수정할 때도 1로 저장하는 잘못된 코드가 통과하므로,
+        // 그 코드를 잡아내도록 0이 아닌 값 적용
+        localVersion = 1,
         id = "-stored",
     )
 
@@ -429,7 +480,8 @@ private class FakeReviewDao(
 
     override fun getAll(): Flow<List<ReviewEntity>> = error("사용하지 않음")
 
-    override suspend fun getPending(): List<ReviewEntity> = error("사용하지 않음")
+    override suspend fun getPending(): List<ReviewEntity> =
+        entities.values.filter { it.syncState != ReviewSyncState.SYNCED }
 
     override suspend fun markSynced(
         id: String,
@@ -442,10 +494,7 @@ private class FakeReviewDao(
 private class FakeReviewRealtimeDataSource(
     private val calls: MutableList<String>,
 ) : ReviewRealtimeDataSource {
-    val saved = mutableListOf<Review>()
-    val savedUserIds = mutableListOf<String>()
-
-    // 서버에 쓰인 감상문을 키별로 남겨, 덮어쓰기 여부와 동기화로 받아 올 감상문을 확인하도록 서버 상태 적용
+    // 동기화로 받아 올 서버 감상문을 키별로 두도록 서버 상태 적용
     val remote = mutableMapOf<String, Review>()
 
     var failNewKey: Boolean = false
@@ -473,13 +522,11 @@ private class FakeReviewRealtimeDataSource(
         return NEW_KEY
     }
 
-    override fun save(
+    override suspend fun save(
         userId: String,
         review: Review,
     ) {
         calls += "server.save"
-        savedUserIds += userId
-        saved += review
         remote[review.id] = review
     }
 
@@ -522,6 +569,14 @@ private class FakeReviewStorageDataSource(
         calls += "storage.delete:$fileName"
         if (failDelete) throw IOException("삭제 실패")
         if (cancelDelete) throw CancellationException("SDK에서 취소된 삭제")
+    }
+}
+
+private class FakeReviewSyncScheduler(
+    private val calls: MutableList<String>,
+) : ReviewSyncScheduler {
+    override fun schedule() {
+        calls += "sync.schedule"
     }
 }
 
