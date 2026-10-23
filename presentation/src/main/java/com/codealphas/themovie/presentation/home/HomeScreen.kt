@@ -167,7 +167,9 @@ internal fun HomeContent(
                 HomeTab.entries.forEach { tab ->
                     NavigationBarItem(
                         selected = tab == selectedTab,
-                        onClick = { onTabSelected(tab) },
+                        // 선택된 탭을 다시 눌러도 탭 이동이 다시 실행되어 키보드 닫기가 불리므로,
+                        // 검색 탭에서 입력하던 키보드가 닫히지 않도록 선택된 탭은 무시하도록 적용
+                        onClick = { if (tab != selectedTab) onTabSelected(tab) },
                         icon = { Icon(painter = painterResource(tab.icon), contentDescription = null) },
                         label = { Text(text = stringResource(tab.label)) },
                     )

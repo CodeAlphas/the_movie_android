@@ -84,13 +84,17 @@ class JoinViewModel
                     // Firebase는 가입에 성공하면 그 계정으로 로그인되므로, 가입 화면에 남은 채 로그인되지 않도록 가입 직후 로그아웃
                     authRepository.signOut()
                 }
-                _state.update { it.copy(isLoading = false) }
                 when (result) {
+                    // 가입 화면은 로그인 화면으로 돌아가며 사라져 로딩을 되돌릴 필요가 없으므로,
+                    // 이동 직전에 덮개가 걷혀 화면이 깜빡이지 않도록 성공하면 isLoading 유지
                     is Outcome.Success -> {
                         _effect.send(JoinEffect.ShowLoginPrompt)
                         _effect.send(JoinEffect.NavigateToLogin)
                     }
-                    is Outcome.Failure -> _effect.send(JoinEffect.ShowError(result.error))
+                    is Outcome.Failure -> {
+                        _state.update { it.copy(isLoading = false) }
+                        _effect.send(JoinEffect.ShowError(result.error))
+                    }
                 }
             }
         }

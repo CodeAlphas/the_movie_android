@@ -3,6 +3,8 @@ package com.codealphas.themovie.presentation.navigation
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
@@ -23,6 +25,14 @@ internal fun AppNavHost(
     startDestination: Any,
     navController: NavHostController = rememberNavController(),
 ) {
+    val focusManager = LocalFocusManager.current
+    // 키보드가 열린 채 화면이 넘어가면 다음 화면이 키보드 높이만큼 줄었다 늘어나며 튀므로,
+    // 어느 버튼으로 이동하든 빠지지 않도록 목적지가 바뀌는 즉시 키보드 닫기 적용
+    DisposableEffect(navController, focusManager) {
+        val listener = NavController.OnDestinationChangedListener { _, _, _ -> focusManager.clearFocus() }
+        navController.addOnDestinationChangedListener(listener)
+        onDispose { navController.removeOnDestinationChangedListener(listener) }
+    }
     // 카카오 지도는 SurfaceView에 그려 alpha를 따르지 않아 기본 페이드 중 현재 위치 버튼이 번져 보이므로,
     // 지도 화면만 예외로 두지 않고 모든 화면이 같은 전환을 쓰도록 위치만 바꾸는 가로 슬라이드 적용
     NavHost(
