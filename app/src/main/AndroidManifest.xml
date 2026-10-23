@@ -70,6 +70,21 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/provider_paths" />
         </provider>
+
+        <!-- lifecycle, profileinstaller 같은 라이브러리도 이 provider 안에서 앱 시작 때 초기화되므로,
+             provider는 그대로 두고 아래 WorkManager 항목만 제거 -->
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            android:exported="false"
+            tools:node="merge">
+            <!-- WorkManagerInitializer가 앱 시작 때 WorkManager를 기본 설정으로 먼저 만들면
+                 TheMovieApplication의 HiltWorkerFactory 설정이 적용되지 않으므로, WorkManagerInitializer 제거 -->
+            <meta-data
+                android:name="androidx.work.WorkManagerInitializer"
+                android:value="androidx.startup"
+                tools:node="remove" />
+        </provider>
     </application>
 
 </manifest>

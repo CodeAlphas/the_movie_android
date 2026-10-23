@@ -2,12 +2,25 @@ package com.codealphas.themovie
 
 import android.app.Application
 import android.os.Build
+import androidx.hilt.work.HiltWorkerFactory
+import androidx.work.Configuration
 import com.codealphas.themovie.notification.NotificationChannels
 import com.kakao.vectormap.KakaoMapSdk
 import dagger.hilt.android.HiltAndroidApp
+import javax.inject.Inject
 
 @HiltAndroidApp
-class TheMovieApplication : Application() {
+class TheMovieApplication :
+    Application(),
+    Configuration.Provider {
+    @Inject
+    lateinit var workerFactory: HiltWorkerFactory
+
+    // WorkManager가 기본 방식으로 Worker를 만들면 Context와 WorkerParameters 외의 생성자 인자를 넣지 못하므로,
+    // Hilt가 나머지 인자를 채워 Worker를 만들도록 HiltWorkerFactory 적용
+    override val workManagerConfiguration: Configuration
+        get() = Configuration.Builder().setWorkerFactory(workerFactory).build()
+
     override fun onCreate() {
         super.onCreate()
         // FCM이 백그라운드 알림 메시지를 표시하기 전에 채널이 있어야 Manifest의 기본 채널로 들어가므로, 프로세스 시작 시 생성 적용

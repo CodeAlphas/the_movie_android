@@ -6,6 +6,8 @@ import com.codealphas.themovie.data.review.remote.FirebaseReviewRealtimeDataSour
 import com.codealphas.themovie.data.review.remote.FirebaseReviewStorageDataSource
 import com.codealphas.themovie.data.review.remote.ReviewRealtimeDataSource
 import com.codealphas.themovie.data.review.remote.ReviewStorageDataSource
+import com.codealphas.themovie.data.review.sync.ReviewSyncScheduler
+import com.codealphas.themovie.data.review.sync.WorkManagerReviewSyncScheduler
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -26,4 +28,7 @@ internal abstract class ReviewModule {
 
     @Binds
     abstract fun bindReviewClock(impl: SystemReviewClock): ReviewClock
+
+    @Binds
+    abstract fun bindReviewSyncScheduler(impl: WorkManagerReviewSyncScheduler): ReviewSyncScheduler
 }
