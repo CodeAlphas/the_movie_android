@@ -39,9 +39,9 @@ class ReviewRepositoryImplTest {
 
             assertEquals(Outcome.Success(Unit), result)
             assertEquals(listOf("room.update", "server.save"), calls)
-            val expected = STORED.toReview().copy(title = "수정한 제목")
+            val expected = STORED.toReview().copy(title = "수정한 제목", updatedAt = NOW_MILLIS)
             assertEquals(expected, dao.saved(STORED.id))
-            assertEquals(expected, realtime.saved.single().withoutTime())
+            assertEquals(expected, realtime.saved.single())
         }
 
     @Test
@@ -60,10 +60,11 @@ class ReviewRepositoryImplTest {
                 STORED.toReview().copy(
                     title = "수정한 제목",
                     imageUrl = downloadUrl(NEW_FILE_NAME),
+                    updatedAt = NOW_MILLIS,
                     storageFileName = NEW_FILE_NAME,
                 )
             assertEquals(expected, dao.saved(STORED.id))
-            assertEquals(expected, realtime.saved.single().withoutTime())
+            assertEquals(expected, realtime.saved.single())
         }
 
     @Test
@@ -135,7 +136,8 @@ class ReviewRepositoryImplTest {
 
             assertEquals(Outcome.Success(Unit), result)
             assertEquals(listOf("room.update", "server.save", "storage.delete:old.png"), calls)
-            val expected = STORED.toReview().copy(title = "수정한 제목", imageUrl = "", storageFileName = "")
+            val expected =
+                STORED.toReview().copy(title = "수정한 제목", imageUrl = "", updatedAt = NOW_MILLIS, storageFileName = "")
             assertEquals(expected, dao.saved(STORED.id))
         }
 
@@ -151,14 +153,41 @@ class ReviewRepositoryImplTest {
                     title = "새 감상문",
                     imageUrl = "",
                     content = "재밌다",
-                    time = "",
+                    createdAt = NOW_MILLIS,
+                    updatedAt = NOW_MILLIS,
                     rating = 7.0,
                     storageFileName = "",
                     id = NEW_KEY,
                 )
             assertEquals(expected, dao.saved(NEW_KEY))
             assertEquals(USER_ID, realtime.savedUserIds.single())
-            assertEquals(expected, realtime.saved.single().withoutTime())
+            assertEquals(expected, realtime.saved.single())
+        }
+
+    @Test
+    fun `감상문을 수정하면 createdAt은 그대로 두고 updatedAt만 지금 시각으로 바꿔야 한다`() =
+        runTest {
+            dao.put(STORED)
+
+            repository().save(editDraft(ReviewPhoto.Unchanged))
+
+            val saved = dao.saved(STORED.id)
+            assertEquals(STORED.createdAt, saved?.createdAt)
+            assertEquals(NOW_MILLIS, saved?.updatedAt)
+            assertEquals(STORED.createdAt, realtime.saved.single().createdAt)
+            assertEquals(NOW_MILLIS, realtime.saved.single().updatedAt)
+        }
+
+    @Test
+    fun `새 감상문을 저장하면 createdAt과 updatedAt을 모두 지금 시각으로 저장해야 한다`() =
+        runTest {
+            repository().save(newDraft(ReviewPhoto.Unchanged))
+
+            val saved = dao.saved(NEW_KEY)
+            assertEquals(NOW_MILLIS, saved?.createdAt)
+            assertEquals(NOW_MILLIS, saved?.updatedAt)
+            assertEquals(NOW_MILLIS, realtime.saved.single().createdAt)
+            assertEquals(NOW_MILLIS, realtime.saved.single().updatedAt)
         }
 
     @Test
@@ -323,12 +352,19 @@ private const val NOW_MILLIS = 1_700_000_000_000L
 private const val NEW_FILE_NAME = "user-12345$NOW_MILLIS.png"
 private const val NEW_KEY = "-new-key"
 
+// 저장된 createdAt이 지금 시각이나 저장된 updatedAt과 같으면,
+// 수정할 때 createdAt을 지금 시각이나 기존 updatedAt으로 잘못 덮어써도 기대값과 같아져 테스트가 통과하므로,
+// 저장된 감상문의 createdAt과 updatedAt을 지금 시각보다 이전의 서로 다른 값으로 적용
+private const val STORED_CREATED_AT = 1_600_000_000_000L
+private const val STORED_UPDATED_AT = 1_650_000_000_000L
+
 private val STORED =
     ReviewEntity(
         title = "기생충",
         image = downloadUrl("old.png"),
         content = "잘 봤다",
-        time = "",
+        createdAt = STORED_CREATED_AT,
+        updatedAt = STORED_UPDATED_AT,
         rating = 9.0,
         storageFileName = "old.png",
         id = "-stored",
@@ -342,9 +378,6 @@ private fun newDraft(photo: ReviewPhoto): ReviewDraft =
 
 private fun downloadUrl(fileName: String): String = "https://storage.example.com/$fileName"
 
-// 작성 시각은 기기 시간대에 따라 문자열이 달라지므로, 시각을 뺀 필드만 비교하도록 빈 문자열로 적용
-private fun Review.withoutTime(): Review = copy(time = "")
-
 private class FakeReviewDao(
     private val calls: MutableList<String>,
 ) : ReviewDao {
@@ -356,7 +389,7 @@ private class FakeReviewDao(
         entities[entity.id] = entity
     }
 
-    fun saved(id: String): Review? = entities[id]?.toReview()?.withoutTime()
+    fun saved(id: String): Review? = entities[id]?.toReview()
 
     // Room의 OnConflictStrategy.IGNORE처럼 같은 id가 있으면 기존 행을 두도록, 없는 id만 추가 적용
     override suspend fun insert(review: ReviewEntity) {

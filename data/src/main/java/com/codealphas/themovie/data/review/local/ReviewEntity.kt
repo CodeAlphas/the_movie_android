@@ -12,8 +12,10 @@ internal class ReviewEntity(
     val image: String,
     @ColumnInfo(name = "content")
     val content: String,
-    @ColumnInfo(name = "time")
-    val time: String,
+    @ColumnInfo(name = "createdAt")
+    val createdAt: Long,
+    @ColumnInfo(name = "updatedAt")
+    val updatedAt: Long,
     @ColumnInfo(name = "rating")
     val rating: Double,
     @ColumnInfo(name = "storageFileName")

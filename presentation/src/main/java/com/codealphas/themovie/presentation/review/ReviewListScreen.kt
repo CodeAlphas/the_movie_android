@@ -32,6 +32,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -59,6 +60,9 @@ import com.codealphas.themovie.domain.review.Review
 import com.codealphas.themovie.presentation.R
 import com.codealphas.themovie.presentation.ui.ScreenHeaderBackground
 import com.codealphas.themovie.presentation.ui.ScreenHeaderTexts
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 private val PanelShape = RoundedCornerShape(5.dp)
 private val PanelBorderWidth = 1.dp
@@ -67,6 +71,10 @@ private val CardElevation = 2.dp
 private val CardBorderWidth = 1.dp
 private val StarSize = 16.dp
 private const val PREVIEW_REVIEW_COUNT = 3
+private const val REVIEW_TIME_PATTERN = "yyyy/MM/dd HH:mm"
+
+// 미리보기에 보이는 시각이 그릴 때마다 바뀌지 않도록, 2026-10-02 12:00(한국 시간)으로 고정
+private const val PREVIEW_UPDATED_AT = 1_790_910_000_000L
 
 @Composable
 fun ReviewListScreen(
@@ -165,6 +173,8 @@ private fun ReviewListPanel(
                 .border(PanelBorderWidth, MaterialTheme.colorScheme.outline, PanelShape),
     ) {
         val reviews = state.reviews
+        // SimpleDateFormat은 만들 때 패턴을 해석하므로, 카드를 그릴 때마다 새로 만들지 않도록 목록에서 한 번 만들어 재사용
+        val timeFormat = remember { SimpleDateFormat(REVIEW_TIME_PATTERN, Locale.getDefault()) }
         if (reviews != null) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
@@ -174,6 +184,7 @@ private fun ReviewListPanel(
                 items(items = reviews, key = { it.id }) { review ->
                     ReviewCard(
                         review = review,
+                        updatedAtText = timeFormat.format(Date(review.updatedAt)),
                         onClick = { onReviewClick(review) },
                         onDeleteClick = { onDeleteClick(review) },
                     )
@@ -212,6 +223,7 @@ private fun ReviewListPanel(
 @Composable
 private fun ReviewCard(
     review: Review,
+    updatedAtText: String,
     onClick: () -> Unit,
     onDeleteClick: () -> Unit,
 ) {
@@ -252,13 +264,16 @@ private fun ReviewCard(
                     )
                 }
             }
-            ReviewCardFooter(review = review)
+            ReviewCardFooter(review = review, updatedAtText = updatedAtText)
         }
     }
 }
 
 @Composable
-private fun ReviewCardFooter(review: Review) {
+private fun ReviewCardFooter(
+    review: Review,
+    updatedAtText: String,
+) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(Spacing.extraSmall),
         horizontalArrangement = Arrangement.spacedBy(Spacing.small, Alignment.End),
@@ -273,7 +288,7 @@ private fun ReviewCardFooter(review: Review) {
         // 감상문 평점은 10점 만점이고 별은 5개라서, 별 하나가 2점이 되도록 절반으로 줄여 표시
         RatingStars(filledStars = (review.rating / 2).toFloat(), starSize = StarSize)
         Text(
-            text = review.time,
+            text = updatedAtText,
             style = MaterialTheme.typography.bodyLarge,
             fontStyle = FontStyle.Italic,
             color = MaterialTheme.colorScheme.onTertiaryContainer,
@@ -319,7 +334,8 @@ private fun previewReview(index: Int): Review =
         title = "Review $index",
         imageUrl = "",
         content = "",
-        time = "2026/10/02 12:00",
+        createdAt = PREVIEW_UPDATED_AT,
+        updatedAt = PREVIEW_UPDATED_AT,
         rating = 7.0,
         storageFileName = "",
         id = index.toString(),

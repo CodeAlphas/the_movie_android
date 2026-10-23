@@ -1,5 +1,7 @@
 package com.codealphas.themovie.data.review.remote
 
+import com.codealphas.themovie.data.review.remoteReviewOrNull
+import com.codealphas.themovie.data.review.toRemoteFields
 import com.codealphas.themovie.domain.review.Review
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseReference
@@ -31,16 +33,7 @@ internal class FirebaseReviewRealtimeDataSource
             userId: String,
             review: Review,
         ) {
-            val fields =
-                mapOf(
-                    "image" to review.imageUrl,
-                    "title" to review.title,
-                    "content" to review.content,
-                    "time" to review.time,
-                    "rating" to review.rating,
-                    "storageFileName" to review.storageFileName,
-                )
-            reviewsReference(userId).child(review.id).updateChildren(fields)
+            reviewsReference(userId).child(review.id).updateChildren(review.toRemoteFields())
         }
 
         // 오프라인이면 삭제가 연결될 때까지 완료되지 않아 화면이 멈추므로, 완료를 기다리지 않고 SDK 대기열에 위임
@@ -60,18 +53,5 @@ internal class FirebaseReviewRealtimeDataSource
                 .child("reviews")
     }
 
-// 필드가 빠진 항목 하나가 예외를 던지면 목록 전체 동기화가 중단되므로, 읽지 못한 항목만 제외
-private fun DataSnapshot.toReviewOrNull(): Review? {
-    val id = key
-    val rating = child("rating").value?.toString()?.toDoubleOrNull()
-    if (id == null || rating == null) return null
-    return Review(
-        title = child("title").value.toString(),
-        imageUrl = child("image").value.toString(),
-        content = child("content").value.toString(),
-        time = child("time").value.toString(),
-        rating = rating,
-        storageFileName = child("storageFileName").value.toString(),
-        id = id,
-    )
-}
+private fun DataSnapshot.toReviewOrNull(): Review? =
+    key?.let { id -> remoteReviewOrNull(id = id, fields = value as? Map<*, *>) }

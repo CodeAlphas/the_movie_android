@@ -25,6 +25,7 @@ internal interface ReviewDao {
     @Query("DELETE FROM reviewTable")
     suspend fun deleteAll()
 
-    @Query("SELECT * FROM reviewTable ORDER BY id DESC")
+    // 수정한 감상문이 맨 위로 오도록 updatedAt 순으로 정렬하고, 같은 시각이면 작성 순서인 push 키 순서로 고정
+    @Query("SELECT * FROM reviewTable ORDER BY updatedAt DESC, id DESC")
     fun getAll(): Flow<List<ReviewEntity>>
 }

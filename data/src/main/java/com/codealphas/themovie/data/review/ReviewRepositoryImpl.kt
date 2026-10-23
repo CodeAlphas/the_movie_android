@@ -19,9 +19,6 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 import javax.inject.Inject
 
 private const val USER_ID_PREFIX_LENGTH = 10
@@ -125,12 +122,14 @@ internal class ReviewRepositoryImpl
             photo: PhotoFields,
             userId: String,
         ) {
+            val now = clock.nowMillis()
             val entity =
                 ReviewEntity(
                     title = draft.title,
                     image = photo.imageUrl,
                     content = draft.content,
-                    time = SimpleDateFormat("yyyy/MM/dd HH:mm", Locale.KOREA).format(Date(clock.nowMillis())),
+                    createdAt = previous?.createdAt ?: now,
+                    updatedAt = now,
                     rating = draft.rating,
                     storageFileName = photo.fileName,
                     id = id,
