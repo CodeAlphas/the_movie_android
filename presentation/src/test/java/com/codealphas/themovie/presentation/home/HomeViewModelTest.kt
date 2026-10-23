@@ -26,6 +26,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -52,6 +53,97 @@ class HomeViewModelTest {
             assertEquals(1, reviewRepository.deleteAllCalls)
             assertEquals(1, authRepository.signOutCalls)
             assertEquals(1, completedCount)
+        }
+    }
+
+    @Test
+    fun `서버에 반영하지 않은 감상문 변경이 있을 때 로그아웃 버튼을 누르면 로그아웃하지 않고 변경 수와 함께 확인 창을 띄워야 한다`() {
+        val authRepository = FakeHomeAuthRepository(userId = "uid")
+        val reviewRepository = FakeHomeReviewRepository(pendingCount = 2)
+        runHomeTest(authRepository = authRepository, reviewRepository = reviewRepository) { viewModel ->
+            val effects = collectEffects(viewModel)
+
+            viewModel.onIntent(HomeIntent.LogoutClicked)
+            runCurrent()
+
+            assertEquals(2, viewModel.state.value.logoutPendingReviewCount)
+            assertEquals(0, reviewRepository.deleteAllCalls)
+            assertEquals(0, authRepository.signOutCalls)
+            assertEquals(emptyList<HomeEffect>(), effects)
+        }
+    }
+
+    @Test
+    fun `서버에 반영하지 않은 감상문 변경이 없을 때 로그아웃 버튼을 누르면 확인 창을 띄우지 않고 로그아웃해야 한다`() {
+        val authRepository = FakeHomeAuthRepository(userId = "uid")
+        runHomeTest(authRepository = authRepository) { viewModel ->
+            val effects = collectEffects(viewModel)
+
+            viewModel.onIntent(HomeIntent.LogoutClicked)
+            runCurrent()
+
+            assertNull(viewModel.state.value.logoutPendingReviewCount)
+            assertEquals(1, authRepository.signOutCalls)
+            assertEquals(listOf<HomeEffect>(HomeEffect.NavigateToLogin), effects)
+        }
+    }
+
+    @Test
+    fun `로그아웃 확인 창에서 로그아웃 버튼을 누르면 확인 창을 닫고 감상문을 지운 뒤 로그아웃해야 한다`() {
+        val authRepository = FakeHomeAuthRepository(userId = "uid")
+        val reviewRepository = FakeHomeReviewRepository(pendingCount = 2)
+        runHomeTest(authRepository = authRepository, reviewRepository = reviewRepository) { viewModel ->
+            val effects = collectEffects(viewModel)
+            viewModel.onIntent(HomeIntent.LogoutClicked)
+            runCurrent()
+
+            viewModel.onIntent(HomeIntent.LogoutConfirmed)
+            runCurrent()
+
+            assertNull(viewModel.state.value.logoutPendingReviewCount)
+            assertEquals(1, reviewRepository.deleteAllCalls)
+            assertEquals(1, authRepository.signOutCalls)
+            assertEquals(listOf<HomeEffect>(HomeEffect.NavigateToLogin), effects)
+        }
+    }
+
+    @Test
+    fun `로그아웃 확인 창에서 로그아웃 버튼을 두 번 누르면 한 번만 로그아웃해야 한다`() {
+        val deleteAllDone = CompletableDeferred<Unit>()
+        val authRepository = FakeHomeAuthRepository(userId = "uid")
+        val reviewRepository = FakeHomeReviewRepository(deleteAllDone = deleteAllDone, pendingCount = 2)
+        runHomeTest(authRepository = authRepository, reviewRepository = reviewRepository) { viewModel ->
+            val effects = collectEffects(viewModel)
+            viewModel.onIntent(HomeIntent.LogoutClicked)
+            runCurrent()
+
+            viewModel.onIntent(HomeIntent.LogoutConfirmed)
+            viewModel.onIntent(HomeIntent.LogoutConfirmed)
+            deleteAllDone.complete(Unit)
+            runCurrent()
+
+            assertEquals(1, reviewRepository.deleteAllCalls)
+            assertEquals(1, authRepository.signOutCalls)
+            assertEquals(listOf<HomeEffect>(HomeEffect.NavigateToLogin), effects)
+        }
+    }
+
+    @Test
+    fun `로그아웃 확인 창에서 취소하면 확인 창을 닫고 로그아웃하지 않아야 한다`() {
+        val authRepository = FakeHomeAuthRepository(userId = "uid")
+        val reviewRepository = FakeHomeReviewRepository(pendingCount = 2)
+        runHomeTest(authRepository = authRepository, reviewRepository = reviewRepository) { viewModel ->
+            val effects = collectEffects(viewModel)
+            viewModel.onIntent(HomeIntent.LogoutClicked)
+            runCurrent()
+
+            viewModel.onIntent(HomeIntent.LogoutDismissed)
+            runCurrent()
+
+            assertNull(viewModel.state.value.logoutPendingReviewCount)
+            assertEquals(0, reviewRepository.deleteAllCalls)
+            assertEquals(0, authRepository.signOutCalls)
+            assertEquals(emptyList<HomeEffect>(), effects)
         }
     }
 
@@ -170,6 +262,7 @@ private fun runHomeTest(
         HomeViewModel(
             logoutUseCase = LogoutUseCase(authRepository, reviewRepository),
             notificationPermissionRepository = permissionRepository,
+            reviewRepository = reviewRepository,
         )
     try {
         body(viewModel)
@@ -212,6 +305,7 @@ private class FakeHomeAuthRepository(
 
 private class FakeHomeReviewRepository(
     private val deleteAllDone: CompletableDeferred<Unit> = CompletableDeferred(Unit),
+    private val pendingCount: Int = 0,
 ) : ReviewRepository {
     var deleteAllCalls: Int = 0
 
@@ -229,6 +323,10 @@ private class FakeHomeReviewRepository(
         deleteAllDone.await()
         deleteAllCalls += 1
     }
+
+    override suspend fun countPendingChanges(): Int = pendingCount
+
+    override fun cancelPendingSync() = Unit
 }
 
 private class FakeNotificationPermissionRepository(

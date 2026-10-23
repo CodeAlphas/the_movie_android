@@ -39,6 +39,9 @@ internal interface ReviewDao {
     @Query("SELECT * FROM reviewTable WHERE syncState != 'SYNCED' ORDER BY updatedAt ASC, id ASC")
     suspend fun getPending(): List<ReviewEntity>
 
+    @Query("SELECT COUNT(*) FROM reviewTable WHERE syncState != 'SYNCED'")
+    suspend fun countPending(): Int
+
     // 업로드하는 동안 다시 수정되거나 삭제 표시된 감상문을 SYNCED로 덮어쓰면 그 변경이 서버에 올라가지 않으므로,
     // 올린 localVersion 그대로 PENDING_UPSERT일 때만 SYNCED로 변경
     @Query(

@@ -311,6 +311,8 @@ private class FakeReviewDao(
     override suspend fun deleteAll() = error("사용하지 않음")
 
     override fun getAll(): Flow<List<ReviewEntity>> = error("사용하지 않음")
+
+    override suspend fun countPending(): Int = error("사용하지 않음")
 }
 
 private fun ReviewEntity.withSyncState(syncState: ReviewSyncState): ReviewEntity =

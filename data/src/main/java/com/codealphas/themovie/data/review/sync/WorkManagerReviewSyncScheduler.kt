@@ -29,7 +29,11 @@ internal class WorkManagerReviewSyncScheduler
                 .enqueueUniqueWork(UNIQUE_WORK_NAME, ExistingWorkPolicy.APPEND_OR_REPLACE, request)
         }
 
-        private companion object {
+        override fun cancel() {
+            WorkManager.getInstance(context).cancelUniqueWork(UNIQUE_WORK_NAME)
+        }
+
+        internal companion object {
             const val UNIQUE_WORK_NAME = "review_sync"
         }
     }

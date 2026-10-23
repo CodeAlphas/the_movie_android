@@ -379,4 +379,8 @@ private class FakeReviewEditRepository(
     override suspend fun delete(review: Review) = error("사용하지 않음")
 
     override suspend fun deleteAll() = error("사용하지 않음")
+
+    override suspend fun countPendingChanges(): Int = error("사용하지 않음")
+
+    override fun cancelPendingSync() = error("사용하지 않음")
 }

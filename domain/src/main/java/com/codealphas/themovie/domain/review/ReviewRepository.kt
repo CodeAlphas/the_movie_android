@@ -11,7 +11,9 @@ interface ReviewRepository {
      * 같은 id의 감상문이 Room에 이미 있으면 서버 감상문으로 바꾸지 않고 그대로 두며, Room에 없는 감상문만 추가한다.
      * 가져오는 중에 실패하면 그때까지 추가한 감상문은 Room에 남는다.
      *
-     * @return 로그인 정보가 없거나 가져오기에 실패하면 [Outcome.Failure]
+     * 서버 응답을 일정 시간까지만 기다리므로, 오프라인이어도 실패로 끝난다.
+     *
+     * @return 로그인 정보가 없거나 가져오기에 실패하거나 서버 응답이 시간 안에 오지 않으면 [Outcome.Failure]
      */
     suspend fun syncFromRemote(): ReviewResult
 
@@ -38,4 +40,16 @@ interface ReviewRepository {
     suspend fun delete(review: Review): ReviewResult
 
     suspend fun deleteAll()
+
+    /**
+     * 서버에 아직 반영하지 않은 감상문 변경(작성, 수정, 삭제) 수를 돌려준다.
+     * 서버가 거부해 대기 상태로 남은 변경도 센다.
+     */
+    suspend fun countPendingChanges(): Int
+
+    /**
+     * 예약되거나 실행 중인 서버 업로드 작업을 취소한다. 대기 중인 감상문 변경은 Room에 그대로 남는다.
+     * 실행 중인 작업은 멈추라는 신호만 받으므로, 취소 전에 보낸 서버 요청은 반영될 수 있다.
+     */
+    fun cancelPendingSync()
 }

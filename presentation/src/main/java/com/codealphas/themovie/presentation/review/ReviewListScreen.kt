@@ -58,6 +58,7 @@ import com.codealphas.themovie.core.android.ui.rememberThrottledClick
 import com.codealphas.themovie.core.android.ui.showToast
 import com.codealphas.themovie.domain.review.Review
 import com.codealphas.themovie.presentation.R
+import com.codealphas.themovie.presentation.ui.LogoutConfirmDialog
 import com.codealphas.themovie.presentation.ui.ScreenHeaderBackground
 import com.codealphas.themovie.presentation.ui.ScreenHeaderTexts
 import java.text.SimpleDateFormat
@@ -154,6 +155,14 @@ internal fun ReviewListContent(
                 )
             }
         }
+    }
+
+    state.logoutPendingReviewCount?.let { pendingCount ->
+        LogoutConfirmDialog(
+            pendingCount = pendingCount,
+            onConfirm = { onIntent(ReviewListIntent.LogoutConfirmed) },
+            onDismiss = { onIntent(ReviewListIntent.LogoutDismissed) },
+        )
     }
 }
 
@@ -315,6 +324,14 @@ private fun ReviewListContentEmptyPreview() {
 @Composable
 private fun ReviewListContentSyncingPreview() {
     ReviewListContentPreview(state = ReviewListUiState())
+}
+
+@Preview(name = "로그아웃 확인")
+@Composable
+private fun ReviewListContentLogoutConfirmPreview() {
+    ReviewListContentPreview(
+        state = ReviewListUiState(reviews = emptyList(), isSyncing = false, logoutPendingReviewCount = 2),
+    )
 }
 
 @Composable

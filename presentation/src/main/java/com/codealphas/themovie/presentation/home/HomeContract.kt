@@ -4,6 +4,8 @@ import com.codealphas.themovie.presentation.notification.NotificationPermissionS
 
 data class HomeUiState(
     val showNotificationPrompt: Boolean = false,
+    // 로그아웃 확인 창은 서버에 반영하지 않은 감상문 변경이 있을 때만 띄우므로, 창에 보일 변경 수를 담고 창을 띄우지 않을 때는 null 적용
+    val logoutPendingReviewCount: Int? = null,
 )
 
 sealed interface HomeIntent {
@@ -12,6 +14,10 @@ sealed interface HomeIntent {
     ) : HomeIntent
 
     data object LogoutClicked : HomeIntent
+
+    data object LogoutConfirmed : HomeIntent
+
+    data object LogoutDismissed : HomeIntent
 
     data class NotificationSettingsClicked(
         val permissionState: NotificationPermissionState,

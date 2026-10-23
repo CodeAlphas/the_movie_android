@@ -21,7 +21,13 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.seconds
+
+// Realtime Database는 디스크 캐시를 쓰지 않으면 오프라인에서 서버 감상문 읽기를 실패시키지 않고 연결될 때까지 기다리므로,
+// 빈 감상문 목록에 로딩 표시만 계속 남지 않도록 서버 읽기 대기 시간 제한
+internal val SERVER_READ_TIMEOUT = 15.seconds
 
 internal class ReviewRepositoryImpl
     @Inject
@@ -39,14 +45,19 @@ internal class ReviewRepositoryImpl
         override suspend fun syncFromRemote(): ReviewResult {
             val userId = authRepository.currentUserId() ?: return Outcome.Failure(ReviewError.Unknown)
             return try {
-                // 서버에서 받은 감상문은 이미 서버에 있으므로, 다시 올리지 않도록 SYNCED와 localVersion 0으로 추가
-                realtimeDataSource.getAll(userId).forEach { review ->
-                    reviewDao.insert(review.toEntity(syncState = ReviewSyncState.SYNCED, localVersion = 0))
+                val remoteReviews = withTimeoutOrNull(SERVER_READ_TIMEOUT) { realtimeDataSource.getAll(userId) }
+                if (remoteReviews == null) {
+                    Outcome.Failure(ReviewError.Unknown)
+                } else {
+                    // 서버에서 받은 감상문은 이미 서버에 있으므로, 다시 올리지 않도록 SYNCED와 localVersion 0으로 추가
+                    remoteReviews.forEach { review ->
+                        reviewDao.insert(review.toEntity(syncState = ReviewSyncState.SYNCED, localVersion = 0))
+                    }
+                    // 업로드 작업이 끝난 뒤에도 대기 상태로 남은 감상문은 다른 감상문을 저장하거나 지우기 전까지 다시 예약되지 않으므로,
+                    // 앱 업데이트나 규칙 수정으로 원인이 고쳐진 뒤 올라가도록 목록을 열 때 업로드 다시 예약
+                    if (reviewDao.countPending() > 0) syncScheduler.schedule()
+                    Outcome.Success(Unit)
                 }
-                // 업로드 작업이 끝난 뒤에도 대기 상태로 남은 감상문은 다른 감상문을 저장하거나 지우기 전까지 다시 예약되지 않으므로,
-                // 앱 업데이트나 규칙 수정으로 원인이 고쳐진 뒤 올라가도록 목록을 열 때 업로드 다시 예약
-                if (reviewDao.getPending().isNotEmpty()) syncScheduler.schedule()
-                Outcome.Success(Unit)
             } catch (_: CancellationException) {
                 // Firebase Realtime Database SDK가 서버 감상문 읽기를 취소해도 취소 예외로 끝나는데 그대로 올리면 동기화 중 표시가 풀리지 않으므로,
                 // 동기화를 요청한 코루틴이 취소되지 않았으면 동기화 실패로 처리
@@ -181,6 +192,12 @@ internal class ReviewRepositoryImpl
 
         override suspend fun deleteAll() {
             reviewDao.deleteAll()
+        }
+
+        override suspend fun countPendingChanges(): Int = reviewDao.countPending()
+
+        override fun cancelPendingSync() {
+            syncScheduler.cancel()
         }
 
         private suspend fun deleteStorageFile(fileName: String) {

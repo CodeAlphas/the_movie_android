@@ -18,6 +18,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.currentTime
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -314,6 +315,18 @@ class ReviewRepositoryImplTest {
         }
 
     @Test
+    fun `서버 감상문 응답이 시간 제한까지 오지 않으면 Room에 쓰지 않고 시간 제한이 지난 뒤 Unknown 실패를 반환해야 한다`() =
+        runTest {
+            realtime.suspendGetAll = true
+
+            val result = repository().syncFromRemote()
+
+            assertEquals(Outcome.Failure(ReviewError.Unknown), result)
+            assertEquals(SERVER_READ_TIMEOUT.inWholeMilliseconds, currentTime)
+            assertEquals(listOf("server.getAll"), calls)
+        }
+
+    @Test
     fun `서버 감상문을 받아 오는 중에 동기화를 요청한 코루틴이 취소되면 실패를 반환하지 않고 취소되어야 한다`() =
         runTest {
             realtime.suspendGetAll = true
@@ -378,6 +391,19 @@ class ReviewRepositoryImplTest {
 
             repository().syncFromRemote()
 
+            assertEquals(ReviewSyncState.PENDING_DELETE, dao.entity(STORED.id)?.syncState)
+        }
+
+    @Test
+    fun `업로드 작업을 취소하면 Room, 서버, Storage를 건드리지 않고 대기 중인 감상문을 그대로 두어야 한다`() =
+        runTest {
+            dao.put(STORED)
+            repository().delete(STORED.toReview())
+            calls.clear()
+
+            repository().cancelPendingSync()
+
+            assertEquals(listOf("sync.cancel"), calls)
             assertEquals(ReviewSyncState.PENDING_DELETE, dao.entity(STORED.id)?.syncState)
         }
 
@@ -467,8 +493,9 @@ private class FakeReviewDao(
 
     override fun getAll(): Flow<List<ReviewEntity>> = error("사용하지 않음")
 
-    override suspend fun getPending(): List<ReviewEntity> =
-        entities.values.filter { it.syncState != ReviewSyncState.SYNCED }
+    override suspend fun getPending(): List<ReviewEntity> = error("사용하지 않음")
+
+    override suspend fun countPending(): Int = entities.values.count { it.syncState != ReviewSyncState.SYNCED }
 
     override suspend fun markSynced(
         id: String,
@@ -569,6 +596,10 @@ private class FakeReviewSyncScheduler(
 ) : ReviewSyncScheduler {
     override fun schedule() {
         calls += "sync.schedule"
+    }
+
+    override fun cancel() {
+        calls += "sync.cancel"
     }
 }
 

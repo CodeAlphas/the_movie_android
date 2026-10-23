@@ -59,6 +59,7 @@ import com.codealphas.themovie.presentation.notification.NotificationPromptDialo
 import com.codealphas.themovie.presentation.notification.notificationPermissionState
 import com.codealphas.themovie.presentation.notification.openNotificationSettings
 import com.codealphas.themovie.presentation.notification.rememberNotificationPermissionRequester
+import com.codealphas.themovie.presentation.ui.LogoutConfirmDialog
 import kotlinx.coroutines.flow.flowOf
 
 @Composable
@@ -184,6 +185,14 @@ internal fun HomeContent(
             onLater = { onIntent(HomeIntent.NotificationPromptDeclined) },
         )
     }
+
+    state.logoutPendingReviewCount?.let { pendingCount ->
+        LogoutConfirmDialog(
+            pendingCount = pendingCount,
+            onConfirm = { onIntent(HomeIntent.LogoutConfirmed) },
+            onDismiss = { onIntent(HomeIntent.LogoutDismissed) },
+        )
+    }
 }
 
 @Composable
@@ -226,6 +235,12 @@ private fun HomeContentPreview() {
 @Composable
 private fun HomeContentNotificationPromptPreview() {
     HomeContentPreview(state = HomeUiState(showNotificationPrompt = true))
+}
+
+@Preview(name = "로그아웃 확인")
+@Composable
+private fun HomeContentLogoutConfirmPreview() {
+    HomeContentPreview(state = HomeUiState(logoutPendingReviewCount = 2))
 }
 
 @Composable

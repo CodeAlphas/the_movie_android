@@ -75,6 +75,16 @@ class ReviewDaoTest {
         }
 
     @Test
+    fun `SYNCED, PENDING_UPSERT, PENDING_DELETE 감상문이 하나씩 있으면 대기 중인 감상문 수로 2를 돌려줘야 한다`() =
+        runTest {
+            dao.insert(entity(id = "-synced", syncState = ReviewSyncState.SYNCED))
+            dao.insert(entity(id = "-upsert", syncState = ReviewSyncState.PENDING_UPSERT))
+            dao.insert(entity(id = "-delete", syncState = ReviewSyncState.PENDING_DELETE))
+
+            assertEquals(2, dao.countPending())
+        }
+
+    @Test
     fun `올린 localVersion과 같은 PENDING_UPSERT 감상문은 SYNCED로 바꿔야 한다`() =
         runTest {
             dao.insert(entity(id = "-a", syncState = ReviewSyncState.PENDING_UPSERT, localVersion = 2))
