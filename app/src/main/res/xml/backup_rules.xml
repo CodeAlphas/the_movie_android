@@ -1,2 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<full-backup-content />
+<!-- Android 11(API 30) 이하는 data_extraction_rules.xml 대신 이 파일을 읽으므로,
+     백업에서 뺄 파일을 data_extraction_rules.xml과 똑같이 나열 -->
+<full-backup-content>
+    <!-- 감상문 동기화는 Room에 없는 id만 서버에서 추가하므로,
+         백업 뒤에 고치거나 지운 감상문이 복원된 DB에서 예전 내용으로 남지 않도록 백업에서 제외 -->
+    <exclude domain="database" path="review_database" />
+    <!-- Room은 기기에 따라 WAL(-wal, -shm) 또는 롤백 저널(-journal) 파일을 함께 쓰므로, DB 본체와 같이 제외 -->
+    <exclude domain="database" path="review_database-wal" />
+    <exclude domain="database" path="review_database-shm" />
+    <exclude domain="database" path="review_database-journal" />
+    <!-- 새 기기에서 알림 권한이 허용되지 않은 채 시작해도 알림 권한 안내를 띄웠다는 기록이 복원되면 자동 안내가 뜨지 않으므로,
+         안내 기록을 백업에서 제외 -->
+    <exclude domain="file" path="datastore/notification_permission.preferences_pb" />
+</full-backup-content>
