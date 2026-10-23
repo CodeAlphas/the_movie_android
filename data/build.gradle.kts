@@ -13,6 +13,12 @@ plugins {
 
 android {
     namespace = "com.codealphas.themovie.data"
+
+    testOptions {
+        // Robolectric이 테스트를 시작할 때 쓰는 JDK 내부 패키지 jdk.internal.access를 JDK가 외부 코드에 막아 두어 테스트가 시작 전에 실패하므로,
+        // 단위 테스트 JVM에 이 패키지를 여는 실행 옵션 추가
+        unitTests.all { it.jvmArgs("--add-exports=java.base/jdk.internal.access=ALL-UNNAMED") }
+    }
 }
 
 // AppDatabase는 exportSchema가 기본값 true라 스키마 JSON을 내보낼 위치가 필요하므로,
@@ -46,4 +52,6 @@ dependencies {
     testImplementation(libs.androidx.paging.testing)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.okhttp.mockwebserver)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core)
 }

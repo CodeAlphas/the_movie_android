@@ -2,7 +2,7 @@ package com.codealphas.themovie.data.di
 
 import android.content.Context
 import androidx.room.Room
-import com.codealphas.themovie.data.review.local.AppDatabase
+import com.codealphas.themovie.data.database.AppDatabase
 import com.codealphas.themovie.data.review.local.ReviewDao
 import dagger.Module
 import dagger.Provides

@@ -19,8 +19,8 @@ android {
         // 로컬 단위 테스트는 기본으로 Android 리소스를 담지 않아 Robolectric 화면 테스트에서 stringResource와 테마를 읽지 못하므로,
         // 화면 테스트가 실제 문자열과 테마로 그리도록 리소스 포함
         unitTests.isIncludeAndroidResources = true
-        // Robolectric은 테스트 시작 때 JDK 내부의 jdk.internal.access를 리플렉션으로 부르는데 JDK가 이 패키지를 공개하지 않아
-        // 화면 테스트가 시작 전에 실패하므로, 단위 테스트 JVM에 이 패키지를 공개하도록 추가
+        // Robolectric이 테스트를 시작할 때 쓰는 JDK 내부 패키지 jdk.internal.access를 JDK가 외부 코드에 막아 두어 테스트가 시작 전에 실패하므로,
+        // 단위 테스트 JVM에 이 패키지를 여는 실행 옵션 추가
         unitTests.all { it.jvmArgs("--add-exports=java.base/jdk.internal.access=ALL-UNNAMED") }
     }
 }

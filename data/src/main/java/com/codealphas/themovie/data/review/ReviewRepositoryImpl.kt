@@ -2,6 +2,7 @@ package com.codealphas.themovie.data.review
 
 import com.codealphas.themovie.data.review.local.ReviewDao
 import com.codealphas.themovie.data.review.local.ReviewEntity
+import com.codealphas.themovie.data.review.local.ReviewSyncState
 import com.codealphas.themovie.data.review.remote.ReviewRealtimeDataSource
 import com.codealphas.themovie.data.review.remote.ReviewStorageDataSource
 import com.codealphas.themovie.domain.auth.AuthRepository
@@ -38,7 +39,10 @@ internal class ReviewRepositoryImpl
         override suspend fun syncFromRemote(): ReviewResult {
             val userId = authRepository.currentUserId() ?: return Outcome.Failure(ReviewError.Unknown)
             return try {
-                realtimeDataSource.getAll(userId).forEach { reviewDao.insert(it.toEntity()) }
+                // 서버에서 받은 감상문은 이미 서버에 있으므로, 다시 올리지 않도록 SYNCED와 localVersion 0으로 추가
+                realtimeDataSource.getAll(userId).forEach { review ->
+                    reviewDao.insert(review.toEntity(syncState = ReviewSyncState.SYNCED, localVersion = 0))
+                }
                 Outcome.Success(Unit)
             } catch (_: CancellationException) {
                 // Firebase Realtime Database SDK가 서버 감상문 읽기를 취소해도 취소 예외로 끝나는데 그대로 올리면 동기화 중 표시가 풀리지 않으므로,
@@ -132,6 +136,8 @@ internal class ReviewRepositoryImpl
                     updatedAt = now,
                     rating = draft.rating,
                     storageFileName = photo.fileName,
+                    syncState = ReviewSyncState.SYNCED,
+                    localVersion = 0,
                     id = id,
                 )
             // Room 저장 실패를 catch(e: Exception)으로 잡아 사진을 지운 뒤 다시 던지면 detekt TooGenericExceptionCaught에 걸리므로,
@@ -155,7 +161,9 @@ internal class ReviewRepositoryImpl
 
         override suspend fun delete(review: Review): ReviewResult {
             try {
-                reviewDao.delete(review.toEntity())
+                // Room의 @Delete는 넘긴 엔티티에서 기본 키(id)만 읽어 지울 행을 찾으므로,
+                // toEntity()가 요구하는 syncState와 localVersion에는 어떤 값을 넘겨도 같아 SYNCED와 0을 전달
+                reviewDao.delete(review.toEntity(syncState = ReviewSyncState.SYNCED, localVersion = 0))
             } catch (e: CancellationException) {
                 throw e
             } catch (_: Exception) {

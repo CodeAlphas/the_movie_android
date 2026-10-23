@@ -1,5 +1,6 @@
 package com.codealphas.themovie.data.review
 
+import com.codealphas.themovie.data.review.local.ReviewSyncState
 import com.codealphas.themovie.domain.review.Review
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -20,7 +21,7 @@ class ReviewMapperTest {
                 id = "-review-key",
             )
 
-        val entity = review.toEntity()
+        val entity = review.toEntity(syncState = ReviewSyncState.SYNCED, localVersion = 0)
 
         assertEquals("기생충", entity.title)
         assertEquals("https://example.com/poster.jpg", entity.image)
@@ -31,6 +32,14 @@ class ReviewMapperTest {
         assertEquals("file.png", entity.storageFileName)
         assertEquals("-review-key", entity.id)
         assertEquals(review, entity.toReview())
+    }
+
+    @Test
+    fun `도메인 Review를 엔티티로 바꾸면 넘긴 syncState와 localVersion을 담아야 한다`() {
+        val entity = REVIEW.toEntity(syncState = ReviewSyncState.PENDING_UPSERT, localVersion = 3)
+
+        assertEquals(ReviewSyncState.PENDING_UPSERT, entity.syncState)
+        assertEquals(3, entity.localVersion)
     }
 
     @Test
@@ -53,14 +62,14 @@ class ReviewMapperTest {
 
     @Test
     fun `서버 감상문의 필드가 모두 정상 형식이면 필드 값을 그대로 옮기고 서버 키를 id로 담아야 한다`() {
-        val review = remoteReviewOrNull(id = REVIEW.id, fields = serverFields())
+        val review = toReviewOrNull(id = REVIEW.id, fields = serverFields())
 
         assertEquals(REVIEW, review)
     }
 
     @Test
     fun `Realtime Database가 정수 평점을 Long으로 주면 Double 평점으로 읽어야 한다`() {
-        val review = remoteReviewOrNull(id = REVIEW.id, fields = serverFields() + ("rating" to 9L))
+        val review = toReviewOrNull(id = REVIEW.id, fields = serverFields() + ("rating" to 9L))
 
         assertEquals(9.0, review?.rating)
     }
@@ -69,19 +78,19 @@ class ReviewMapperTest {
     fun `createdAt과 updatedAt이 없고 예전 형식의 문자열 time만 있으면 그 감상문을 건너뛰어야 한다`() {
         val fields = serverFields() - "createdAt" - "updatedAt" + ("time" to "2024/01/02 03:04")
 
-        assertNull(remoteReviewOrNull(id = REVIEW.id, fields = fields))
+        assertNull(toReviewOrNull(id = REVIEW.id, fields = fields))
     }
 
     @Test
     fun `updatedAt이 숫자가 아닌 문자열이면 그 감상문을 건너뛰어야 한다`() {
         val fields = serverFields() + ("updatedAt" to "1650000000000")
 
-        assertNull(remoteReviewOrNull(id = REVIEW.id, fields = fields))
+        assertNull(toReviewOrNull(id = REVIEW.id, fields = fields))
     }
 
     @Test
     fun `서버 감상문에 필드가 하나도 없으면 그 감상문을 건너뛰어야 한다`() {
-        assertNull(remoteReviewOrNull(id = REVIEW.id, fields = null))
+        assertNull(toReviewOrNull(id = REVIEW.id, fields = null))
     }
 }
 

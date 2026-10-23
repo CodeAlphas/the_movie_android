@@ -2,6 +2,7 @@ package com.codealphas.themovie.data.review
 
 import com.codealphas.themovie.data.review.local.ReviewDao
 import com.codealphas.themovie.data.review.local.ReviewEntity
+import com.codealphas.themovie.data.review.local.ReviewSyncState
 import com.codealphas.themovie.data.review.remote.ReviewRealtimeDataSource
 import com.codealphas.themovie.data.review.remote.ReviewStorageDataSource
 import com.codealphas.themovie.domain.auth.AuthRepository
@@ -247,6 +248,17 @@ class ReviewRepositoryImplTest {
         }
 
     @Test
+    fun `서버에서 받아 온 감상문을 Room에 추가하면 syncState는 SYNCED, localVersion은 0으로 저장해야 한다`() =
+        runTest {
+            realtime.remote["-server"] = STORED.toReview().copy(id = "-server")
+
+            repository().syncFromRemote()
+
+            assertEquals(ReviewSyncState.SYNCED, dao.entity("-server")?.syncState)
+            assertEquals(0, dao.entity("-server")?.localVersion)
+        }
+
+    @Test
     fun `서버에서 받아 온 감상문과 같은 키의 감상문이 Room에 있으면 Room 감상문을 그대로 두어야 한다`() =
         runTest {
             dao.put(STORED)
@@ -367,6 +379,8 @@ private val STORED =
         updatedAt = STORED_UPDATED_AT,
         rating = 9.0,
         storageFileName = "old.png",
+        syncState = ReviewSyncState.SYNCED,
+        localVersion = 0,
         id = "-stored",
     )
 
@@ -391,6 +405,8 @@ private class FakeReviewDao(
 
     fun saved(id: String): Review? = entities[id]?.toReview()
 
+    fun entity(id: String): ReviewEntity? = entities[id]
+
     // Room의 OnConflictStrategy.IGNORE처럼 같은 id가 있으면 기존 행을 두도록, 없는 id만 추가 적용
     override suspend fun insert(review: ReviewEntity) {
         calls += "room.insert"
@@ -413,6 +429,15 @@ private class FakeReviewDao(
     override suspend fun deleteAll() = error("사용하지 않음")
 
     override fun getAll(): Flow<List<ReviewEntity>> = error("사용하지 않음")
+
+    override suspend fun getPending(): List<ReviewEntity> = error("사용하지 않음")
+
+    override suspend fun markSynced(
+        id: String,
+        localVersion: Int,
+    ): Int = error("사용하지 않음")
+
+    override suspend fun deleteIfPendingDelete(id: String): Int = error("사용하지 않음")
 }
 
 private class FakeReviewRealtimeDataSource(

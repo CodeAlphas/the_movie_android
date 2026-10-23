@@ -1,7 +1,7 @@
 package com.codealphas.themovie.data.review.remote
 
-import com.codealphas.themovie.data.review.remoteReviewOrNull
 import com.codealphas.themovie.data.review.toRemoteFields
+import com.codealphas.themovie.data.review.toReviewOrNull
 import com.codealphas.themovie.domain.review.Review
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseReference
@@ -54,4 +54,4 @@ internal class FirebaseReviewRealtimeDataSource
     }
 
 private fun DataSnapshot.toReviewOrNull(): Review? =
-    key?.let { id -> remoteReviewOrNull(id = id, fields = value as? Map<*, *>) }
+    key?.let { id -> toReviewOrNull(id = id, fields = value as? Map<*, *>) }

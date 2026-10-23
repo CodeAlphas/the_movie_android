@@ -1,6 +1,7 @@
 package com.codealphas.themovie.data.review
 
 import com.codealphas.themovie.data.review.local.ReviewEntity
+import com.codealphas.themovie.data.review.local.ReviewSyncState
 import com.codealphas.themovie.domain.review.Review
 
 internal fun ReviewEntity.toReview(): Review =
@@ -15,7 +16,10 @@ internal fun ReviewEntity.toReview(): Review =
         id = id,
     )
 
-internal fun Review.toEntity(): ReviewEntity =
+internal fun Review.toEntity(
+    syncState: ReviewSyncState,
+    localVersion: Int,
+): ReviewEntity =
     ReviewEntity(
         title = title,
         image = imageUrl,
@@ -24,6 +28,8 @@ internal fun Review.toEntity(): ReviewEntity =
         updatedAt = updatedAt,
         rating = rating,
         storageFileName = storageFileName,
+        syncState = syncState,
+        localVersion = localVersion,
         id = id,
     )
 
@@ -39,7 +45,7 @@ internal fun Review.toRemoteFields(): Map<String, Any> =
     )
 
 // 필드가 빠진 항목 하나가 예외를 던지면 목록 전체 동기화가 중단되므로, 읽지 못한 항목만 제외
-internal fun remoteReviewOrNull(
+internal fun toReviewOrNull(
     id: String,
     fields: Map<*, *>?,
 ): Review? {
