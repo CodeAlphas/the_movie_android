@@ -22,8 +22,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
-private const val USER_ID_PREFIX_LENGTH = 10
-
 internal class ReviewRepositoryImpl
     @Inject
     constructor(
@@ -106,7 +104,8 @@ internal class ReviewRepositoryImpl
             uri: String,
             userId: String,
         ): PhotoFields? {
-            val fileName = userId.take(USER_ID_PREFIX_LENGTH) + "${clock.nowMillis()}.png"
+            // Storage 규칙이 경로의 사용자 폴더로 본인 사진만 쓰고 지우게 막으므로, 사진을 uid 폴더 아래에 저장 처리
+            val fileName = "$userId/${clock.nowMillis()}.png"
             return try {
                 PhotoFields(imageUrl = storageDataSource.upload(fileName, uri), fileName = fileName)
             } catch (_: CancellationException) {

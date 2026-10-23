@@ -358,10 +358,9 @@ class ReviewRepositoryImplTest {
         )
 }
 
-// 사진 파일 이름은 사용자 id 앞 10자에 현재 시각을 붙이므로, 10자보다 긴 id에서 앞 10자만 쓰는지 확인하도록 15자 id 적용
 private const val USER_ID = "user-1234567890"
 private const val NOW_MILLIS = 1_700_000_000_000L
-private const val NEW_FILE_NAME = "user-12345$NOW_MILLIS.png"
+private const val NEW_FILE_NAME = "$USER_ID/$NOW_MILLIS.png"
 private const val NEW_KEY = "-new-key"
 
 // 저장된 createdAt이 지금 시각이나 저장된 updatedAt과 같으면,

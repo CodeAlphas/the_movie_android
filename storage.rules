@@ -1,0 +1,17 @@
+// 목록 조회(list) 규칙은 버전 2에서만 동작하고 버전을 적지 않으면 버전 1로 해석되므로, 버전 2 명시
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /review/photo/{uid}/{file} {
+      // 삭제 요청에는 올릴 파일(request.resource)이 없어 크기와 타입 조건을 걸면 삭제가 모두 거부되므로,
+      // 조회와 삭제는 본인 여부만 확인
+      allow get, delete: if request.auth != null && request.auth.uid == uid;
+      // 앱이 사진을 압축하지 않고 원본을 올려 휴대폰 사진이 5MB를 넘는 경우가 많으므로, 10MB 미만 이미지만 허용
+      allow create, update: if request.auth != null
+        && request.auth.uid == uid
+        && request.resource.size < 10 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+    }
+  }
+}
