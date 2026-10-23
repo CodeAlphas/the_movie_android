@@ -11,5 +11,9 @@ internal interface ReviewStorageDataSource {
         uri: String,
     ): String
 
+    /**
+     * 사진 파일을 지운다. 파일이 이미 없으면 성공으로 본다.
+     * Storage가 보안 규칙으로 거부하면 [ReviewPermissionDeniedException]을, 그 밖의 실패는 다른 예외를 던진다.
+     */
     suspend fun delete(fileName: String)
 }

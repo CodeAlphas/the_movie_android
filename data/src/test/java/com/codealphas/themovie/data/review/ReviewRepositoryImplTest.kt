@@ -95,22 +95,6 @@ class ReviewRepositoryImplTest {
         }
 
     @Test
-    fun `새 사진으로 수정할 때 이전 파일 삭제가 SDK에서 취소되면 저장 성공을 반환해야 한다`() =
-        runTest {
-            dao.put(STORED)
-            storage.cancelDelete = true
-
-            val result = repository().save(editDraft(ReviewPhoto.New("content://photo/2")))
-
-            assertEquals(Outcome.Success(Unit), result)
-            assertEquals(
-                listOf("storage.upload:$NEW_FILE_NAME", "room.update", "sync.schedule", "storage.delete:old.png"),
-                calls,
-            )
-            assertEquals(NEW_FILE_NAME, dao.saved(STORED.id)?.storageFileName)
-        }
-
-    @Test
     fun `사진 업로드 중에 저장을 요청한 코루틴이 취소되면 실패를 반환하지 않고 취소되어야 한다`() =
         runTest {
             dao.put(STORED)
@@ -346,54 +330,55 @@ class ReviewRepositoryImplTest {
         }
 
     @Test
-    fun `감상문을 지우면 Room, 서버, 사진 파일 순서로 지우고 성공을 반환해야 한다`() =
+    fun `감상문을 지우면 서버와 사진 파일은 지우지 않고 Room에 삭제 표시를 한 뒤 서버 업로드를 예약해야 한다`() =
         runTest {
             dao.put(STORED)
 
             val result = repository().delete(STORED.toReview())
 
             assertEquals(Outcome.Success(Unit), result)
-            assertEquals(listOf("room.delete", "server.delete:${STORED.id}", "storage.delete:old.png"), calls)
-            assertNull(dao.saved(STORED.id))
+            assertEquals(listOf("room.markPendingDelete", "sync.schedule"), calls)
+            assertEquals(ReviewSyncState.PENDING_DELETE, dao.entity(STORED.id)?.syncState)
+            assertEquals(STORED.localVersion, dao.entity(STORED.id)?.localVersion)
         }
 
     @Test
-    fun `Room에서 감상문을 지우지 못하면 서버와 사진 파일을 지우지 않고 Unknown 실패를 반환해야 한다`() =
+    fun `Room에 삭제 표시를 하지 못하면 서버 업로드를 예약하지 않고 Unknown 실패를 반환해야 한다`() =
         runTest {
             dao.put(STORED)
-            dao.failDelete = true
+            dao.failMarkPendingDelete = true
 
             val result = repository().delete(STORED.toReview())
 
             assertEquals(Outcome.Failure(ReviewError.Unknown), result)
-            assertEquals(listOf("room.delete"), calls)
-            assertEquals(STORED.toReview(), dao.saved(STORED.id))
+            assertEquals(listOf("room.markPendingDelete"), calls)
+            assertEquals(ReviewSyncState.SYNCED, dao.entity(STORED.id)?.syncState)
         }
 
     @Test
-    fun `감상문 사진 파일을 지우지 못해도 Room에서 지웠으면 성공을 반환해야 한다`() =
+    fun `지운 감상문을 수정하면 저장하거나 서버 업로드를 예약하지 않고 Unknown 실패를 반환해야 한다`() =
         runTest {
             dao.put(STORED)
-            storage.failDelete = true
+            repository().delete(STORED.toReview())
+            calls.clear()
 
-            val result = repository().delete(STORED.toReview())
+            val result = repository().save(editDraft(ReviewPhoto.New("content://photo/2")))
 
-            assertEquals(Outcome.Success(Unit), result)
-            assertEquals(listOf("room.delete", "server.delete:${STORED.id}", "storage.delete:old.png"), calls)
-            assertNull(dao.saved(STORED.id))
+            assertEquals(Outcome.Failure(ReviewError.Unknown), result)
+            assertEquals(emptyList<String>(), calls)
+            assertEquals(ReviewSyncState.PENDING_DELETE, dao.entity(STORED.id)?.syncState)
         }
 
     @Test
-    fun `서버 삭제 요청이 바로 실패하면 사진 파일은 지우지 않고 성공을 반환해야 한다`() =
+    fun `지운 감상문이 서버에 남아 있어도 서버 감상문을 받아 오면 다시 추가하지 않아야 한다`() =
         runTest {
             dao.put(STORED)
-            realtime.failDelete = true
+            realtime.remote[STORED.id] = STORED.toReview()
+            repository().delete(STORED.toReview())
 
-            val result = repository().delete(STORED.toReview())
+            repository().syncFromRemote()
 
-            assertEquals(Outcome.Success(Unit), result)
-            assertEquals(listOf("room.delete", "server.delete:${STORED.id}"), calls)
-            assertNull(dao.saved(STORED.id))
+            assertEquals(ReviewSyncState.PENDING_DELETE, dao.entity(STORED.id)?.syncState)
         }
 
     private fun repository(userId: String? = USER_ID): ReviewRepositoryImpl =
@@ -447,7 +432,7 @@ private class FakeReviewDao(
 ) : ReviewDao {
     private val entities = mutableMapOf<String, ReviewEntity>()
 
-    var failDelete: Boolean = false
+    var failMarkPendingDelete: Boolean = false
 
     fun put(entity: ReviewEntity) {
         entities[entity.id] = entity
@@ -463,10 +448,10 @@ private class FakeReviewDao(
         if (review.id !in entities) entities[review.id] = review
     }
 
-    override suspend fun delete(review: ReviewEntity) {
-        calls += "room.delete"
-        if (failDelete) throw IllegalStateException("Room 삭제 실패")
-        entities -= review.id
+    override suspend fun markPendingDelete(id: String) {
+        calls += "room.markPendingDelete"
+        if (failMarkPendingDelete) throw IllegalStateException("Room 삭제 표시 실패")
+        entities[id]?.let { entities[id] = it.withSyncState(ReviewSyncState.PENDING_DELETE) }
     }
 
     override suspend fun update(review: ReviewEntity) {
@@ -474,7 +459,9 @@ private class FakeReviewDao(
         entities[review.id] = review
     }
 
-    override suspend fun getById(id: String): ReviewEntity? = entities[id]
+    // 실제 쿼리처럼 지운 감상문을 수정하려는 저장을 막도록, 삭제 표시된 감상문 제외 적용
+    override suspend fun getById(id: String): ReviewEntity? =
+        entities[id]?.takeIf { it.syncState != ReviewSyncState.PENDING_DELETE }
 
     override suspend fun deleteAll() = error("사용하지 않음")
 
@@ -507,8 +494,6 @@ private class FakeReviewRealtimeDataSource(
     // 동기화를 요청한 코루틴이 서버 감상문을 받아 오는 도중에 취소되는 상황을 만들도록 읽기 대기 적용
     var suspendGetAll: Boolean = false
 
-    var failDelete: Boolean = false
-
     override suspend fun getAll(userId: String): List<Review> {
         calls += "server.getAll"
         if (cancelGetAll) throw CancellationException("SDK에서 취소된 읽기")
@@ -530,25 +515,20 @@ private class FakeReviewRealtimeDataSource(
         remote[review.id] = review
     }
 
-    override fun delete(
+    override suspend fun delete(
         userId: String,
         reviewId: String,
-    ) {
-        calls += "server.delete:$reviewId"
-        if (failDelete) throw IllegalStateException("서버 삭제 요청 실패")
-    }
+    ) = error("사용하지 않음")
 }
 
 private class FakeReviewStorageDataSource(
     private val calls: MutableList<String>,
 ) : ReviewStorageDataSource {
     var failUpload: Boolean = false
-    var failDelete: Boolean = false
 
-    // Firebase Storage SDK가 업로드나 삭제를 취소하면 저장을 요청한 코루틴이 취소되지 않아도 취소 예외가 올라오므로,
-    // 코루틴 취소 없이 업로드나 삭제에서 CancellationException 발생 적용
+    // Firebase Storage SDK가 업로드를 취소하면 저장을 요청한 코루틴이 취소되지 않아도 취소 예외가 올라오므로,
+    // 코루틴 취소 없이 업로드에서 CancellationException 발생 적용
     var cancelUpload: Boolean = false
-    var cancelDelete: Boolean = false
 
     // awaitCancellation()은 코루틴이 취소될 때까지 멈추므로,
     // 저장을 요청한 코루틴이 업로드 도중에 취소되는 상황을 만들도록 업로드 대기 적용
@@ -567,10 +547,22 @@ private class FakeReviewStorageDataSource(
 
     override suspend fun delete(fileName: String) {
         calls += "storage.delete:$fileName"
-        if (failDelete) throw IOException("삭제 실패")
-        if (cancelDelete) throw CancellationException("SDK에서 취소된 삭제")
     }
 }
+
+private fun ReviewEntity.withSyncState(syncState: ReviewSyncState): ReviewEntity =
+    ReviewEntity(
+        title = title,
+        image = image,
+        content = content,
+        createdAt = createdAt,
+        updatedAt = updatedAt,
+        rating = rating,
+        storageFileName = storageFileName,
+        syncState = syncState,
+        localVersion = localVersion,
+        id = id,
+    )
 
 private class FakeReviewSyncScheduler(
     private val calls: MutableList<String>,

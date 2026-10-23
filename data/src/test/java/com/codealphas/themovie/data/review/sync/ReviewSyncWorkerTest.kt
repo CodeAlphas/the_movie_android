@@ -12,6 +12,7 @@ import com.codealphas.themovie.data.review.local.ReviewEntity
 import com.codealphas.themovie.data.review.local.ReviewSyncState
 import com.codealphas.themovie.data.review.remote.ReviewPermissionDeniedException
 import com.codealphas.themovie.data.review.remote.ReviewRealtimeDataSource
+import com.codealphas.themovie.data.review.remote.ReviewStorageDataSource
 import com.codealphas.themovie.domain.auth.AuthRepository
 import com.codealphas.themovie.domain.auth.AuthResult
 import com.codealphas.themovie.domain.review.Review
@@ -84,6 +85,7 @@ class ReviewSyncWorkerTest {
             ReviewUploader(
                 reviewDao = database.reviewDao(),
                 realtimeDataSource = realtime,
+                storageDataSource = FakeSyncWorkerStorageDataSource(),
                 authRepository = FakeSyncWorkerAuthRepository(),
             )
         val factory =
@@ -128,10 +130,19 @@ private class FakeSyncWorkerRealtimeDataSource : ReviewRealtimeDataSource {
 
     override fun newKey(userId: String): String = error("사용하지 않음")
 
-    override fun delete(
+    override suspend fun delete(
         userId: String,
         reviewId: String,
     ) = error("사용하지 않음")
+}
+
+private class FakeSyncWorkerStorageDataSource : ReviewStorageDataSource {
+    override suspend fun upload(
+        fileName: String,
+        uri: String,
+    ): String = error("사용하지 않음")
+
+    override suspend fun delete(fileName: String) = error("사용하지 않음")
 }
 
 private class FakeSyncWorkerAuthRepository : AuthRepository {

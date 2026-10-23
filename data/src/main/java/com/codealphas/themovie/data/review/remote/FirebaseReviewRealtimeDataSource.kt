@@ -31,31 +31,20 @@ internal class FirebaseReviewRealtimeDataSource
         override fun newKey(userId: String): String =
             checkNotNull(reviewsReference(userId).push().key) { "감상문 서버 키를 만들지 못함" }
 
-        // Task로 기다리면 실패가 오류 코드 없이 메시지만 담은 DatabaseException으로 와 권한 거부와 네트워크 오류를 구분할 수 없으므로,
-        // 오류 코드가 든 DatabaseError를 받도록 CompletionListener로 쓰기 완료 대기
         override suspend fun save(
             userId: String,
             review: Review,
         ) {
-            suspendCancellableCoroutine { continuation ->
-                reviewsReference(userId).child(review.id).updateChildren(review.toRemoteFields()) { error, _ ->
-                    if (error == null) {
-                        continuation.resume(Unit)
-                    } else {
-                        continuation.resumeWithException(error.toReviewRemoteException())
-                    }
-                }
+            awaitCompletion { listener ->
+                reviewsReference(userId).child(review.id).updateChildren(review.toRemoteFields(), listener)
             }
         }
 
-        // 오프라인이면 삭제가 연결될 때까지 완료되지 않아 화면이 멈추므로, 완료를 기다리지 않고 SDK 대기열에 위임
-        // SDK 대기열은 메모리에만 있어 연결 전에 앱이 종료되면 서버 삭제가 빠지므로,
-        // 다음 동기화 때 삭제한 감상문이 사진 링크가 깨진 채 되살아나는 한계를 허용
-        override fun delete(
+        override suspend fun delete(
             userId: String,
             reviewId: String,
         ) {
-            reviewsReference(userId).child(reviewId).removeValue()
+            awaitCompletion { listener -> reviewsReference(userId).child(reviewId).removeValue(listener) }
         }
 
         private fun reviewsReference(userId: String): DatabaseReference =
@@ -64,6 +53,20 @@ internal class FirebaseReviewRealtimeDataSource
                 .child(userId)
                 .child("reviews")
     }
+
+// Task로 기다리면 실패가 오류 코드 없이 메시지만 담은 DatabaseException으로 와 권한 거부와 네트워크 오류를 구분할 수 없으므로,
+// 오류 코드가 든 DatabaseError를 받도록 CompletionListener로 서버 확인 대기
+private suspend fun awaitCompletion(request: (DatabaseReference.CompletionListener) -> Unit) {
+    suspendCancellableCoroutine { continuation ->
+        request { error, _ ->
+            if (error == null) {
+                continuation.resume(Unit)
+            } else {
+                continuation.resumeWithException(error.toReviewRemoteException())
+            }
+        }
+    }
+}
 
 private fun DataSnapshot.toReviewOrNull(): Review? =
     key?.let { id -> toReviewOrNull(id = id, fields = value as? Map<*, *>) }

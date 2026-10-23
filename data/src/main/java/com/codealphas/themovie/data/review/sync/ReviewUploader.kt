@@ -5,6 +5,7 @@ import com.codealphas.themovie.data.review.local.ReviewEntity
 import com.codealphas.themovie.data.review.local.ReviewSyncState
 import com.codealphas.themovie.data.review.remote.ReviewPermissionDeniedException
 import com.codealphas.themovie.data.review.remote.ReviewRealtimeDataSource
+import com.codealphas.themovie.data.review.remote.ReviewStorageDataSource
 import com.codealphas.themovie.data.review.toReview
 import com.codealphas.themovie.domain.auth.AuthRepository
 import kotlinx.coroutines.CancellationException
@@ -12,8 +13,8 @@ import kotlinx.coroutines.withTimeoutOrNull
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
 
-// 네트워크가 연결됐는데 Firebase 서버가 응답하지 않으면 쓰기가 끝나지 않아 WorkManager가 실행 한도인 10분이 지나야 작업을 멈추므로,
-// 그 전에 재시도로 넘어가도록 서버 쓰기 대기 시간 제한
+// 네트워크가 연결됐는데 Firebase 서버가 응답하지 않으면 쓰기와 삭제가 끝나지 않아 WorkManager가 실행 한도인 10분이 지나야 작업을 멈추므로,
+// 그 전에 재시도로 넘어가도록 서버 응답 대기 시간 제한
 internal val SERVER_WRITE_TIMEOUT = 30.seconds
 
 internal class ReviewUploader
@@ -21,6 +22,7 @@ internal class ReviewUploader
     constructor(
         private val reviewDao: ReviewDao,
         private val realtimeDataSource: ReviewRealtimeDataSource,
+        private val storageDataSource: ReviewStorageDataSource,
         private val authRepository: AuthRepository,
     ) {
         suspend fun upload(): ReviewUploadResult {
@@ -31,10 +33,16 @@ internal class ReviewUploader
 
         private suspend fun uploadPending(userId: String): ReviewUploadResult {
             var permissionDenied = false
-            val pending = reviewDao.getPending().filter { it.syncState == ReviewSyncState.PENDING_UPSERT }
-            for (review in pending) {
-                when (write(userId, review)) {
-                    ReviewUploadResult.SUCCESS -> reviewDao.markSynced(review.id, review.localVersion)
+            for (review in reviewDao.getPending()) {
+                val result =
+                    when (review.syncState) {
+                        ReviewSyncState.PENDING_UPSERT -> write(userId, review)
+                        ReviewSyncState.PENDING_DELETE -> remove(userId, review)
+                        // getPending()은 SYNCED 감상문을 돌려주지 않으므로, 올릴 것이 없는 감상문으로 보고 성공 처리
+                        ReviewSyncState.SYNCED -> ReviewUploadResult.SUCCESS
+                    }
+                when (result) {
+                    ReviewUploadResult.SUCCESS -> Unit
                     // 연결 문제는 다음 감상문도 같은 이유로 실패하므로, 남은 감상문을 시도하지 않고 재시도로 종료
                     ReviewUploadResult.RETRY -> return ReviewUploadResult.RETRY
                     // 감상문 하나의 권한 거부가 다른 감상문의 업로드를 막지 않도록, 거부된 감상문만 건너뛰고 계속 업로드
@@ -47,13 +55,47 @@ internal class ReviewUploader
         private suspend fun write(
             userId: String,
             review: ReviewEntity,
-        ): ReviewUploadResult =
+        ): ReviewUploadResult {
+            val result = requestServer { realtimeDataSource.save(userId, review.toReview()) }
+            if (result == ReviewUploadResult.SUCCESS) reviewDao.markSynced(review.id, review.localVersion)
+            return result
+        }
+
+        private suspend fun remove(
+            userId: String,
+            review: ReviewEntity,
+        ): ReviewUploadResult {
+            var result = requestServer { realtimeDataSource.delete(userId, review.id) }
+            // 서버 삭제가 실패했는데 사진을 지우면 서버에 남은 감상문이 로그아웃 뒤 다시 로그인하거나 다른 기기에서 받을 때
+            // 깨진 사진으로 나타나므로, 서버 삭제를 확인한 뒤에만 사진 삭제
+            if (result == ReviewUploadResult.SUCCESS) result = deletePhoto(review.storageFileName)
+            // 행을 먼저 지우는데 사진 삭제가 실패하면 지울 사진 파일 이름이 어디에도 남지 않아 다시 시도할 수 없으므로,
+            // 사진 삭제가 끝난 뒤 행 삭제
+            if (result == ReviewUploadResult.SUCCESS) reviewDao.deleteIfPendingDelete(review.id)
+            return result
+        }
+
+        private suspend fun deletePhoto(fileName: String): ReviewUploadResult {
+            if (fileName.isEmpty()) return ReviewUploadResult.SUCCESS
+            val result =
+                request {
+                    storageDataSource.delete(fileName)
+                    ReviewUploadResult.SUCCESS
+                }
+            // 보안 규칙이 삭제를 거부한 사진은 다시 지워도 같은 결과인데 행을 남기면 서버에서 이미 지운 감상문이 대기 상태로 계속 남으므로,
+            // 사진 파일이 Storage에 남는 것을 허용하고 행 삭제로 진행
+            return if (result == ReviewUploadResult.PERMANENT_FAILURE) ReviewUploadResult.SUCCESS else result
+        }
+
+        private suspend fun requestServer(block: suspend () -> Unit): ReviewUploadResult =
+            request {
+                val finished = withTimeoutOrNull(SERVER_WRITE_TIMEOUT) { block() }
+                if (finished == null) ReviewUploadResult.RETRY else ReviewUploadResult.SUCCESS
+            }
+
+        private suspend fun request(block: suspend () -> ReviewUploadResult): ReviewUploadResult =
             try {
-                val written =
-                    withTimeoutOrNull(SERVER_WRITE_TIMEOUT) {
-                        realtimeDataSource.save(userId, review.toReview())
-                    }
-                if (written == null) ReviewUploadResult.RETRY else ReviewUploadResult.SUCCESS
+                block()
             } catch (e: CancellationException) {
                 throw e
             } catch (_: ReviewPermissionDeniedException) {
@@ -64,12 +106,12 @@ internal class ReviewUploader
     }
 
 internal enum class ReviewUploadResult {
-    /** 대기 중인 감상문을 모두 올렸다. 업로드하는 동안 다시 수정된 감상문은 대기 상태로 남는다. */
+    /** 대기 중인 저장과 삭제를 모두 서버에 반영했다. 업로드하는 동안 다시 수정되거나 삭제된 감상문은 대기 상태로 남는다. */
     SUCCESS,
 
     /** 네트워크 오류나 시간 초과로 멈췄다. 남은 감상문은 대기 상태로 남는다. */
     RETRY,
 
-    /** 서버가 거부한 감상문을 건너뛰고 나머지를 올렸다. 거부된 감상문은 대기 상태로 남는다. */
+    /** 서버가 거부한 감상문을 건너뛰고 나머지를 반영했다. 거부된 감상문은 대기 상태로 남는다. */
     PERMANENT_FAILURE,
 }

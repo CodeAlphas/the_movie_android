@@ -1,7 +1,6 @@
 package com.codealphas.themovie.data.review.local
 
 import androidx.room.Dao
-import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
@@ -13,20 +12,27 @@ internal interface ReviewDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(review: ReviewEntity)
 
-    @Delete
-    suspend fun delete(review: ReviewEntity)
-
     @Update
     suspend fun update(review: ReviewEntity)
 
-    @Query("SELECT * FROM reviewTable WHERE id = :id")
+    // 삭제 표시된 감상문을 찾아 저장하면 PENDING_UPSERT로 덮어써 지운 감상문이 되살아나므로, 삭제 표시된 감상문 제외
+    @Query("SELECT * FROM reviewTable WHERE id = :id AND syncState != 'PENDING_DELETE'")
     suspend fun getById(id: String): ReviewEntity?
+
+    // 행을 바로 지우는데 서버에 삭제가 반영되지 않으면 동기화가 서버에만 남은 감상문으로 보고 다시 추가하므로,
+    // 서버 삭제가 끝날 때까지 행을 남기도록 삭제 표시만 적용
+    @Query("UPDATE reviewTable SET syncState = 'PENDING_DELETE' WHERE id = :id")
+    suspend fun markPendingDelete(id: String)
 
     @Query("DELETE FROM reviewTable")
     suspend fun deleteAll()
 
     // 수정한 감상문이 맨 위로 오도록 updatedAt 순으로 정렬하고, 같은 시각이면 작성 순서인 push 키 순서로 고정
-    @Query("SELECT * FROM reviewTable ORDER BY updatedAt DESC, id DESC")
+    // 삭제 표시된 감상문은 서버 삭제 전까지 행이 남지만 사용자는 이미 지웠으므로, 목록에서 제외
+    @Query(
+        "SELECT * FROM reviewTable WHERE syncState != 'PENDING_DELETE' " +
+            "ORDER BY updatedAt DESC, id DESC",
+    )
     fun getAll(): Flow<List<ReviewEntity>>
 
     // 업로드가 중간에 멈추면 남은 감상문은 다음 실행으로 미뤄지므로, 오래 기다린 변경부터 올리도록 updatedAt 오름차순으로 정렬

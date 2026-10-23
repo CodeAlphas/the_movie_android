@@ -43,7 +43,7 @@ internal class ReviewRepositoryImpl
                 realtimeDataSource.getAll(userId).forEach { review ->
                     reviewDao.insert(review.toEntity(syncState = ReviewSyncState.SYNCED, localVersion = 0))
                 }
-                // 업로드 작업이 끝난 뒤에도 대기 상태로 남은 감상문은 새로 저장하기 전까지 다시 예약되지 않으므로,
+                // 업로드 작업이 끝난 뒤에도 대기 상태로 남은 감상문은 다른 감상문을 저장하거나 지우기 전까지 다시 예약되지 않으므로,
                 // 앱 업데이트나 규칙 수정으로 원인이 고쳐진 뒤 올라가도록 목록을 열 때 업로드 다시 예약
                 if (reviewDao.getPending().isNotEmpty()) syncScheduler.schedule()
                 Outcome.Success(Unit)
@@ -164,34 +164,20 @@ internal class ReviewRepositoryImpl
             }
         }
 
-        override suspend fun delete(review: Review): ReviewResult {
+        override suspend fun delete(review: Review): ReviewResult =
             try {
-                // Room의 @Delete는 넘긴 엔티티에서 기본 키(id)만 읽어 지울 행을 찾으므로,
-                // toEntity()가 요구하는 syncState와 localVersion에는 어떤 값을 넘겨도 같아 SYNCED와 0을 전달
-                reviewDao.delete(review.toEntity(syncState = ReviewSyncState.SYNCED, localVersion = 0))
+                // 삭제를 요청한 코루틴이 삭제 표시 뒤에 취소되면 업로드를 예약하지 못해 다음 저장이나 동기화 전까지 서버에서 지워지지 않으므로,
+                // 삭제 표시를 시작한 뒤에는 취소되지 않고 예약까지 처리
+                withContext(NonCancellable) {
+                    reviewDao.markPendingDelete(review.id)
+                    syncScheduler.schedule()
+                }
+                Outcome.Success(Unit)
             } catch (e: CancellationException) {
                 throw e
             } catch (_: Exception) {
-                // Room에서 지우지 못한 감상문은 목록에 남아 서버 백업과 사진을 지우면 사진이 깨지므로, 서버와 Storage는 그대로 두고 실패 반환
-                return Outcome.Failure(ReviewError.Unknown)
+                Outcome.Failure(ReviewError.Unknown)
             }
-            val userId = authRepository.currentUserId()
-            if (userId != null) {
-                val remoteDeleted =
-                    try {
-                        realtimeDataSource.delete(userId, review.id)
-                        true
-                    } catch (_: Exception) {
-                        // 서버 삭제 요청이 바로 실패하면 서버에 남은 감상문이 다음 동기화 때 되살아나므로,
-                        // 되살아난 감상문의 사진이 깨지지 않도록 사진 파일은 지우지 않고 Room 삭제 결과대로 성공 처리
-                        false
-                    }
-                if (remoteDeleted && review.storageFileName.isNotEmpty()) {
-                    deleteStorageFile(review.storageFileName)
-                }
-            }
-            return Outcome.Success(Unit)
-        }
 
         override suspend fun deleteAll() {
             reviewDao.deleteAll()
@@ -200,12 +186,10 @@ internal class ReviewRepositoryImpl
         private suspend fun deleteStorageFile(fileName: String) {
             try {
                 storageDataSource.delete(fileName)
-            } catch (_: CancellationException) {
-                // Firebase Storage SDK가 사진 삭제를 취소해도 취소 예외로 끝나는데 그대로 올리면 Room에 반영된 저장이나 삭제가 완료로 처리되지 않으므로,
-                // 요청한 코루틴이 취소되지 않았으면 Storage에 사진 파일이 남는 것을 허용
-                currentCoroutineContext().ensureActive()
+            } catch (e: CancellationException) {
+                throw e
             } catch (_: Exception) {
-                // 사진 파일을 지우지 못해도 감상문 저장이나 삭제 결과는 바뀌지 않으므로, Storage에 사진 파일이 남는 것을 허용
+                // 사진 파일을 지우지 못해도 감상문 저장 결과는 바뀌지 않으므로, Storage에 사진 파일이 남는 것을 허용
             }
         }
     }

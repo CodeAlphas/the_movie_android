@@ -104,7 +104,7 @@ class ReviewDaoTest {
             val changed = dao.markSynced(id = "-a", localVersion = 2)
 
             assertEquals(0, changed)
-            assertEquals(ReviewSyncState.PENDING_DELETE, dao.getById("-a")?.syncState)
+            assertEquals(ReviewSyncState.PENDING_DELETE, dao.pendingRow("-a")?.syncState)
         }
 
     @Test
@@ -115,7 +115,7 @@ class ReviewDaoTest {
             val deleted = dao.deleteIfPendingDelete("-a")
 
             assertEquals(1, deleted)
-            assertNull(dao.getById("-a"))
+            assertNull(dao.pendingRow("-a"))
         }
 
     @Test
@@ -129,6 +129,47 @@ class ReviewDaoTest {
             assertEquals(0, deleted)
             assertEquals(ReviewSyncState.SYNCED, dao.getById("-synced")?.syncState)
             assertEquals(ReviewSyncState.PENDING_UPSERT, dao.getById("-upsert")?.syncState)
+        }
+
+    @Test
+    fun `감상문에 삭제 표시를 하면 localVersion은 그대로 두고 PENDING_DELETE로 바꿔야 한다`() =
+        runTest {
+            dao.insert(entity(id = "-a", syncState = ReviewSyncState.PENDING_UPSERT, localVersion = 2))
+
+            dao.markPendingDelete("-a")
+
+            val row = dao.pendingRow("-a")
+            assertEquals(ReviewSyncState.PENDING_DELETE, row?.syncState)
+            assertEquals(2, row?.localVersion)
+        }
+
+    @Test
+    fun `삭제 표시된 감상문은 목록에서 빠져야 한다`() =
+        runTest {
+            dao.insert(entity(id = "-a"))
+            dao.insert(entity(id = "-b", syncState = ReviewSyncState.PENDING_DELETE))
+
+            assertEquals(listOf("-a"), dao.getAll().first().map { it.id })
+        }
+
+    @Test
+    fun `삭제 표시된 감상문을 id로 찾으면 null을 돌려줘야 한다`() =
+        runTest {
+            dao.insert(entity(id = "-a", syncState = ReviewSyncState.PENDING_DELETE))
+
+            assertNull(dao.getById("-a"))
+        }
+
+    @Test
+    fun `삭제 표시된 감상문과 같은 id의 서버 감상문을 추가하면 PENDING_DELETE로 남겨야 한다`() =
+        runTest {
+            dao.insert(entity(id = "-a", syncState = ReviewSyncState.PENDING_DELETE))
+
+            dao.insert(entity(id = "-a", title = "서버 제목", syncState = ReviewSyncState.SYNCED))
+
+            val row = dao.pendingRow("-a")
+            assertEquals(ReviewSyncState.PENDING_DELETE, row?.syncState)
+            assertEquals("기생충", row?.title)
         }
 
     @Test
@@ -152,6 +193,9 @@ class ReviewDaoTest {
             assertEquals(emptyList<ReviewEntity>(), dao.getAll().first())
         }
 }
+
+// getById()는 삭제 표시된 감상문을 숨기므로, 삭제 표시된 행의 상태를 보도록 대기 중인 행에서 조회
+private suspend fun ReviewDao.pendingRow(id: String): ReviewEntity? = getPending().singleOrNull { it.id == id }
 
 private fun entity(
     id: String,

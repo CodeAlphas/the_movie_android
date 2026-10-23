@@ -22,10 +22,11 @@ internal interface ReviewRealtimeDataSource {
     )
 
     /**
-     * 감상문을 서버에서 지우도록 요청만 하고 완료를 기다리지 않는다.
-     * 요청을 보내지 못하면 예외를 던지지만, 서버 삭제가 나중에 실패하면 알리지 않는다.
+     * 감상문을 서버에서 지우고 서버가 삭제를 확인할 때까지 기다린다. 서버에 없는 감상문을 지워도 성공한다.
+     * 오프라인이면 연결될 때까지 끝나지 않으므로, 부르는 쪽이 `withTimeoutOrNull` 같은 시간 제한을 건다.
+     * 서버가 보안 규칙으로 거부하면 [ReviewPermissionDeniedException]을, 그 밖의 실패는 다른 예외를 던진다.
      */
-    fun delete(
+    suspend fun delete(
         userId: String,
         reviewId: String,
     )

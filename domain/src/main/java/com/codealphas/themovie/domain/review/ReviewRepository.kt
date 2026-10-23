@@ -18,24 +18,22 @@ interface ReviewRepository {
     suspend fun getById(id: String): Review?
 
     /**
-     * 감상문을 Room과 서버에 저장한다. [ReviewDraft.id]가 null이면 새로 추가하고, 있으면 기존 감상문을 수정한다.
-     * 새 사진은 먼저 업로드한 뒤 Room, 서버 순서로 저장한다.
+     * 감상문을 Room에 저장하고 서버 업로드를 예약한다. [ReviewDraft.id]가 null이면 새로 추가하고, 있으면 기존 감상문을 수정한다.
+     * 새 사진은 먼저 업로드한 뒤 Room에 저장한다.
      * 사진 업로드 중에 호출한 코루틴이 취소되면 저장하지 않지만, Room 저장을 시작한 뒤에 취소되면 저장을 끝까지 진행한다.
-     * 사진 업로드에 실패하면 기존 사진과 Room, 서버를 바꾸지 않는다.
-     * 서버 저장은 요청만 하고 완료를 기다리지 않으므로, 서버에서 나중에 실패해도 결과에 반영되지 않는다.
+     * 사진 업로드에 실패하면 기존 사진과 Room을 바꾸지 않는다.
+     * 서버 업로드는 연결되면 백그라운드에서 진행하므로, 업로드 결과는 반환값에 반영되지 않는다.
      *
      * @return 사진 업로드에 실패하면 [ReviewError.PhotoUploadFailed],
-     * 로그인 정보가 없거나 수정할 감상문이 Room에 없거나 Room 저장에 실패하면 [ReviewError.Unknown]
+     * 로그인 정보가 없거나 수정할 감상문이 Room에 없거나(지운 감상문 포함) Room 저장에 실패하면 [ReviewError.Unknown]
      */
     suspend fun save(draft: ReviewDraft): ReviewResult
 
     /**
-     * 감상문을 Room, 서버, Storage 사진 순서로 지운다.
-     * Room에서 지우지 못하면 서버와 사진은 지우지 않고, 로그인 정보가 없으면 Room에서만 지운다.
-     * 서버 삭제는 요청만 하고 완료를 기다리지 않으므로, 서버에서 나중에 실패해도 결과에 반영되지 않는다.
-     * 서버 삭제 요청을 보내지 못하면 사진은 지우지 않는다.
+     * 감상문을 지운다. Room에 삭제 표시를 하고 서버와 Storage 사진 삭제를 예약하므로, 오프라인이어도 서버를 기다리지 않는다.
+     * 지운 감상문은 서버에서 지워지기 전에도 [observeAll]과 [getById]에 나오지 않고, [syncFromRemote]로 다시 추가되지 않는다.
      *
-     * @return Room에서 지우지 못했을 때만 [ReviewError.Unknown]. 서버 삭제 요청이나 사진 삭제가 실패해도 성공
+     * @return Room에 삭제 표시를 하지 못하면 [ReviewError.Unknown]
      */
     suspend fun delete(review: Review): ReviewResult
 
