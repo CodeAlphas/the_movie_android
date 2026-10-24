@@ -1,6 +1,7 @@
 package com.codealphas.themovie.presentation.review
 
 import android.content.ActivityNotFoundException
+import android.content.Context
 import android.content.res.Configuration
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -71,8 +72,10 @@ import com.codealphas.themovie.core.android.ui.TheMovieTopAppBar
 import com.codealphas.themovie.core.android.ui.rememberThrottledClick
 import com.codealphas.themovie.core.android.ui.showToast
 import com.codealphas.themovie.domain.review.ReviewError
+import com.codealphas.themovie.domain.review.ReviewPhoto
 import com.codealphas.themovie.presentation.R
 import java.io.File
+import java.io.IOException
 
 private val FieldShape = RoundedCornerShape(5.dp)
 private val FieldBorderWidth = 1.dp
@@ -80,6 +83,9 @@ private val StarSize = 36.dp
 private const val PHOTO_WEIGHT = 0.4f
 private const val CONTENT_WEIGHT = 0.6f
 private const val PREVIEW_RATING = 7.0
+
+// provider_paths.xml의 cache-path와 같은 폴더여야 FileProvider가 촬영 파일 uri를 만들 수 있으므로, 두 곳을 함께 수정
+private const val CAMERA_DIRECTORY = "review_camera"
 
 @Composable
 fun ReviewEditScreen(
@@ -135,14 +141,19 @@ fun ReviewEditScreen(
             if (!isSaved) context.showToast(R.string.review_edit_photo_failed, Toast.LENGTH_LONG)
         }
     val launchCamera = {
-        val file = File.createTempFile("review_photo_", ".jpg", context.externalCacheDir)
-        val uri = FileProvider.getUriForFile(context, "${context.packageName}.provider", file)
-        viewModel.onIntent(ReviewEditIntent.CameraStarted(file.toUri().toString()))
-        // 카메라 앱이 없는 기기에서는 실행 시 예외가 나므로, 앱 종료 대신 실패 안내 처리
-        try {
-            cameraLauncher.launch(uri)
-        } catch (ignored: ActivityNotFoundException) {
+        val photoInUse = (state.photo as? ReviewPhoto.New)?.uri
+        val file = createCameraFile(context, photoInUse)
+        if (file == null) {
             context.showToast(R.string.review_edit_photo_failed, Toast.LENGTH_LONG)
+        } else {
+            val uri = FileProvider.getUriForFile(context, "${context.packageName}.provider", file)
+            viewModel.onIntent(ReviewEditIntent.CameraStarted(file.toUri().toString()))
+            // 카메라 앱이 없는 기기에서는 실행 시 예외가 나므로, 앱 종료 대신 실패 안내 처리
+            try {
+                cameraLauncher.launch(uri)
+            } catch (ignored: ActivityNotFoundException) {
+                context.showToast(R.string.review_edit_photo_failed, Toast.LENGTH_LONG)
+            }
         }
     }
 
@@ -156,6 +167,25 @@ fun ReviewEditScreen(
         },
         onCameraClick = launchCamera,
     )
+}
+
+private fun createCameraFile(
+    context: Context,
+    photoInUse: String?,
+): File? {
+    // 외부 저장소는 기기 상태에 따라 쓸 수 없을 때가 있으므로, 항상 쓸 수 있는 앱 내부 캐시 폴더에 촬영 파일 생성
+    val directory = File(context.cacheDir, CAMERA_DIRECTORY)
+    val fileInUse = photoInUse?.toUri()?.path?.let(::File)
+    return try {
+        directory.mkdirs()
+        // 촬영 파일은 업로드한 뒤에도 지우는 곳이 없어 촬영할 때마다 쌓이므로,
+        // 새로 촬영하기 전에 입력 중인 감상문이 쓰는 사진을 뺀 이전 촬영 파일 삭제
+        directory.listFiles()?.filter { it != fileInUse }?.forEach(File::delete)
+        File.createTempFile("review_photo_", ".jpg", directory)
+    } catch (ignored: IOException) {
+        // 저장 공간이 부족하면 createTempFile이 IOException을 던지므로, 앱 종료 대신 촬영 실패 안내로 처리
+        null
+    }
 }
 
 @StringRes

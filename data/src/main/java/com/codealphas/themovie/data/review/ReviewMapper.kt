@@ -28,6 +28,8 @@ internal fun Review.toEntity(
         updatedAt = updatedAt,
         rating = rating,
         storageFileName = storageFileName,
+        // 서버에서 받은 감상문에는 Storage에서 지울 이전 사진이 없으므로, 빈 문자열 적용
+        storageFileNameToDelete = "",
         syncState = syncState,
         localVersion = localVersion,
         id = id,
@@ -55,13 +57,18 @@ internal fun toReviewOrNull(
     val updatedAt = fields?.get("updatedAt") as? Long
     if (rating == null || createdAt == null || updatedAt == null) return null
     return Review(
-        title = fields["title"].toString(),
-        imageUrl = fields["image"].toString(),
-        content = fields["content"].toString(),
+        title = fields.stringOrEmpty("title"),
+        imageUrl = fields.stringOrEmpty("image"),
+        content = fields.stringOrEmpty("content"),
         createdAt = createdAt,
         updatedAt = updatedAt,
         rating = rating,
-        storageFileName = fields["storageFileName"].toString(),
+        storageFileName = fields.stringOrEmpty("storageFileName"),
         id = id,
     )
 }
+
+// 문자열 필드 하나가 빠졌다고 감상문을 건너뛰면 사용자가 쓴 감상문이 목록에서 사라지므로,
+// 빠지거나 문자열이 아닌 필드는 빈 문자열 적용
+// 사진이 없는 감상문도 사진 주소와 파일 이름이 빈 문자열이므로, 사진 필드가 빠진 감상문은 사진이 없는 감상문으로 처리
+private fun Map<*, *>.stringOrEmpty(key: String): String = get(key) as? String ?: ""

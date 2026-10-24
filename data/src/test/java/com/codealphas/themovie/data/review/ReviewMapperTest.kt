@@ -75,6 +75,15 @@ class ReviewMapperTest {
     }
 
     @Test
+    fun `서버 감상문에 제목, 내용, 사진 주소, 사진 파일 이름이 없으면 그 필드를 빈 문자열로 읽어야 한다`() {
+        val fields = serverFields() - "title" - "content" - "image" - "storageFileName"
+
+        val review = toReviewOrNull(id = REVIEW.id, fields = fields)
+
+        assertEquals(REVIEW.copy(title = "", content = "", imageUrl = "", storageFileName = ""), review)
+    }
+
+    @Test
     fun `createdAt과 updatedAt이 없고 예전 형식의 문자열 time만 있으면 그 감상문을 건너뛰어야 한다`() {
         val fields = serverFields() - "createdAt" - "updatedAt" + ("time" to "2024/01/02 03:04")
 

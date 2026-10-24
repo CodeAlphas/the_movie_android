@@ -53,6 +53,13 @@ internal interface ReviewDao {
         localVersion: Int,
     ): Int
 
+    // 업로더가 Storage에서 지운 파일 이름일 때만 빈 문자열로 바꾸도록 이름 조건 적용
+    @Query("UPDATE reviewTable SET storageFileNameToDelete = '' WHERE id = :id AND storageFileNameToDelete = :fileName")
+    suspend fun clearStorageFileNameToDelete(
+        id: String,
+        fileName: String,
+    ): Int
+
     // 삭제 표시가 없는 감상문의 id가 잘못 넘어오면 사용자가 지운 적 없는 감상문이 목록에서 사라지므로,
     // PENDING_DELETE 감상문일 때만 행 삭제
     @Query("DELETE FROM reviewTable WHERE id = :id AND syncState = 'PENDING_DELETE'")

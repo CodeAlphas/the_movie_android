@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths>
-    <external-files-path
-        name="external_files"
-        path="." />
-    <external-cache-path
-        name="external_cache"
-        path="." />
+    <!-- 카메라 앱은 이 앱의 내부 캐시 폴더에 접근할 수 없으므로,
+         촬영 사진을 저장할 수 있도록 review_camera 폴더만 카메라 앱에 공유 -->
+    <cache-path
+        name="review_camera"
+        path="review_camera/" />
 </paths>

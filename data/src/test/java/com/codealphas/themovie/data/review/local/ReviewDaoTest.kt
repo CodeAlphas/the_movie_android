@@ -193,6 +193,28 @@ class ReviewDaoTest {
         }
 
     @Test
+    fun `업로더가 지운 이전 사진 파일 이름과 같으면 이름을 빈 문자열로 바꿔야 한다`() =
+        runTest {
+            dao.insert(entity(id = "-a", storageFileNameToDelete = "old.png"))
+
+            val changed = dao.clearStorageFileNameToDelete(id = "-a", fileName = "old.png")
+
+            assertEquals(1, changed)
+            assertEquals("", dao.getById("-a")?.storageFileNameToDelete)
+        }
+
+    @Test
+    fun `기록된 이전 사진 파일 이름이 업로더가 지운 이름과 다르면 이름을 그대로 두어야 한다`() =
+        runTest {
+            dao.insert(entity(id = "-a", storageFileNameToDelete = "newer.png"))
+
+            val changed = dao.clearStorageFileNameToDelete(id = "-a", fileName = "old.png")
+
+            assertEquals(0, changed)
+            assertEquals("newer.png", dao.getById("-a")?.storageFileNameToDelete)
+        }
+
+    @Test
     fun `감상문을 모두 지우면 목록이 비어야 한다`() =
         runTest {
             dao.insert(entity(id = "-a"))
@@ -213,6 +235,7 @@ private fun entity(
     updatedAt: Long = 1_000L,
     syncState: ReviewSyncState = ReviewSyncState.SYNCED,
     localVersion: Int = 0,
+    storageFileNameToDelete: String = "",
 ): ReviewEntity =
     ReviewEntity(
         title = title,
@@ -222,6 +245,7 @@ private fun entity(
         updatedAt = updatedAt,
         rating = 9.0,
         storageFileName = "",
+        storageFileNameToDelete = storageFileNameToDelete,
         syncState = syncState,
         localVersion = localVersion,
         id = id,

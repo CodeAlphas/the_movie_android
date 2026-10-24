@@ -20,6 +20,10 @@ internal class ReviewEntity(
     val rating: Double,
     @ColumnInfo(name = "storageFileName")
     val storageFileName: String,
+    // 사진을 바꿔 저장해도 감상문 업로드가 끝날 때까지 서버 감상문은 이전 사진을 가리키므로,
+    // 감상문 업로드가 끝난 뒤 Storage에서 지울 이전 사진 파일 이름을 보관하고 지울 파일이 없으면 빈 문자열 적용
+    @ColumnInfo(name = "storageFileNameToDelete")
+    val storageFileNameToDelete: String,
     @ColumnInfo(name = "syncState")
     val syncState: ReviewSyncState,
     @ColumnInfo(name = "localVersion")

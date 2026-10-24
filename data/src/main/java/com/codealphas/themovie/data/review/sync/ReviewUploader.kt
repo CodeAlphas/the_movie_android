@@ -24,6 +24,7 @@ internal class ReviewUploader
         private val realtimeDataSource: ReviewRealtimeDataSource,
         private val storageDataSource: ReviewStorageDataSource,
         private val authRepository: AuthRepository,
+        private val syncLock: ReviewSyncLock,
     ) {
         suspend fun upload(): ReviewUploadResult {
             // 로그아웃하면 Room 감상문도 함께 지우므로, 올릴 감상문이 없는 상태로 보고 성공 처리
@@ -56,12 +57,26 @@ internal class ReviewUploader
             userId: String,
             review: ReviewEntity,
         ): ReviewUploadResult {
-            val result = requestServer { realtimeDataSource.save(userId, review.toReview()) }
-            if (result == ReviewUploadResult.SUCCESS) reviewDao.markSynced(review.id, review.localVersion)
+            var result = requestServer { realtimeDataSource.save(userId, review.toReview()) }
+            // 감상문 업로드가 실패했는데 이전 사진을 지우면 서버에 남은 예전 감상문이 지운 사진을 가리키므로, 감상문 업로드를 확인한 뒤에만 삭제
+            if (result == ReviewUploadResult.SUCCESS) result = deletePhoto(review.storageFileNameToDelete)
+            if (result == ReviewUploadResult.SUCCESS) {
+                // 사진 삭제가 실패해도 다음 실행에서 다시 지울 수 있도록 Storage에서 사진을 지운 뒤에 storageFileNameToDelete를 빈 문자열로 변경
+                if (review.storageFileNameToDelete.isNotEmpty()) {
+                    reviewDao.clearStorageFileNameToDelete(review.id, review.storageFileNameToDelete)
+                }
+                reviewDao.markSynced(review.id, review.localVersion)
+            }
             return result
         }
 
+        // 동기화가 지운 감상문을 Room에 다시 넣지 않도록 서버 삭제부터 행 삭제까지 동기화와 같은 잠금 적용
         private suspend fun remove(
+            userId: String,
+            review: ReviewEntity,
+        ): ReviewUploadResult = syncLock.withLock { removeFromServerAndRoom(userId, review) }
+
+        private suspend fun removeFromServerAndRoom(
             userId: String,
             review: ReviewEntity,
         ): ReviewUploadResult {
@@ -69,19 +84,17 @@ internal class ReviewUploader
             // 서버 삭제가 실패했는데 사진을 지우면 서버에 남은 감상문이 로그아웃 뒤 다시 로그인하거나 다른 기기에서 받을 때
             // 깨진 사진으로 나타나므로, 서버 삭제를 확인한 뒤에만 사진 삭제
             if (result == ReviewUploadResult.SUCCESS) result = deletePhoto(review.storageFileName)
-            // 행을 먼저 지우는데 사진 삭제가 실패하면 지울 사진 파일 이름이 어디에도 남지 않아 다시 시도할 수 없으므로,
-            // 사진 삭제가 끝난 뒤 행 삭제
+            // 감상문 업로드 전에 사진을 바꾸거나 지운 뒤 감상문을 지우면 이전 사진 파일도 Storage에 남아 있으므로, 이전 사진 파일도 삭제
+            if (result == ReviewUploadResult.SUCCESS) result = deletePhoto(review.storageFileNameToDelete)
+            // 사진 삭제가 실패해도 다음 실행에서 행에 남은 파일 이름으로 다시 지울 수 있도록 사진을 지운 뒤에 행 삭제
             if (result == ReviewUploadResult.SUCCESS) reviewDao.deleteIfPendingDelete(review.id)
             return result
         }
 
         private suspend fun deletePhoto(fileName: String): ReviewUploadResult {
             if (fileName.isEmpty()) return ReviewUploadResult.SUCCESS
-            val result =
-                request {
-                    storageDataSource.delete(fileName)
-                    ReviewUploadResult.SUCCESS
-                }
+            // Storage가 응답하지 않아도 감상문 삭제가 동기화 잠금을 오래 잡지 않도록, 감상문 서버 쓰기와 같은 응답 대기 시간 제한 적용
+            val result = requestServer { storageDataSource.delete(fileName) }
             // 보안 규칙이 삭제를 거부한 사진은 다시 지워도 같은 결과인데 행을 남기면 서버에서 이미 지운 감상문이 대기 상태로 계속 남으므로,
             // 사진 파일이 Storage에 남는 것을 허용하고 행 삭제로 진행
             return if (result == ReviewUploadResult.PERMANENT_FAILURE) ReviewUploadResult.SUCCESS else result

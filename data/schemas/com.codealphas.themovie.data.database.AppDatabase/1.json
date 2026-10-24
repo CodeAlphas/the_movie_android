@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "113466f679a38bb698ac2cbcb953bff1",
+    "identityHash": "5421295265e91dfe7b4ea49459dd2efc",
     "entities": [
       {
         "tableName": "reviewTable",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`title` TEXT NOT NULL, `image` TEXT NOT NULL, `content` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `rating` REAL NOT NULL, `storageFileName` TEXT NOT NULL, `syncState` TEXT NOT NULL, `localVersion` INTEGER NOT NULL, `id` TEXT NOT NULL, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`title` TEXT NOT NULL, `image` TEXT NOT NULL, `content` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `rating` REAL NOT NULL, `storageFileName` TEXT NOT NULL, `storageFileNameToDelete` TEXT NOT NULL, `syncState` TEXT NOT NULL, `localVersion` INTEGER NOT NULL, `id` TEXT NOT NULL, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "title",
@@ -51,6 +51,12 @@
             "notNull": true
           },
           {
+            "fieldPath": "storageFileNameToDelete",
+            "columnName": "storageFileNameToDelete",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
             "fieldPath": "syncState",
             "columnName": "syncState",
             "affinity": "TEXT",
@@ -79,7 +85,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '113466f679a38bb698ac2cbcb953bff1')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '5421295265e91dfe7b4ea49459dd2efc')"
     ]
   }
 }

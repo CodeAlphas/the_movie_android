@@ -87,6 +87,7 @@ class ReviewSyncWorkerTest {
                 realtimeDataSource = realtime,
                 storageDataSource = FakeSyncWorkerStorageDataSource(),
                 authRepository = FakeSyncWorkerAuthRepository(),
+                syncLock = ReviewSyncLock(),
             )
         val factory =
             object : WorkerFactory() {
@@ -111,6 +112,7 @@ private fun pendingReview(): ReviewEntity =
         updatedAt = 1_000L,
         rating = 9.0,
         storageFileName = "",
+        storageFileNameToDelete = "",
         syncState = ReviewSyncState.PENDING_UPSERT,
         localVersion = 1,
         id = REVIEW_ID,

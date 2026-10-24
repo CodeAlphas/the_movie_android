@@ -204,6 +204,20 @@ class ReviewUploaderTest {
         }
 
     @Test
+    fun `Storage가 사진 파일 삭제에 응답하지 않으면 30초 뒤 행을 남기고 재시도를 반환해야 한다`() =
+        runTest {
+            dao.put(pending(id = "-a", syncState = ReviewSyncState.PENDING_DELETE, storageFileName = PHOTO))
+            storage.hanging = true
+
+            val result = uploader().upload()
+
+            assertEquals(ReviewUploadResult.RETRY, result)
+            assertEquals(SERVER_WRITE_TIMEOUT.inWholeMilliseconds, currentTime)
+            assertEquals(listOf("server.delete:-a", "storage.delete:$PHOTO"), calls)
+            assertEquals(ReviewSyncState.PENDING_DELETE, dao.entity("-a")?.syncState)
+        }
+
+    @Test
     fun `보안 규칙이 사진 파일 삭제를 거부하면 사진 파일은 두고 행을 지운 뒤 성공을 반환해야 한다`() =
         runTest {
             dao.put(pending(id = "-a", syncState = ReviewSyncState.PENDING_DELETE, storageFileName = PHOTO))
@@ -213,6 +227,82 @@ class ReviewUploaderTest {
 
             assertEquals(ReviewUploadResult.SUCCESS, result)
             assertEquals(listOf("server.delete:-a", "storage.delete:$PHOTO", "room.delete:-a"), calls)
+            assertNull(dao.entity("-a"))
+        }
+
+    @Test
+    fun `사진을 바꾼 감상문을 서버에 쓰면 그 뒤 이전 사진 파일을 지우고 이름을 빈 문자열로 만든 다음 SYNCED로 바꿔야 한다`() =
+        runTest {
+            dao.put(pending(id = "-a", storageFileName = PHOTO, storageFileNameToDelete = OLD_PHOTO))
+
+            val result = uploader().upload()
+
+            assertEquals(ReviewUploadResult.SUCCESS, result)
+            assertEquals(listOf("server.save:-a", "storage.delete:$OLD_PHOTO"), calls)
+            assertEquals("", dao.entity("-a")?.storageFileNameToDelete)
+            assertEquals(ReviewSyncState.SYNCED, dao.entity("-a")?.syncState)
+        }
+
+    @Test
+    fun `사진을 바꾼 감상문의 서버 쓰기가 네트워크 오류로 실패하면 이전 사진 파일을 지우지 않고 이름을 남겨야 한다`() =
+        runTest {
+            dao.put(pending(id = "-a", storageFileName = PHOTO, storageFileNameToDelete = OLD_PHOTO))
+            realtime.failures["-a"] = IOException("네트워크 오류")
+
+            val result = uploader().upload()
+
+            assertEquals(ReviewUploadResult.RETRY, result)
+            assertEquals(listOf("server.save:-a"), calls)
+            assertEquals(OLD_PHOTO, dao.entity("-a")?.storageFileNameToDelete)
+            assertEquals(ReviewSyncState.PENDING_UPSERT, dao.entity("-a")?.syncState)
+        }
+
+    @Test
+    fun `이전 사진 파일 삭제가 네트워크 오류로 실패하면 이름을 남기고 PENDING_UPSERT로 둔 채 재시도를 반환해야 한다`() =
+        runTest {
+            dao.put(pending(id = "-a", storageFileName = PHOTO, storageFileNameToDelete = OLD_PHOTO))
+            storage.failure = IOException("네트워크 오류")
+
+            val result = uploader().upload()
+
+            assertEquals(ReviewUploadResult.RETRY, result)
+            assertEquals(listOf("server.save:-a", "storage.delete:$OLD_PHOTO"), calls)
+            assertEquals(OLD_PHOTO, dao.entity("-a")?.storageFileNameToDelete)
+            assertEquals(ReviewSyncState.PENDING_UPSERT, dao.entity("-a")?.syncState)
+        }
+
+    @Test
+    fun `보안 규칙이 이전 사진 파일 삭제를 거부하면 파일은 두고 이름을 빈 문자열로 만든 뒤 SYNCED로 바꿔야 한다`() =
+        runTest {
+            dao.put(pending(id = "-a", storageFileName = PHOTO, storageFileNameToDelete = OLD_PHOTO))
+            storage.failure = ReviewPermissionDeniedException(IllegalStateException("Permission denied"))
+
+            val result = uploader().upload()
+
+            assertEquals(ReviewUploadResult.SUCCESS, result)
+            assertEquals("", dao.entity("-a")?.storageFileNameToDelete)
+            assertEquals(ReviewSyncState.SYNCED, dao.entity("-a")?.syncState)
+        }
+
+    @Test
+    fun `사진을 바꾼 수정을 올리기 전에 지운 감상문은 서버에서 지운 뒤 지금 사진과 이전 사진 파일을 모두 지워야 한다`() =
+        runTest {
+            dao.put(
+                pending(
+                    id = "-a",
+                    syncState = ReviewSyncState.PENDING_DELETE,
+                    storageFileName = PHOTO,
+                    storageFileNameToDelete = OLD_PHOTO,
+                ),
+            )
+
+            val result = uploader().upload()
+
+            assertEquals(ReviewUploadResult.SUCCESS, result)
+            assertEquals(
+                listOf("server.delete:-a", "storage.delete:$PHOTO", "storage.delete:$OLD_PHOTO", "room.delete:-a"),
+                calls,
+            )
             assertNull(dao.entity("-a"))
         }
 
@@ -234,11 +324,13 @@ class ReviewUploaderTest {
             realtimeDataSource = realtime,
             storageDataSource = storage,
             authRepository = FakeUploaderAuthRepository(userId),
+            syncLock = ReviewSyncLock(),
         )
 }
 
 private const val USER_ID = "user-1234567890"
 private const val PHOTO = "$USER_ID/1000.png"
+private const val OLD_PHOTO = "$USER_ID/500.png"
 
 private fun pending(
     id: String,
@@ -247,6 +339,7 @@ private fun pending(
     syncState: ReviewSyncState = ReviewSyncState.PENDING_UPSERT,
     localVersion: Int = 1,
     storageFileName: String = "",
+    storageFileNameToDelete: String = "",
 ): ReviewEntity =
     ReviewEntity(
         title = title,
@@ -256,6 +349,7 @@ private fun pending(
         updatedAt = updatedAt,
         rating = 8.0,
         storageFileName = storageFileName,
+        storageFileNameToDelete = storageFileNameToDelete,
         syncState = syncState,
         localVersion = localVersion,
         id = id,
@@ -289,7 +383,17 @@ private class FakeReviewDao(
         ) {
             return 0
         }
-        entities[id] = current.withSyncState(ReviewSyncState.SYNCED)
+        entities[id] = current.copy(syncState = ReviewSyncState.SYNCED)
+        return 1
+    }
+
+    override suspend fun clearStorageFileNameToDelete(
+        id: String,
+        fileName: String,
+    ): Int {
+        val current = entities[id]
+        if (current == null || current.storageFileNameToDelete != fileName) return 0
+        entities[id] = current.copy(storageFileNameToDelete = "")
         return 1
     }
 
@@ -315,7 +419,11 @@ private class FakeReviewDao(
     override suspend fun countPending(): Int = error("사용하지 않음")
 }
 
-private fun ReviewEntity.withSyncState(syncState: ReviewSyncState): ReviewEntity =
+// ReviewEntity는 data class가 아니라 copy가 없으므로, 업로더가 바꾸는 두 컬럼만 바꾼 행을 만들도록 같은 이름의 함수 적용
+private fun ReviewEntity.copy(
+    syncState: ReviewSyncState = this.syncState,
+    storageFileNameToDelete: String = this.storageFileNameToDelete,
+): ReviewEntity =
     ReviewEntity(
         title = title,
         image = image,
@@ -324,6 +432,7 @@ private fun ReviewEntity.withSyncState(syncState: ReviewSyncState): ReviewEntity
         updatedAt = updatedAt,
         rating = rating,
         storageFileName = storageFileName,
+        storageFileNameToDelete = storageFileNameToDelete,
         syncState = syncState,
         localVersion = localVersion,
         id = id,
@@ -349,6 +458,7 @@ private class FakeReviewRealtimeDataSource(
         userId: String,
         review: Review,
     ) {
+        calls += "server.save:${review.id}"
         savedIds += review.id
         savedUserIds += userId
         failures[review.id]?.let { throw it }
@@ -377,10 +487,12 @@ private class FakeReviewStorageDataSource(
     private val calls: MutableList<String>,
 ) : ReviewStorageDataSource {
     var failure: Exception? = null
+    var hanging = false
 
     override suspend fun delete(fileName: String) {
         calls += "storage.delete:$fileName"
         failure?.let { throw it }
+        if (hanging) awaitCancellation()
     }
 
     override suspend fun upload(

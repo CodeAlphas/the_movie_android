@@ -5,6 +5,7 @@ import com.codealphas.themovie.data.review.local.ReviewEntity
 import com.codealphas.themovie.data.review.local.ReviewSyncState
 import com.codealphas.themovie.data.review.remote.ReviewRealtimeDataSource
 import com.codealphas.themovie.data.review.remote.ReviewStorageDataSource
+import com.codealphas.themovie.data.review.sync.ReviewSyncLock
 import com.codealphas.themovie.data.review.sync.ReviewSyncScheduler
 import com.codealphas.themovie.domain.auth.AuthRepository
 import com.codealphas.themovie.domain.auth.AuthResult
@@ -48,17 +49,15 @@ class ReviewRepositoryImplTest {
         }
 
     @Test
-    fun `새 사진으로 수정하면 사진을 올린 뒤 Room에 저장하고 서버 업로드를 예약한 다음 이전 사진 파일을 지워야 한다`() =
+    fun `새 사진으로 수정하면 사진을 올린 뒤 Room에 저장하고 서버 업로드를 예약하며 이전 사진 파일은 지우지 않고 이름을 남겨야 한다`() =
         runTest {
             dao.put(STORED)
 
             val result = repository().save(editDraft(ReviewPhoto.New("content://photo/2")))
 
             assertEquals(Outcome.Success(Unit), result)
-            assertEquals(
-                listOf("storage.upload:$NEW_FILE_NAME", "room.update", "sync.schedule", "storage.delete:old.png"),
-                calls,
-            )
+            assertEquals(listOf("storage.upload:$NEW_FILE_NAME", "room.update", "sync.schedule"), calls)
+            assertEquals("old.png", dao.entity(STORED.id)?.storageFileNameToDelete)
             val expected =
                 STORED.toReview().copy(
                     title = "수정한 제목",
@@ -114,17 +113,45 @@ class ReviewRepositoryImplTest {
         }
 
     @Test
-    fun `사진을 지우고 수정하면 빈 URL로 저장하고 이전 파일을 지워야 한다`() =
+    fun `사진을 지우고 수정하면 Room에 사진 없이 저장하고 이전 사진 파일은 업로드 뒤 지우도록 기록해야 한다`() =
         runTest {
             dao.put(STORED)
 
             val result = repository().save(editDraft(ReviewPhoto.Removed))
 
             assertEquals(Outcome.Success(Unit), result)
-            assertEquals(listOf("room.update", "sync.schedule", "storage.delete:old.png"), calls)
+            assertEquals(listOf("room.update", "sync.schedule"), calls)
+            assertEquals("old.png", dao.entity(STORED.id)?.storageFileNameToDelete)
             val expected =
                 STORED.toReview().copy(title = "수정한 제목", imageUrl = "", updatedAt = NOW_MILLIS, storageFileName = "")
             assertEquals(expected, dao.saved(STORED.id))
+        }
+
+    @Test
+    fun `업로드 전에 사진을 두 번 바꾸면 중간에 고른 사진 파일만 바로 지우고 서버에 있는 사진 파일은 업로드 뒤 지우도록 남겨야 한다`() =
+        runTest {
+            dao.put(STORED_WITH_PHOTO_TO_DELETE)
+
+            val result = repository().save(editDraft(ReviewPhoto.New("content://photo/3")))
+
+            assertEquals(Outcome.Success(Unit), result)
+            assertEquals(
+                listOf("storage.upload:$NEW_FILE_NAME", "room.update", "sync.schedule", "storage.delete:middle.png"),
+                calls,
+            )
+            assertEquals("old.png", dao.entity(STORED.id)?.storageFileNameToDelete)
+        }
+
+    @Test
+    fun `업로드 전에 사진을 바꾼 뒤 글만 수정하면 사진 파일을 지우지 않고 서버에 있는 사진 파일은 업로드 뒤 지우도록 남겨야 한다`() =
+        runTest {
+            dao.put(STORED_WITH_PHOTO_TO_DELETE)
+
+            val result = repository().save(editDraft(ReviewPhoto.Unchanged))
+
+            assertEquals(Outcome.Success(Unit), result)
+            assertEquals(listOf("room.update", "sync.schedule"), calls)
+            assertEquals("old.png", dao.entity(STORED.id)?.storageFileNameToDelete)
         }
 
     @Test
@@ -282,6 +309,7 @@ class ReviewRepositoryImplTest {
                     updatedAt = STORED_UPDATED_AT,
                     rating = 5.0,
                     storageFileName = "",
+                    storageFileNameToDelete = "",
                     syncState = ReviewSyncState.PENDING_UPSERT,
                     localVersion = 1,
                     id = "-pending",
@@ -415,6 +443,7 @@ class ReviewRepositoryImplTest {
             authRepository = FakeReviewAuthRepository(userId),
             clock = { NOW_MILLIS },
             syncScheduler = scheduler,
+            syncLock = ReviewSyncLock(),
         )
 }
 
@@ -438,11 +467,28 @@ private val STORED =
         updatedAt = STORED_UPDATED_AT,
         rating = 9.0,
         storageFileName = "old.png",
+        storageFileNameToDelete = "",
         syncState = ReviewSyncState.SYNCED,
         // 저장된 localVersion이 0이면 수정한 뒤 기대하는 localVersion이 새 감상문과 같은 1이라 수정할 때도 1로 저장하는 잘못된 코드가 통과하므로,
         // 그 코드를 잡아내도록 0이 아닌 값 적용
         localVersion = 1,
         id = "-stored",
+    )
+
+// 사진을 old.png에서 middle.png로 바꾼 수정이 아직 서버에 올라가지 않아, 서버는 old.png를 가리키고 Room은 middle.png를 가리키는 감상문
+private val STORED_WITH_PHOTO_TO_DELETE =
+    ReviewEntity(
+        title = STORED.title,
+        image = downloadUrl("middle.png"),
+        content = STORED.content,
+        createdAt = STORED_CREATED_AT,
+        updatedAt = STORED_UPDATED_AT,
+        rating = STORED.rating,
+        storageFileName = "middle.png",
+        storageFileNameToDelete = "old.png",
+        syncState = ReviewSyncState.PENDING_UPSERT,
+        localVersion = 2,
+        id = STORED.id,
     )
 
 private fun editDraft(photo: ReviewPhoto): ReviewDraft =
@@ -500,6 +546,11 @@ private class FakeReviewDao(
     override suspend fun markSynced(
         id: String,
         localVersion: Int,
+    ): Int = error("사용하지 않음")
+
+    override suspend fun clearStorageFileNameToDelete(
+        id: String,
+        fileName: String,
     ): Int = error("사용하지 않음")
 
     override suspend fun deleteIfPendingDelete(id: String): Int = error("사용하지 않음")
@@ -586,6 +637,7 @@ private fun ReviewEntity.withSyncState(syncState: ReviewSyncState): ReviewEntity
         updatedAt = updatedAt,
         rating = rating,
         storageFileName = storageFileName,
+        storageFileNameToDelete = storageFileNameToDelete,
         syncState = syncState,
         localVersion = localVersion,
         id = id,

@@ -5,6 +5,7 @@ import com.codealphas.themovie.data.review.local.ReviewEntity
 import com.codealphas.themovie.data.review.local.ReviewSyncState
 import com.codealphas.themovie.data.review.remote.ReviewRealtimeDataSource
 import com.codealphas.themovie.data.review.remote.ReviewStorageDataSource
+import com.codealphas.themovie.data.review.sync.ReviewSyncLock
 import com.codealphas.themovie.data.review.sync.ReviewSyncScheduler
 import com.codealphas.themovie.domain.auth.AuthRepository
 import com.codealphas.themovie.domain.result.Outcome
@@ -38,6 +39,7 @@ internal class ReviewRepositoryImpl
         private val authRepository: AuthRepository,
         private val clock: ReviewClock,
         private val syncScheduler: ReviewSyncScheduler,
+        private val syncLock: ReviewSyncLock,
     ) : ReviewRepository {
         override fun observeAll(): Flow<List<Review>> =
             reviewDao.getAll().map { reviews -> reviews.map(ReviewEntity::toReview) }
@@ -45,16 +47,19 @@ internal class ReviewRepositoryImpl
         override suspend fun syncFromRemote(): ReviewResult {
             val userId = authRepository.currentUserId() ?: return Outcome.Failure(ReviewError.Unknown)
             return try {
-                val remoteReviews = withTimeoutOrNull(SERVER_READ_TIMEOUT) { realtimeDataSource.getAll(userId) }
-                if (remoteReviews == null) {
+                // 잠금 대기를 시간 제한 밖에 두면 업로더가 감상문을 지우는 동안 목록에 로딩 표시가 그만큼 더 남으므로,
+                // 잠금 대기도 서버 읽기 시간 제한에 포함
+                val inserted =
+                    withTimeoutOrNull(SERVER_READ_TIMEOUT) {
+                        // 서버 목록을 읽은 뒤 Room에 넣기 전에 업로더가 같은 감상문을 서버와 Room에서 지우면 지운 감상문이 다시 추가되므로,
+                        // 서버 읽기부터 Room 추가까지 업로더의 감상문 삭제와 같은 잠금 적용
+                        syncLock.withLock { insertRemoteReviews(userId) }
+                    }
+                if (inserted == null) {
                     Outcome.Failure(ReviewError.Unknown)
                 } else {
-                    // 서버에서 받은 감상문은 이미 서버에 있으므로, 다시 올리지 않도록 SYNCED와 localVersion 0으로 추가
-                    remoteReviews.forEach { review ->
-                        reviewDao.insert(review.toEntity(syncState = ReviewSyncState.SYNCED, localVersion = 0))
-                    }
-                    // 업로드 작업이 끝난 뒤에도 대기 상태로 남은 감상문은 다른 감상문을 저장하거나 지우기 전까지 다시 예약되지 않으므로,
-                    // 앱 업데이트나 규칙 수정으로 원인이 고쳐진 뒤 올라가도록 목록을 열 때 업로드 다시 예약
+                    // 감상문 업로드 작업이 끝난 뒤에도 대기 상태로 남은 감상문은 다른 감상문을 저장하거나 지우기 전까지 다시 예약되지 않으므로,
+                    // 앱 업데이트나 규칙 수정으로 원인이 고쳐진 뒤 올라가도록 목록을 열 때 감상문 업로드 다시 예약
                     if (reviewDao.countPending() > 0) syncScheduler.schedule()
                     Outcome.Success(Unit)
                 }
@@ -68,6 +73,13 @@ internal class ReviewRepositoryImpl
             }
         }
 
+        private suspend fun insertRemoteReviews(userId: String) {
+            // 서버에서 받은 감상문은 이미 서버에 있으므로, 다시 올리지 않도록 SYNCED와 localVersion 0으로 추가
+            realtimeDataSource.getAll(userId).forEach { review ->
+                reviewDao.insert(review.toEntity(syncState = ReviewSyncState.SYNCED, localVersion = 0))
+            }
+        }
+
         override suspend fun getById(id: String): Review? = reviewDao.getById(id)?.toReview()
 
         override suspend fun save(draft: ReviewDraft): ReviewResult {
@@ -78,7 +90,7 @@ internal class ReviewRepositoryImpl
                 if (draft.id != null && previous == null) {
                     Outcome.Failure(ReviewError.Unknown)
                 } else {
-                    store(draft, previous, userId)
+                    preparePhotoAndSave(draft, previous, userId)
                 }
             } catch (e: CancellationException) {
                 throw e
@@ -87,25 +99,25 @@ internal class ReviewRepositoryImpl
             }
         }
 
-        private suspend fun store(
+        private suspend fun preparePhotoAndSave(
             draft: ReviewDraft,
             previous: ReviewEntity?,
             userId: String,
         ): ReviewResult {
-            // 키를 만들지 못해 실패할 때 이미 올린 사진이 고아 파일로 남지 않도록, 사진 업로드 전에 새 감상문 키 생성 처리
+            // 키를 만들지 못해 실패할 때 이미 올린 사진이 고아 파일로 남지 않도록, 사진을 Storage에 업로드하기 전에 새 감상문 키 생성 처리
             val id = draft.id ?: realtimeDataSource.newKey(userId)
-            val photo =
-                resolvePhoto(draft.photo, previous, userId)
+            val photoFields =
+                preparePhotoFields(draft.photo, previous, userId)
                     ?: return Outcome.Failure(ReviewError.PhotoUploadFailed)
-            // 저장을 요청한 코루틴이 Room 저장 뒤에 취소되면 업로드를 예약하거나 이전 사진을 지우지 못한 채 끝나므로,
-            // Room 저장을 시작한 뒤에는 취소되지 않고 끝까지 처리
-            // 업로드 직후 프로세스가 종료되면 코드로 막을 수 없고 드물어서, 남는 고아 사진 파일은 별도 정리 없이 허용
-            withContext(NonCancellable) { persist(id, draft, previous, photo) }
+            // 저장을 요청한 코루틴이 Room 저장 뒤에 취소되면 감상문 업로드를 예약하거나 업로드 전에 바뀐 사진 파일을
+            // 지우지 못한 채 끝나므로, Room 저장을 시작한 뒤에는 취소되지 않고 끝까지 처리
+            // 사진을 Storage에 업로드한 직후 프로세스가 종료되면 코드로 막을 수 없고 드물어서, 남는 고아 사진 파일은 별도 정리 없이 허용
+            withContext(NonCancellable) { saveAndScheduleUpload(id, draft, previous, photoFields) }
             return Outcome.Success(Unit)
         }
 
-        // 업로드가 실패하면 기존 사진과 Room, 서버를 바꾸지 않도록 null 반환
-        private suspend fun resolvePhoto(
+        // 사진을 Storage에 업로드하지 못하면 기존 사진과 Room, 서버를 바꾸지 않도록 null 반환
+        private suspend fun preparePhotoFields(
             photo: ReviewPhoto,
             previous: ReviewEntity?,
             userId: String,
@@ -113,10 +125,10 @@ internal class ReviewRepositoryImpl
             when (photo) {
                 ReviewPhoto.Unchanged -> PhotoFields(previous?.image.orEmpty(), previous?.storageFileName.orEmpty())
                 ReviewPhoto.Removed -> PhotoFields(imageUrl = "", fileName = "")
-                is ReviewPhoto.New -> upload(photo.uri, userId)
+                is ReviewPhoto.New -> uploadPhoto(photo.uri, userId)
             }
 
-        private suspend fun upload(
+        private suspend fun uploadPhoto(
             uri: String,
             userId: String,
         ): PhotoFields? {
@@ -134,24 +146,26 @@ internal class ReviewRepositoryImpl
             }
         }
 
-        private suspend fun persist(
+        private suspend fun saveAndScheduleUpload(
             id: String,
             draft: ReviewDraft,
             previous: ReviewEntity?,
-            photo: PhotoFields,
+            photoFields: PhotoFields,
         ) {
             val now = clock.nowMillis()
+            val cleanup = planPhotoCleanup(draft.photo, previous)
             val entity =
                 ReviewEntity(
                     title = draft.title,
-                    image = photo.imageUrl,
+                    image = photoFields.imageUrl,
                     content = draft.content,
                     createdAt = previous?.createdAt ?: now,
                     updatedAt = now,
                     rating = draft.rating,
-                    storageFileName = photo.fileName,
+                    storageFileName = photoFields.fileName,
+                    storageFileNameToDelete = cleanup.storageFileNameToDelete,
                     syncState = ReviewSyncState.PENDING_UPSERT,
-                    // 업로드하는 동안 다시 저장하면 업로더가 올린 내용이 Room 내용과 달라지므로,
+                    // 감상문을 업로드하는 동안 다시 저장하면 업로더가 올린 내용이 Room 내용과 달라지므로,
                     // 업로더가 이를 알아채고 SYNCED로 바꾸지 않도록 저장할 때마다 localVersion 증가
                     localVersion = (previous?.localVersion ?: 0) + 1,
                     id = id,
@@ -164,20 +178,42 @@ internal class ReviewRepositoryImpl
                 stored = true
             } finally {
                 // Room에 저장되지 않아 방금 올린 사진을 가리키는 곳이 없으므로, 고아 파일이 남지 않게 삭제 처리
-                if (!stored && draft.photo is ReviewPhoto.New) deleteStorageFile(photo.fileName)
+                if (!stored && draft.photo is ReviewPhoto.New) deletePhoto(photoFields.fileName)
             }
             syncScheduler.schedule()
+            if (cleanup.unreferencedFileName.isNotEmpty()) deletePhoto(cleanup.unreferencedFileName)
+        }
 
-            // 사진을 그대로 두는데 파일을 지우면 저장된 URL이 죽은 링크가 되므로, 바꾸거나 지운 경우에만 기존 파일 삭제
+        private fun planPhotoCleanup(
+            photo: ReviewPhoto,
+            previous: ReviewEntity?,
+        ): PhotoCleanup {
             val previousFileName = previous?.storageFileName.orEmpty()
-            if (draft.photo !is ReviewPhoto.Unchanged && previousFileName.isNotEmpty()) {
-                deleteStorageFile(previousFileName)
+            val previousFileNameToDelete = previous?.storageFileNameToDelete.orEmpty()
+            // 사진을 그대로 두는데 파일을 지우면 저장된 URL이 죽은 링크가 되므로, 바꾸거나 지운 경우에만 이전 파일 정리
+            val isPhotoReplaced = photo !is ReviewPhoto.Unchanged && previousFileName.isNotEmpty()
+            return when {
+                !isPhotoReplaced ->
+                    PhotoCleanup(storageFileNameToDelete = previousFileNameToDelete, unreferencedFileName = "")
+                // 서버 감상문은 감상문 업로드가 끝날 때까지 이전 사진을 가리킬 수 있으므로,
+                // 이전 사진 파일은 지금 지우지 않고 감상문 업로드가 끝난 뒤 업로더가 지우도록 storageFileNameToDelete에 보관
+                previousFileNameToDelete.isEmpty() ->
+                    PhotoCleanup(storageFileNameToDelete = previousFileName, unreferencedFileName = "")
+                // 사진을 A에서 B로 바꾸고 감상문 업로드가 끝나기 전에 다시 C로 바꾸면 다음 감상문 업로드 뒤 B를 가리키는 곳이 없으므로,
+                // Room에 C를 저장한 뒤 Storage의 B 파일은 바로 지우고 A는 감상문 업로드 뒤 지우도록 그대로 보관
+                // B를 올리던 감상문 업로드가 이미 진행 중이면 다음 감상문 업로드 전까지 서버 감상문이 지운 B를 가리키지만,
+                // 다음 감상문 업로드가 C로 바꾸므로 잠시 사진이 깨져 보이는 것을 허용
+                else ->
+                    PhotoCleanup(
+                        storageFileNameToDelete = previousFileNameToDelete,
+                        unreferencedFileName = previousFileName,
+                    )
             }
         }
 
         override suspend fun delete(review: Review): ReviewResult =
             try {
-                // 삭제를 요청한 코루틴이 삭제 표시 뒤에 취소되면 업로드를 예약하지 못해 다음 저장이나 동기화 전까지 서버에서 지워지지 않으므로,
+                // 삭제를 요청한 코루틴이 삭제 표시 뒤에 취소되면 감상문 업로드를 예약하지 못해 다음 저장, 삭제, 동기화 성공 전까지 서버에서 지워지지 않으므로,
                 // 삭제 표시를 시작한 뒤에는 취소되지 않고 예약까지 처리
                 withContext(NonCancellable) {
                     reviewDao.markPendingDelete(review.id)
@@ -200,7 +236,7 @@ internal class ReviewRepositoryImpl
             syncScheduler.cancel()
         }
 
-        private suspend fun deleteStorageFile(fileName: String) {
+        private suspend fun deletePhoto(fileName: String) {
             try {
                 storageDataSource.delete(fileName)
             } catch (e: CancellationException) {
@@ -214,4 +250,11 @@ internal class ReviewRepositoryImpl
 private data class PhotoFields(
     val imageUrl: String,
     val fileName: String,
+)
+
+private data class PhotoCleanup(
+    // 감상문 업로드가 끝난 뒤 업로더가 Storage에서 지울 이전 사진 파일 이름
+    val storageFileNameToDelete: String,
+    // 감상문 업로드가 끝나기 전에 다른 사진으로 바뀌어 Room 저장 뒤 Storage에서 바로 지울 사진 파일 이름
+    val unreferencedFileName: String,
 )
