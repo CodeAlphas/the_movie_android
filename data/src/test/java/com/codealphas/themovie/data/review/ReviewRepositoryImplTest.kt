@@ -449,7 +449,7 @@ class ReviewRepositoryImplTest {
 
 private const val USER_ID = "user-1234567890"
 private const val NOW_MILLIS = 1_700_000_000_000L
-private const val NEW_FILE_NAME = "$USER_ID/$NOW_MILLIS.png"
+private const val NEW_FILE_NAME = "$USER_ID/$NOW_MILLIS"
 private const val NEW_KEY = "-new-key"
 
 // 저장된 createdAt이 지금 시각이나 저장된 updatedAt과 같으면,

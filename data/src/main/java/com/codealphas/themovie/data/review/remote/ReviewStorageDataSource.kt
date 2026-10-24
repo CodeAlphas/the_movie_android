@@ -2,7 +2,8 @@ package com.codealphas.themovie.data.review.remote
 
 internal interface ReviewStorageDataSource {
     /**
-     * 사진을 Storage에 올린다. 업로드나 URL 조회가 실패하면 예외를 던진다.
+     * 사진을 Storage에 올린다. 사진의 MIME 타입을 찾아 contentType으로 함께 저장한다.
+     * 이미지가 아니거나 형식을 알 수 없을 때, 업로드나 URL 조회가 실패할 때 예외를 던진다.
      *
      * @return 업로드한 사진을 내려받을 수 있는 URL
      */

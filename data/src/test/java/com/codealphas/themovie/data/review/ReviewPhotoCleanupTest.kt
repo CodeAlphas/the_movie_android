@@ -266,8 +266,8 @@ private const val SECOND_SAVE = FIRST_SAVE + SAVE_INTERVAL
 private const val THIRD_SAVE = SECOND_SAVE + SAVE_INTERVAL
 private val FILE_A = fileAt(FIRST_SAVE)
 
-// 그 시각에 저장한 사진의 파일 이름을 ReviewRepositoryImpl과 같은 규칙("사용자 id/저장 시각.png")으로 생성
-private fun fileAt(millis: Long): String = "$USER_ID/$millis.png"
+// 그 시각에 저장한 사진의 파일 이름을 ReviewRepositoryImpl과 같은 규칙("사용자 id/저장 시각")으로 생성
+private fun fileAt(millis: Long): String = "$USER_ID/$millis"
 
 private fun draft(
     id: String?,

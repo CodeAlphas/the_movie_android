@@ -2,6 +2,9 @@ name: check
 
 on:
   pull_request:
+  # 다른 PR이 먼저 병합되면 두 변경이 합쳐진 main은 PR 검사를 거치지 않으므로, main push에도 실행
+  push:
+    branches: [main]
 
 jobs:
   check:

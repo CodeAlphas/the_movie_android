@@ -1,8 +1,11 @@
 package com.codealphas.themovie.data.review.remote
 
-import android.net.Uri
+import android.content.Context
+import androidx.core.net.toUri
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageException
+import com.google.firebase.storage.StorageMetadata
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
@@ -10,17 +13,27 @@ internal class FirebaseReviewStorageDataSource
     @Inject
     constructor(
         private val storage: FirebaseStorage,
+        @param:ApplicationContext private val context: Context,
     ) : ReviewStorageDataSource {
         override suspend fun upload(
             fileName: String,
             uri: String,
-        ): String =
-            photoReference(fileName)
-                .putFile(Uri.parse(uri))
+        ): String {
+            val photoUri = uri.toUri()
+            // 파일 이름으로는 사진의 실제 형식을 알 수 없으므로,
+            // Storage 규칙의 이미지 형식 검사를 통과하도록 사진에서 찾은 형식을 업로드 메타데이터로 직접 지정
+            val metadata =
+                StorageMetadata
+                    .Builder()
+                    .setContentType(photoContentType(photoUri, context.contentResolver))
+                    .build()
+            return photoReference(fileName)
+                .putFile(photoUri, metadata)
                 .await()
                 .storage.downloadUrl
                 .await()
                 .toString()
+        }
 
         override suspend fun delete(fileName: String) {
             try {

@@ -29,6 +29,7 @@ room {
 
 dependencies {
     implementation(project(":domain"))
+    implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.annotation.experimental)
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.paging.common)

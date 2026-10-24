@@ -133,7 +133,9 @@ internal class ReviewRepositoryImpl
             userId: String,
         ): PhotoFields? {
             // Storage 규칙이 경로의 사용자 폴더로 본인 사진만 쓰고 지우게 막으므로, 사진을 uid 폴더 아래에 저장 처리
-            val fileName = "$userId/${clock.nowMillis()}.png"
+            // 갤러리 사진은 JPEG, PNG, WebP 등 형식이 여러 가지라 확장자를 고정하면 실제 형식과 어긋나므로,
+            // 형식은 업로드 메타데이터로 지정하고 파일 이름에는 확장자를 붙이지 않도록 처리
+            val fileName = "$userId/${clock.nowMillis()}"
             return try {
                 PhotoFields(imageUrl = storageDataSource.upload(fileName, uri), fileName = fileName)
             } catch (_: CancellationException) {
