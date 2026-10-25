@@ -64,3 +64,6 @@ Thumbs.db
 
 # Local docs
 docs/
+
+# README 실행 화면 GIF 원본 (릴리스 첨부 파일로 게시)
+screenshots/

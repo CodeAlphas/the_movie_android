@@ -13,6 +13,16 @@
 | 📍 영화관   | 현재 위치 주변 영화관 지도 표시, 카카오맵 길찾기 연동                      |
 | 🔔 알림    | 푸시 알림 수신                                             |
 
+## 실행 화면
+
+| 로그인 | 영화 목록 | 영화 검색 | 영화 상세 |
+| :---: | :---: | :---: | :---: |
+| <img src="https://github.com/CodeAlphas/the_movie_android/releases/download/v2.2.0/auth.gif" width="200" alt="로그인"> | <img src="https://github.com/CodeAlphas/the_movie_android/releases/download/v2.2.0/movie-list.gif" width="200" alt="영화 목록"> | <img src="https://github.com/CodeAlphas/the_movie_android/releases/download/v2.2.0/movie-search.gif" width="200" alt="영화 검색"> | <img src="https://github.com/CodeAlphas/the_movie_android/releases/download/v2.2.0/movie-detail.gif" width="200" alt="영화 상세"> |
+
+| 감상문 | 영화관 지도 | 알림 |
+| :---: | :---: | :---: |
+| <img src="https://github.com/CodeAlphas/the_movie_android/releases/download/v2.2.0/review.gif" width="200" alt="감상문"> | <img src="https://github.com/CodeAlphas/the_movie_android/releases/download/v2.2.0/theater-map.gif" width="200" alt="영화관 지도"> | <img src="https://github.com/CodeAlphas/the_movie_android/releases/download/v2.2.0/notification.gif" width="200" alt="알림"> |
+
 ## 기술 스택
 
 | 분류           | 사용 기술                                                                           |
