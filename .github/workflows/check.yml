@@ -2,6 +2,9 @@ name: check
 
 on:
   pull_request:
+  # 다른 PR이 먼저 병합되면 두 변경이 합쳐진 main은 PR 검사를 거치지 않으므로, main push에도 실행
+  push:
+    branches: [main]
 
 jobs:
   check:
@@ -54,4 +57,12 @@ jobs:
       - run: ./gradlew lint ktlintCheck
       - run: ./gradlew detekt
       - run: ./gradlew testDebugUnitTest :domain:test
+
+      # Room Gradle 플러그인이 빌드할 때 data/schemas의 스키마 JSON을 다시 쓰므로,
+      # 엔티티를 바꾸고 스키마 JSON을 커밋하지 않은 PR을 잡도록 새 파일까지 포함해 바뀐 내용이 있으면 실패 처리
+      - name: Room 스키마 커밋 확인
+        run: |
+          git add --intent-to-add -- data/schemas
+          git diff --exit-code -- data/schemas || { echo "엔티티 변경으로 다시 생성된 Room 스키마 JSON이 커밋되지 않았습니다."; exit 1; }
+
       - run: ./gradlew assembleDebug

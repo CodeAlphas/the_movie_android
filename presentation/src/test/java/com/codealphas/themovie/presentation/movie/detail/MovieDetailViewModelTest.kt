@@ -48,7 +48,7 @@ class MovieDetailViewModelTest {
         }
 
     @Test
-    fun `화면이 멈춘 동안 상세 요청이 실패하면 다시 구독할 때 영화 정보 없이 오류를 받아야 한다`() =
+    fun `상세를 불러오지 못하면 화면 가운데에 오류와 다시 시도 버튼만 보여 주고 오류 안내는 띄우지 않아야 한다`() =
         runTest {
             Dispatchers.setMain(StandardTestDispatcher(testScheduler))
             val repository =
@@ -66,7 +66,7 @@ class MovieDetailViewModelTest {
                     MovieDetailUiState(detail = null, isLoading = false, loadError = RemoteError.Network),
                     viewModel.state.value,
                 )
-                assertEquals(listOf(MovieDetailEffect.ShowError(RemoteError.Network)), effects)
+                assertEquals(emptyList<MovieDetailEffect>(), effects)
             } finally {
                 viewModel.viewModelScope.cancel()
                 Dispatchers.resetMain()

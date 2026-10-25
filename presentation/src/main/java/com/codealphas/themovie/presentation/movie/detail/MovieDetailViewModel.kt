@@ -57,8 +57,11 @@ class MovieDetailViewModel
                 // 본문이 실패하면 앱바 아래가 빈 채로 남으므로, 다시 시도 버튼을 보이도록 본문 오류를 loadError에 반영
                 val loadError = if (result.detail == null) result.errors.firstOrNull() else null
                 _state.value = MovieDetailUiState(detail = result.detail, isLoading = false, loadError = loadError)
-                // 출연진과 영상이 함께 실패하면 같은 화면에서 안내가 연달아 뜨므로, 첫 오류만 알리도록 처리
-                result.errors.firstOrNull()?.let { error -> _effect.send(MovieDetailEffect.ShowError(error)) }
+                // 본문이 실패하면 화면 가운데 오류 문구가 같은 내용을 이미 보여 주므로, 본문을 보여 줄 때만 오류 안내
+                if (result.detail != null) {
+                    // 출연진과 영상이 함께 실패하면 같은 화면에서 안내가 연달아 뜨므로, 첫 오류만 알리도록 처리
+                    result.errors.firstOrNull()?.let { error -> _effect.send(MovieDetailEffect.ShowError(error)) }
+                }
             }
         }
     }

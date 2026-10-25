@@ -11,7 +11,7 @@ import org.junit.Test
 
 class LogoutUseCaseTest {
     @Test
-    fun `로그아웃하면 감상문을 지운 뒤 로그아웃해야 한다`() =
+    fun `로그아웃하면 업로드 작업을 취소하고 감상문을 지운 뒤 로그아웃해야 한다`() =
         runTest {
             val calls = mutableListOf<String>()
             val useCase =
@@ -22,7 +22,7 @@ class LogoutUseCaseTest {
 
             useCase()
 
-            assertEquals(listOf("deleteAll", "signOut"), calls)
+            assertEquals(listOf("cancelPendingSync", "deleteAll", "signOut"), calls)
         }
 }
 
@@ -61,5 +61,11 @@ private class FakeReviewRepository(
 
     override suspend fun deleteAll() {
         calls += "deleteAll"
+    }
+
+    override suspend fun countPendingChanges(): Int = error("사용하지 않음")
+
+    override fun cancelPendingSync() {
+        calls += "cancelPendingSync"
     }
 }

@@ -9,7 +9,8 @@ junit = "4.13.2"
 # Compose에서 Activity를 읽는 LocalActivity가 1.10.0부터 있으므로, Kotlin 1.8.22로 빌드되고 lifecycle 2.6.1을 요구하는 1.10.1 사용
 activityKtx = "1.10.1"
 # 1.4.0은 Kotlin 2.2.20으로 빌드되고 lifecycle을 2.11.0으로 올리므로, Kotlin 2.0.21로 빌드되고 lifecycle 2.9.1을 요구하는 1.3.0 사용
-hiltLifecycleViewmodelCompose = "1.3.0"
+androidxHilt = "1.3.0"
+work = "2.12.0"
 lifecycle = "2.9.4"
 # 2.10.0부터는 lifecycle을 2.11.0으로 올리므로, Kotlin 2.0.21로 빌드되고 lifecycle 2.9.0, kotlinx.serialization 1.7.3을 요구하는 2.9.8 사용
 navigationCompose = "2.9.8"
@@ -41,6 +42,11 @@ hilt = "2.59.2"
 detekt = "2.0.0-alpha.6"
 # :domain의 @Inject는 javax.inject 애너테이션이므로 1을 사용
 javaxInject = "1"
+# targetSdk 37의 Android 런타임은 4.17부터 들어 있으므로, 화면 테스트가 앱과 같은 SDK에서 돌도록 4.17 사용
+robolectric = "4.17"
+# Compose ui-test-junit4가 가져오는 3.5.0은 API 37에서 없어진 InputManager.getInstance()를 불러 화면 테스트가 실패하므로, 최신 안정판 3.7.0 사용
+espresso = "3.7.0"
+androidxTestCore = "1.7.0"
 
 [libraries]
 androidx-annotation-experimental = { group = "androidx.annotation", name = "annotation-experimental", version.ref = "annotationExperimental" }
@@ -48,7 +54,11 @@ androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = 
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityKtx" }
 androidx-activity-ktx = { group = "androidx.activity", name = "activity-ktx", version.ref = "activityKtx" }
-androidx-hilt-lifecycle-viewmodel-compose = { group = "androidx.hilt", name = "hilt-lifecycle-viewmodel-compose", version.ref = "hiltLifecycleViewmodelCompose" }
+androidx-hilt-lifecycle-viewmodel-compose = { group = "androidx.hilt", name = "hilt-lifecycle-viewmodel-compose", version.ref = "androidxHilt" }
+androidx-hilt-work = { group = "androidx.hilt", name = "hilt-work", version.ref = "androidxHilt" }
+androidx-hilt-compiler = { group = "androidx.hilt", name = "hilt-compiler", version.ref = "androidxHilt" }
+androidx-work-runtime = { group = "androidx.work", name = "work-runtime", version.ref = "work" }
+androidx-work-testing = { group = "androidx.work", name = "work-testing", version.ref = "work" }
 androidx-lifecycle-viewmodel-ktx = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-ktx", version.ref = "lifecycle" }
 androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycle" }
 androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
@@ -61,11 +71,16 @@ androidx-compose-ui = { group = "androidx.compose.ui", name = "ui" }
 androidx-compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
 androidx-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
 androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3" }
+androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
+androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
 androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
 retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
 retrofit-converter-kotlinx-serialization = { group = "com.squareup.retrofit2", name = "converter-kotlinx-serialization", version.ref = "retrofit" }
+androidx-test-core = { group = "androidx.test", name = "core", version.ref = "androidxTestCore" }
+androidx-test-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espresso" }
+robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
 okhttp-mockwebserver = { group = "com.squareup.okhttp3", name = "mockwebserver", version.ref = "okhttp" }
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
 kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "coroutines" }

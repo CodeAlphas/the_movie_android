@@ -1,4 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Android 12(API 31) 이상은 backup_rules.xml 대신 이 파일을 읽으므로,
+     백업에서 뺄 파일을 backup_rules.xml과 똑같이 나열(파일마다 빼는 이유는 backup_rules.xml 주석) -->
 <data-extraction-rules>
-    <cloud-backup />
+    <cloud-backup>
+        <exclude domain="database" path="review_database" />
+        <exclude domain="database" path="review_database-wal" />
+        <exclude domain="database" path="review_database-shm" />
+        <exclude domain="database" path="review_database-journal" />
+        <exclude domain="file" path="datastore/notification_permission.preferences_pb" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="database" path="review_database" />
+        <exclude domain="database" path="review_database-wal" />
+        <exclude domain="database" path="review_database-shm" />
+        <exclude domain="database" path="review_database-journal" />
+        <exclude domain="file" path="datastore/notification_permission.preferences_pb" />
+    </device-transfer>
 </data-extraction-rules>

@@ -25,7 +25,7 @@
 | 🔐 인증  | 회원가입, 로그인, 로그아웃                       |
 | 🎬 영화  | 무한 스크롤로 보는 인기 영화, 높은 평점 영화, 영화 검색 |
 | 🎞 영화 상세 | 개봉일, 평점, 출연진, 줄거리 확인과 예고편 재생 |
-| 🖊 감상문 | 사진을 포함한 감상문 작성, 수정, 삭제, 계정별 서버 백업     |
+| 🖊 감상문 | 사진을 포함한 감상문 작성, 수정, 삭제, 계정별 서버 백업(네트워크가 연결되면 자동 업로드) |
 | 📍 영화관 | 현재 위치 주변 영화관 지도 표시, 카카오맵 길찾기 연동       |
 | 🔔 알림  | 푸시 알림 수신                              |
 
@@ -46,13 +46,14 @@
 | Paging       | Paging 3 (paging-compose)                                   |
 | Network      | Retrofit, OkHttp, kotlinx.serialization                     |
 | Local        | Room, DataStore                                             |
+| Background   | WorkManager                                                 |
 | Image        | Coil                                                        |
 | Media        | android-youtube-player                                      |
 | Location     | Play Services Location (FusedLocationProvider)              |
 | Firebase     | Authentication, Realtime Database, Storage, Cloud Messaging |
 | 외부 API / SDK | TMDB API, Kakao Local API, Kakao Map SDK                    |
 | Build        | Version Catalog, Convention Plugin                          |
-| Quality      | ktlint, detekt, Android Lint, JUnit, GitHub Actions         |
+| Quality      | ktlint, detekt, Android Lint, JUnit, Robolectric, GitHub Actions |
 
 
   
@@ -91,7 +92,7 @@ graph TD
 
 ## 리팩터링 (Before → After)
 
-기존 코드 분석과 설계는 직접 하고, 구현과 테스트 작성은 Claude Code와 Cursor로 진행했습니다. AI가 프로젝트 규칙에 맞게 코드를 만들도록 `CLAUDE.md`와 `.cursor/rules`에 규칙을 정의하고, 커밋·PR 메시지 작성은 스킬로 표준화했습니다. 결과는 직접 리뷰하고 PR마다 CI(Lint, ktlint, detekt, 단위 테스트, 빌드)로 검증했습니다.
+기존 코드 분석과 설계는 직접 하고, 구현과 테스트 작성은 Claude Code와 Cursor로 진행했습니다. AI가 프로젝트 규칙에 맞게 코드를 만들도록 `CLAUDE.md`와 `.cursor/rules`에 규칙을 정의하고, 커밋·PR 메시지 작성은 스킬로 표준화했습니다. 결과는 직접 리뷰하고 PR과 main 병합 뒤마다 CI(Lint, ktlint, detekt, 단위 테스트, 빌드)로 검증했습니다.
 
 
 | 항목     | Before                                                                 | After                                                           |
@@ -105,8 +106,8 @@ graph TD
 | 오류 처리  | 일부만 처리, 원인 구분 없음                                                       | 결과 타입으로 원인별 안내                                                  |
 | API 키  | 소스 코드(`Credentials`)에 직접 입력                                            | `local.properties`로 분리                                          |
 | 지도     | Google Maps, TMAP                                                      | Kakao Map SDK, Kakao Local API                                  |
-| 품질 검사  | 없음                                                                     | PR마다 Lint, ktlint, detekt, 단위 테스트, 빌드 실행                        |
-| 테스트    | 없음                                                                     | 단위 테스트 약 200개                                                   |
+| 품질 검사  | 없음                                                                     | PR과 main push마다 Lint, ktlint, detekt, 단위 테스트, 빌드 실행             |
+| 테스트    | 없음                                                                     | 단위 테스트 약 300개                                                   |
 
 
   

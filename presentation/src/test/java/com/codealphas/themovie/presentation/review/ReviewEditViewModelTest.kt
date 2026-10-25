@@ -316,7 +316,8 @@ private val STORED_REVIEW =
         title = "기생충",
         imageUrl = "https://example.com/photo.png",
         content = "잘 봤다",
-        time = "2024/01/02 03:04",
+        createdAt = 1_704_132_240_000L,
+        updatedAt = 1_704_132_240_000L,
         rating = 9.0,
         storageFileName = "photo.png",
         id = "-stored",
@@ -378,4 +379,8 @@ private class FakeReviewEditRepository(
     override suspend fun delete(review: Review) = error("사용하지 않음")
 
     override suspend fun deleteAll() = error("사용하지 않음")
+
+    override suspend fun countPendingChanges(): Int = error("사용하지 않음")
+
+    override fun cancelPendingSync() = error("사용하지 않음")
 }

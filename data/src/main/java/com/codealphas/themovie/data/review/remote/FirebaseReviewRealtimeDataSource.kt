@@ -1,11 +1,17 @@
 package com.codealphas.themovie.data.review.remote
 
+import com.codealphas.themovie.data.review.toRemoteFields
+import com.codealphas.themovie.data.review.toReviewOrNull
 import com.codealphas.themovie.domain.review.Review
 import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 
 internal class FirebaseReviewRealtimeDataSource
     @Inject
@@ -25,32 +31,20 @@ internal class FirebaseReviewRealtimeDataSource
         override fun newKey(userId: String): String =
             checkNotNull(reviewsReference(userId).push().key) { "감상문 서버 키를 만들지 못함" }
 
-        // 오프라인이면 쓰기가 연결될 때까지 완료되지 않아 화면이 멈추므로, 완료를 기다리지 않고 SDK 대기열에 위임
-        // SDK 대기열은 메모리에만 있어 연결 전에 앱이 종료되면 서버 쓰기가 빠지므로, 그 감상문이 이 기기에만 남는 한계를 허용
-        override fun save(
+        override suspend fun save(
             userId: String,
             review: Review,
         ) {
-            val fields =
-                mapOf(
-                    "image" to review.imageUrl,
-                    "title" to review.title,
-                    "content" to review.content,
-                    "time" to review.time,
-                    "rating" to review.rating,
-                    "storageFileName" to review.storageFileName,
-                )
-            reviewsReference(userId).child(review.id).updateChildren(fields)
+            awaitCompletion { listener ->
+                reviewsReference(userId).child(review.id).updateChildren(review.toRemoteFields(), listener)
+            }
         }
 
-        // 오프라인이면 삭제가 연결될 때까지 완료되지 않아 화면이 멈추므로, 완료를 기다리지 않고 SDK 대기열에 위임
-        // SDK 대기열은 메모리에만 있어 연결 전에 앱이 종료되면 서버 삭제가 빠지므로,
-        // 다음 동기화 때 삭제한 감상문이 사진 링크가 깨진 채 되살아나는 한계를 허용
-        override fun delete(
+        override suspend fun delete(
             userId: String,
             reviewId: String,
         ) {
-            reviewsReference(userId).child(reviewId).removeValue()
+            awaitCompletion { listener -> reviewsReference(userId).child(reviewId).removeValue(listener) }
         }
 
         private fun reviewsReference(userId: String): DatabaseReference =
@@ -60,18 +54,23 @@ internal class FirebaseReviewRealtimeDataSource
                 .child("reviews")
     }
 
-// 필드가 빠진 항목 하나가 예외를 던지면 목록 전체 동기화가 중단되므로, 읽지 못한 항목만 제외
-private fun DataSnapshot.toReviewOrNull(): Review? {
-    val id = key
-    val rating = child("rating").value?.toString()?.toDoubleOrNull()
-    if (id == null || rating == null) return null
-    return Review(
-        title = child("title").value.toString(),
-        imageUrl = child("image").value.toString(),
-        content = child("content").value.toString(),
-        time = child("time").value.toString(),
-        rating = rating,
-        storageFileName = child("storageFileName").value.toString(),
-        id = id,
-    )
+// Task로 기다리면 실패가 오류 코드 없이 메시지만 담은 DatabaseException으로 와 권한 거부와 네트워크 오류를 구분할 수 없으므로,
+// 오류 코드가 든 DatabaseError를 받도록 CompletionListener로 서버 확인 대기
+private suspend fun awaitCompletion(request: (DatabaseReference.CompletionListener) -> Unit) {
+    suspendCancellableCoroutine { continuation ->
+        request { error, _ ->
+            if (error == null) {
+                continuation.resume(Unit)
+            } else {
+                continuation.resumeWithException(error.toReviewRemoteException())
+            }
+        }
+    }
 }
+
+private fun DataSnapshot.toReviewOrNull(): Review? =
+    key?.let { id -> toReviewOrNull(id = id, fields = value as? Map<*, *>) }
+
+// 보안 규칙이 거부한 쓰기는 다시 보내도 같은 결과라 재시도하면 업로드가 끝나지 않으므로, PERMISSION_DENIED만 권한 거부로 변환
+private fun DatabaseError.toReviewRemoteException(): Exception =
+    if (code == DatabaseError.PERMISSION_DENIED) ReviewPermissionDeniedException(toException()) else toException()

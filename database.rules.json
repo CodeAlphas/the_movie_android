@@ -1,0 +1,24 @@
+{
+  "rules": {
+    "users": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid",
+        "reviews": {
+          "$reviewId": {
+            ".validate": "newData.hasChildren(['title', 'content', 'image', 'storageFileName', 'rating', 'createdAt', 'updatedAt'])",
+            "title": { ".validate": "newData.isString()" },
+            "content": { ".validate": "newData.isString()" },
+            "image": { ".validate": "newData.isString()" },
+            "storageFileName": { ".validate": "newData.isString()" },
+            "rating": { ".validate": "newData.isNumber()" },
+            "createdAt": { ".validate": "newData.isNumber()" },
+            "updatedAt": { ".validate": "newData.isNumber()" },
+            "$other": { ".validate": false }
+          }
+        },
+        "$other": { ".validate": false }
+      }
+    }
+  }
+}

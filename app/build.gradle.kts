@@ -36,6 +36,8 @@ dependencies {
     implementation(project(":data"))
     implementation(project(":core-android"))
     implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.work.runtime)
+    implementation(libs.androidx.hilt.work)
     implementation(libs.kakao.map)
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.messaging)

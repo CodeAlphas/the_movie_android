@@ -26,6 +26,7 @@ import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Test
 
@@ -96,7 +97,7 @@ class ReviewListViewModelTest {
     }
 
     @Test
-    fun `동기화에 실패하면 실패 안내를 한 번 보내야 한다`() {
+    fun `Room 감상문이 없을 때 동기화에 실패하면 실패 안내를 한 번 보내야 한다`() {
         val repository = FakeReviewListRepository(syncResult = Outcome.Failure(ReviewError.Unknown))
         runReviewListTest(repository) { viewModel ->
             var failedCount = 0
@@ -108,6 +109,21 @@ class ReviewListViewModelTest {
 
             assertEquals(1, repository.syncCalls)
             assertEquals(1, failedCount)
+        }
+    }
+
+    @Test
+    fun `Room 감상문이 있을 때 동기화에 실패하면 실패 안내를 보내지 않아야 한다`() {
+        val repository = FakeReviewListRepository(syncResult = Outcome.Failure(ReviewError.Unknown))
+        repository.reviews.value = listOf(REVIEW)
+        runReviewListTest(repository) { viewModel ->
+            val effects = collectEffects(viewModel)
+
+            runCurrent()
+
+            assertEquals(1, repository.syncCalls)
+            assertEquals(ReviewListUiState(reviews = listOf(REVIEW), isSyncing = false), viewModel.state.value)
+            assertEquals(emptyList<ReviewListEffect>(), effects)
         }
     }
 
@@ -210,6 +226,125 @@ class ReviewListViewModelTest {
             assertEquals(listOf("syncCancelled", "deleteAll"), repository.calls)
         }
     }
+
+    @Test
+    fun `서버에 반영하지 않은 감상문 변경이 있을 때 로그아웃 버튼을 누르면 로그아웃하지 않고 변경 수와 함께 확인 창을 띄워야 한다`() {
+        val repository = FakeReviewListRepository(pendingCount = 2)
+        val authRepository = FakeReviewListAuthRepository()
+        runReviewListTest(repository, authRepository) { viewModel ->
+            val effects = collectEffects(viewModel)
+
+            viewModel.onIntent(ReviewListIntent.LogoutClicked)
+            runCurrent()
+
+            assertEquals(2, viewModel.state.value.logoutPendingReviewCount)
+            assertEquals(0, repository.deleteAllCalls)
+            assertEquals(0, authRepository.signOutCalls)
+            assertEquals(emptyList<ReviewListEffect>(), effects)
+        }
+    }
+
+    @Test
+    fun `서버에 반영하지 않은 감상문 변경이 없을 때 로그아웃 버튼을 누르면 확인 창을 띄우지 않고 로그아웃해야 한다`() {
+        val repository = FakeReviewListRepository()
+        val authRepository = FakeReviewListAuthRepository()
+        runReviewListTest(repository, authRepository) { viewModel ->
+            val effects = collectEffects(viewModel)
+
+            viewModel.onIntent(ReviewListIntent.LogoutClicked)
+            runCurrent()
+
+            assertNull(viewModel.state.value.logoutPendingReviewCount)
+            assertEquals(1, authRepository.signOutCalls)
+            assertEquals(listOf<ReviewListEffect>(ReviewListEffect.NavigateToLogin), effects)
+        }
+    }
+
+    @Test
+    fun `로그아웃 확인 창에서 로그아웃 버튼을 누르면 확인 창을 닫고 감상문을 지운 뒤 로그아웃해야 한다`() {
+        val repository = FakeReviewListRepository(pendingCount = 2)
+        val authRepository = FakeReviewListAuthRepository()
+        runReviewListTest(repository, authRepository) { viewModel ->
+            val effects = collectEffects(viewModel)
+            viewModel.onIntent(ReviewListIntent.LogoutClicked)
+            runCurrent()
+
+            viewModel.onIntent(ReviewListIntent.LogoutConfirmed)
+            runCurrent()
+
+            assertNull(viewModel.state.value.logoutPendingReviewCount)
+            assertEquals(1, repository.deleteAllCalls)
+            assertEquals(1, authRepository.signOutCalls)
+            assertEquals(listOf<ReviewListEffect>(ReviewListEffect.NavigateToLogin), effects)
+        }
+    }
+
+    @Test
+    fun `로그아웃 확인 창에서 로그아웃 버튼을 두 번 누르면 한 번만 로그아웃해야 한다`() {
+        val deleteAllDone = CompletableDeferred<Unit>()
+        val repository = FakeReviewListRepository(deleteAllDone = deleteAllDone, pendingCount = 2)
+        val authRepository = FakeReviewListAuthRepository()
+        runReviewListTest(repository, authRepository) { viewModel ->
+            val effects = collectEffects(viewModel)
+            viewModel.onIntent(ReviewListIntent.LogoutClicked)
+            runCurrent()
+
+            viewModel.onIntent(ReviewListIntent.LogoutConfirmed)
+            viewModel.onIntent(ReviewListIntent.LogoutConfirmed)
+            deleteAllDone.complete(Unit)
+            runCurrent()
+
+            assertEquals(1, repository.deleteAllCalls)
+            assertEquals(1, authRepository.signOutCalls)
+            assertEquals(listOf<ReviewListEffect>(ReviewListEffect.NavigateToLogin), effects)
+        }
+    }
+
+    @Test
+    fun `로그아웃 확인 창에서 취소하면 확인 창을 닫고 로그아웃하지 않아야 한다`() {
+        val repository = FakeReviewListRepository(pendingCount = 2)
+        val authRepository = FakeReviewListAuthRepository()
+        runReviewListTest(repository, authRepository) { viewModel ->
+            val effects = collectEffects(viewModel)
+            viewModel.onIntent(ReviewListIntent.LogoutClicked)
+            runCurrent()
+
+            viewModel.onIntent(ReviewListIntent.LogoutDismissed)
+            runCurrent()
+
+            assertNull(viewModel.state.value.logoutPendingReviewCount)
+            assertEquals(0, repository.deleteAllCalls)
+            assertEquals(0, authRepository.signOutCalls)
+            assertEquals(emptyList<ReviewListEffect>(), effects)
+        }
+    }
+
+    @Test
+    fun `서버 동기화 중에 로그아웃 확인 창에서 취소하면 동기화를 멈추지 않고 동기화 중 상태를 끝내야 한다`() {
+        val syncDone = CompletableDeferred<Unit>()
+        val repository = FakeReviewListRepository(syncDone = syncDone, pendingCount = 2)
+        runReviewListTest(repository) { viewModel ->
+            runCurrent()
+            viewModel.onIntent(ReviewListIntent.LogoutClicked)
+            runCurrent()
+
+            viewModel.onIntent(ReviewListIntent.LogoutDismissed)
+            syncDone.complete(Unit)
+            runCurrent()
+
+            assertEquals(emptyList<String>(), repository.calls)
+            assertFalse(viewModel.state.value.isSyncing)
+        }
+    }
+}
+
+@OptIn(ExperimentalCoroutinesApi::class)
+private fun TestScope.collectEffects(viewModel: ReviewListViewModel): List<ReviewListEffect> {
+    val effects = mutableListOf<ReviewListEffect>()
+    backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+        viewModel.effect.collect { effects += it }
+    }
+    return effects
 }
 
 private val REVIEW =
@@ -217,7 +352,8 @@ private val REVIEW =
         title = "기생충",
         imageUrl = "",
         content = "잘 봤다",
-        time = "2024/01/02 03:04",
+        createdAt = 1_704_132_240_000L,
+        updatedAt = 1_704_132_240_000L,
         rating = 9.0,
         storageFileName = "",
         id = "-review",
@@ -244,6 +380,7 @@ private class FakeReviewListRepository(
     private val syncDone: CompletableDeferred<Unit> = CompletableDeferred(Unit),
     private val deleteDone: CompletableDeferred<Unit> = CompletableDeferred(Unit),
     private val deleteResult: ReviewResult = Outcome.Success(Unit),
+    private val pendingCount: Int = 0,
 ) : ReviewRepository {
     val reviews = MutableStateFlow(emptyList<Review>())
     val deleted = mutableListOf<Review>()
@@ -279,6 +416,10 @@ private class FakeReviewListRepository(
         deleteAllCalls += 1
         calls += "deleteAll"
     }
+
+    override suspend fun countPendingChanges(): Int = pendingCount
+
+    override fun cancelPendingSync() = Unit
 }
 
 private class FakeReviewListAuthRepository : AuthRepository {
